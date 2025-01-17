@@ -1,0 +1,27 @@
+{
+  "name": "aqixuan",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/congchuyidaogaosan/aqixuan.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/congchuyidaogaosan/aqixuan/issues"
+  },
+  "homepage": "https://github.com/congchuyidaogaosan/aqixuan#readme",
+  "dependencies": {
+    "@dcloudio/uni-ui": "^1.5.7",
+    "axios": "^1.7.9",
+    "mockjs": "^1.1.0",
+    "vue": "^3.2.45"
+  },
+  "devDependencies": {},
+  "description": ""
+}
