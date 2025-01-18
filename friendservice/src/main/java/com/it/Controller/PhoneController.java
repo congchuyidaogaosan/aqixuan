@@ -21,18 +21,22 @@ public class PhoneController {
 
 
     @GetMapping("getPhone")
-    public Result getPhone(@RequestParam("phone") String phone, @RequestParam(defaultValue = "1160", name = "isFlag") String isFlag) {
+    public Result getPhone(@RequestParam("phone") String phone, @RequestParam(defaultValue = "", name = "isFlag") String isFlag) {
 
         Boolean flag = userService.isUserPhone(phone);
 
         if (!flag) {
-            return Result.fail("手机号不存在请注册");
+//            return Result.fail("手机号不存在请注册");
+            Result result = infoPhone(phone);
+
         }
 
 
         if (isFlag.equals("1160")) {
+            //不发
             return smsSendUtill.NewGoDuanXin(phone);
         } else {
+            //发
             return smsSendUtill.goDuanXin(phone);
 
         }

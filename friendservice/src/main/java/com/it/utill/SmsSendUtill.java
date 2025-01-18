@@ -2,9 +2,9 @@ package com.it.utill;
 
 import com.it.domain.DTO.PhoneReturn;
 import com.it.domain.common.Result;
-import com.sun.istack.internal.NotNull;
 import org.apache.http.HttpResponse;
 import org.apache.http.util.EntityUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
@@ -33,7 +33,7 @@ public class SmsSendUtill {
 
         String key = randomStringGenerator.getSubString(10);
 
-        String randoNumber = generateRandomNumber.getRandoNumber(4);
+        String randoNumber = generateRandomNumber.getRandoNumber(6);
         System.out.println("subString" + key + " ： randoNumber " + randoNumber);
         redisTemplate.opsForValue().set(key, randoNumber, 5, TimeUnit.MINUTES);
 
@@ -52,7 +52,7 @@ public class SmsSendUtill {
 
         String key = randomStringGenerator.getSubString(10);
 
-        String randoNumber = generateRandomNumber.getRandoNumber(4);
+        String randoNumber = generateRandomNumber.getRandoNumber(6);
         System.out.println("subString" + key + " ： randoNumber " + randoNumber);
         redisTemplate.opsForValue().set(key, randoNumber, 5, TimeUnit.MINUTES);
 

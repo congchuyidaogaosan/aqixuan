@@ -2,8 +2,7 @@ import axios from 'axios'
 
 // 创建axios实例
 const request = axios.create({
-  // 开发环境下不需要baseURL，因为Mock会直接拦截请求
-  baseURL: process.env.NODE_ENV === 'development' ? '' : 'http://localhost:3000',
+  baseURL: '/aqixuan',
   timeout: 10000
 })
 

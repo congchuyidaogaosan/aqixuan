@@ -1,23 +1,26 @@
 import request from '@/utils/request'
 
 // 是否使用mock数据
-const USE_MOCK = process.env.NODE_ENV === 'development'
+// const USE_MOCK = process.env.NODE_ENV === 'development'
 
 // 统一的API实现
 const api = {
   // 发送验证码
   sendSmsCode: (phone) => {
     return request({
-      url: '/api/sms/send',
-      method: 'post',
-      data: { phone }
+      url: '/phone/getPhone',
+      method: 'get',
+      params: { 
+        phone,
+        isFlag:'1160' //开发带，上线去掉
+    }
     })
   },
 
   // 登录/注册
   loginByCode: (data) => {
     return request({
-      url: '/api/user/login',
+      url: '/user/login',
       method: 'post',
       data
     })
@@ -26,7 +29,7 @@ const api = {
   // 设置用户昵称
   updateNickname: (nickname) => {
     return request({
-      url: '/api/user/update/nickname',
+      url: '/user/update/nickname',
       method: 'post',
       data: { nickname }
     })

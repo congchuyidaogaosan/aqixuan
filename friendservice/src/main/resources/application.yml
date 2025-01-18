@@ -10,7 +10,7 @@ spring:
     static-locations: classpath:/templates/
   datasource:
     username: root
-    password: 123456
+    password: 20020309
     url: jdbc:mysql://localhost:3306/servie0118?useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useSSL=false
     driver-class-name: com.mysql.jdbc.Driver
   servlet:
