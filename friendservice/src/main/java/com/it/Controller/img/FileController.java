@@ -60,7 +60,7 @@ public class FileController {
             throw new RuntimeException(e);
         }
 
-        String str = "http://localhost:8081/" + "image\\" + name + type;
+        String str = "http://localhost:8081/" + "image/" + name + type;
         return Result.ok(str);
     }
 
@@ -70,7 +70,7 @@ public class FileController {
      * @return
      */
     @RequestMapping("/upload")
-    public Result upload(@RequestParam("avatar") MultipartFile file) throws Exception {
+    public Result upload(@RequestParam("file") MultipartFile file) throws Exception {
         if (file.isEmpty()) {
 
         }
@@ -101,7 +101,7 @@ public class FileController {
             throw new RuntimeException(e);
         }
 
-        String str = "http://localhost:8081/" + "image\\" + name + type;
+        String str = "http://localhost:8081/" + "image/" + name + type;
         return Result.ok(str);
     }
 

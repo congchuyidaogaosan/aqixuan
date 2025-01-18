@@ -25,6 +25,11 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   response => {
     const res = response.data
+    // 新用户需要设置昵称
+    if (res.code === 201) {
+      return res
+    }
+    // 其他非200状态码都是错误
     if (res.code !== 200) {
       uni.showToast({
         title: res.message || '请求失败',

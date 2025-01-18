@@ -14,7 +14,7 @@ public class GenerateRandomNumber {
         Random random = new Random();
         StringBuilder str = new StringBuilder();
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < num; i++) {
             if (i == 0) {
 // 首位不能为0，取值范围为[1, 9]
                 str.append(random.nextInt(9) + 1);

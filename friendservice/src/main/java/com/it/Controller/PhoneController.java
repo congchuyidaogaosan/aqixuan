@@ -28,7 +28,7 @@ public class PhoneController {
         if (!flag) {
 //            return Result.fail("手机号不存在请注册");
             Result result = infoPhone(phone);
-
+//
         }
 
 
@@ -43,6 +43,7 @@ public class PhoneController {
 
     }
 
+    //
     @GetMapping("isPhone")
     public Result isPhone(@RequestParam("phone") String phone, @RequestParam("code") String code, @RequestParam("key") String key) {
 

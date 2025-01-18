@@ -30,30 +30,17 @@
       
       <button class="login-btn" @click="handleLogin">登录</button>
     </view>
-
-    <uni-popup ref="popup" type="dialog">
-      <uni-popup-dialog
-        type="input"
-        mode="input"
-        title="设置昵称"
-        placeholder="请输入昵称"
-        :value="nickname"
-        @confirm="confirmNickname"
-        @close="closePopup"
-      ></uni-popup-dialog>
-    </uni-popup>
   </view>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import { sendSmsCode, loginByCode, updateNickname } from '@/api/user.js'
+import { sendSmsCode, loginByCode } from '@/api/user.js'
 
-const phone = ref('')
+const phone = ref('15845587016')
 const code = ref('')
-const nickname = ref('')
 const counting = ref(0)
-const popup = ref(null)
+const codeKey = ref('')
 
 // 发送验证码
 const sendCode = async () => {
@@ -73,6 +60,9 @@ const sendCode = async () => {
       icon: 'none'
     })
     console.log(res)
+    codeKey.value = res.key
+    code.value = res.code
+    console.log(codeKey.value)
   } catch(e) {
     uni.showToast({
       title: e.message || '发送失败',
@@ -113,32 +103,34 @@ const handleLogin = async () => {
   try {
     const loginData = {
       phone: phone.value,
-      code: code.value
+      code: code.value,
+      key: codeKey.value,
+      nickname: phone.value  // 使用手机号作为默认昵称
     }
-    
+    console.log(loginData)
     const res = await loginByCode(loginData)
     console.log('登录响应:', res)
-
-    // 处理新用户需要设置昵称的情况
-    if(res.needNickname) {
-      nickname.value = '' // 清空昵称
-      popup.value.open()
-      return
-    }
     
     // 登录成功，保存token和用户信息
-    uni.setStorageSync('token', res.token)
-    uni.setStorageSync('userInfo', res.userInfo)
+    // uni.setStorageSync('token', res.data.token)
+    // 保存用户信息
+    uni.setStorageSync('userInfo', res.data)
     
     uni.showToast({
       title: '登录成功',
       icon: 'success'
     })
     
-    // 登录成功后跳转
+    // 修改登录成功后的跳转
     setTimeout(() => {
-      uni.switchTab({
-        url: '/pages/index/index'
+      uni.reLaunch({
+        url: '/pages/index/index',
+        success: () => {
+          console.log('跳转成功')
+        },
+        fail: (err) => {
+          console.error('跳转失败:', err)
+        }
       })
     }, 1500)
     
@@ -148,64 +140,6 @@ const handleLogin = async () => {
       icon: 'none'
     })
   }
-}
-
-// 确认昵称
-const confirmNickname = async (val) => {
-  if(!val.trim()) {
-    uni.showToast({
-      title: '请输入昵称',
-      icon: 'none'
-    })
-    return
-  }
-  
-  try {
-    const loginData = {
-      phone: phone.value,
-      code: code.value,
-      nickname: val.trim()
-    }
-    
-    const res = await loginByCode(loginData)
-    
-    if(res.needNickname) {
-      uni.showToast({
-        title: '请设置昵称',
-        icon: 'none'
-      })
-      return
-    }
-    
-    // 登录成功，保存token和用户信息
-    uni.setStorageSync('token', res.token)
-    uni.setStorageSync('userInfo', res.userInfo)
-    
-    popup.value.close()
-    
-    uni.showToast({
-      title: '登录成功',
-      icon: 'success'
-    })
-    
-    // 登录成功后跳转
-    setTimeout(() => {
-      uni.switchTab({
-        url: '/pages/index/index'
-      })
-    }, 1500)
-    
-  } catch(e) {
-    uni.showToast({
-      title: e.message || '设置失败',
-      icon: 'none'
-    })
-  }
-}
-
-// 关闭弹框
-const closePopup = () => {
-  popup.value.close()
 }
 </script>
 
@@ -263,6 +197,54 @@ const closePopup = () => {
       border-radius: 45rpx;
       margin-top: 60rpx;
       font-size: 32rpx;
+    }
+  }
+}
+
+.popup-content {
+  width: 600rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 40rpx;
+  
+  .popup-title {
+    font-size: 32rpx;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 40rpx;
+  }
+  
+  .popup-input {
+    // width: 100%;
+    height: 80rpx;
+    background: #f8f8f8;
+    border-radius: 40rpx;
+    padding: 0 30rpx;
+    font-size: 28rpx;
+    margin-bottom: 40rpx;
+  }
+  
+  .popup-btns {
+    display: flex;
+    justify-content: space-between;
+    
+    .popup-btn {
+      width: 240rpx;
+      height: 80rpx;
+      line-height: 80rpx;
+      text-align: center;
+      border-radius: 40rpx;
+      font-size: 28rpx;
+      
+      &.cancel-btn {
+        background: #f8f8f8;
+        color: #666;
+      }
+      
+      &.confirm-btn {
+        background: #007aff;
+        color: #fff;
+      }
     }
   }
 }

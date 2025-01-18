@@ -1,7 +1,10 @@
 package com.it.utill;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.it.domain.DTO.PhoneReturn;
+import com.it.domain.User;
 import com.it.domain.common.Result;
+import com.it.mapper.UserMapper;
 import org.apache.http.HttpResponse;
 import org.apache.http.util.EntityUtils;
 import org.jetbrains.annotations.NotNull;
@@ -12,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -27,6 +31,8 @@ public class SmsSendUtill {
 
     @Autowired
     private GenerateRandomNumber generateRandomNumber;
+    @Autowired
+    private UserMapper userMapper;
 
 
     public Result<?> NewGoDuanXin(@NotNull String phone) {
@@ -84,8 +90,6 @@ public class SmsSendUtill {
             System.out.println(httpResponse.toString());
             //获取response的body
             System.out.println(EntityUtils.toString(httpResponse.getEntity()));
-
-
             PhoneReturn phoneReturn = new PhoneReturn();
             phoneReturn.setInfoDate(new Date());
             phoneReturn.setKey(key);
@@ -102,16 +106,16 @@ public class SmsSendUtill {
     }
 
     public Result<?> isDuanXin(@NotNull String phone, @NotNull String code, @NotNull String key) {
-
         String RedisCode = (String) redisTemplate.opsForValue().get(key);
-
         assert RedisCode != null;
         if (RedisCode.equals(code)) {
-            return Result.ok();
+            QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
+            userQueryWrapper.eq("phone", phone);
+            List<User> users = userMapper.selectList(userQueryWrapper);
+            if (users.size() == 1) {
+                return Result.ok(users.get(0));
+            }
         }
-
         return Result.fail();
     }
-
-
 }
