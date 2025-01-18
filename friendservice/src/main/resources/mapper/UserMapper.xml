@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.it.mapper.UserMapper">
+
+    <resultMap id="BaseResultMap" type="com.it.domain.User">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="phone" column="phone" jdbcType="VARCHAR"/>
+            <result property="nickname" column="nickname" jdbcType="VARCHAR"/>
+            <result property="introduction" column="introduction" jdbcType="VARCHAR"/>
+            <result property="location" column="location" jdbcType="VARCHAR"/>
+            <result property="height" column="height" jdbcType="INTEGER"/>
+            <result property="weight" column="weight" jdbcType="INTEGER"/>
+            <result property="birthday" column="birthday" jdbcType="DATE"/>
+            <result property="roleType" column="role_type" jdbcType="TINYINT"/>
+            <result property="industry" column="industry" jdbcType="VARCHAR"/>
+            <result property="emotionStatus" column="emotion_status" jdbcType="TINYINT"/>
+            <result property="mbti" column="mbti" jdbcType="VARCHAR"/>
+            <result property="datingPurpose" column="dating_purpose" jdbcType="TINYINT"/>
+            <result property="interests" column="interests" jdbcType="OTHER"/>
+            <result property="sports" column="sports" jdbcType="OTHER"/>
+            <result property="ipAddress" column="ip_address" jdbcType="VARCHAR"/>
+            <result property="isVerified" column="is_verified" jdbcType="BOOLEAN"/>
+            <result property="isDeleted" column="is_deleted" jdbcType="BOOLEAN"/>
+            <result property="deleteTime" column="delete_time" jdbcType="TIMESTAMP"/>
+            <result property="createdAt" column="created_at" jdbcType="TIMESTAMP"/>
+            <result property="updatedAt" column="updated_at" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,phone,nickname,
+        introduction,location,height,
+        weight,birthday,role_type,
+        industry,emotion_status,mbti,
+        dating_purpose,interests,sports,
+        ip_address,is_verified,is_deleted,
+        delete_time,created_at,updated_at
+    </sql>
+</mapper>

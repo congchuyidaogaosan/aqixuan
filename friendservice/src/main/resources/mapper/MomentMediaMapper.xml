@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.it.mapper.MomentMediaMapper">
+
+    <resultMap id="BaseResultMap" type="com.it.domain.MomentMedia">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="momentId" column="moment_id" jdbcType="BIGINT"/>
+            <result property="mediaType" column="media_type" jdbcType="TINYINT"/>
+            <result property="mediaUrl" column="media_url" jdbcType="VARCHAR"/>
+            <result property="sortOrder" column="sort_order" jdbcType="INTEGER"/>
+            <result property="createdAt" column="created_at" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,moment_id,media_type,
+        media_url,sort_order,created_at
+    </sql>
+</mapper>

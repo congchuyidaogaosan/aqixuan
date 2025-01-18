@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.it.mapper.ActivityMapper">
+
+    <resultMap id="BaseResultMap" type="com.it.domain.Activity">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="userId" column="user_id" jdbcType="BIGINT"/>
+            <result property="activityType" column="activity_type" jdbcType="TINYINT"/>
+            <result property="title" column="title" jdbcType="VARCHAR"/>
+            <result property="description" column="description" jdbcType="VARCHAR"/>
+            <result property="location" column="location" jdbcType="VARCHAR"/>
+            <result property="totalNumber" column="total_number" jdbcType="INTEGER"/>
+            <result property="currentNumber" column="current_number" jdbcType="INTEGER"/>
+            <result property="endTime" column="end_time" jdbcType="TIMESTAMP"/>
+            <result property="startTime" column="start_time" jdbcType="TIMESTAMP"/>
+            <result property="cost" column="cost" jdbcType="DECIMAL"/>
+            <result property="costType" column="cost_type" jdbcType="TINYINT"/>
+            <result property="penaltyCost" column="penalty_cost" jdbcType="DECIMAL"/>
+            <result property="status" column="status" jdbcType="TINYINT"/>
+            <result property="createdAt" column="created_at" jdbcType="TIMESTAMP"/>
+            <result property="updatedAt" column="updated_at" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,user_id,activity_type,
+        title,description,location,
+        total_number,current_number,end_time,
+        start_time,cost,cost_type,
+        penalty_cost,status,created_at,
+        updated_at
+    </sql>
+</mapper>
