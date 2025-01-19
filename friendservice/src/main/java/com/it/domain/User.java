@@ -19,7 +19,7 @@ public class User implements Serializable {
      * 用户ID
      */
     @TableId(type = IdType.AUTO)
-    private Long id;
+    private Integer id;
 
     /**
      * 手机号
@@ -59,7 +59,7 @@ public class User implements Serializable {
     /**
      * 角色类型
      */
-    private Byte roleType;
+    private String roleType;
 
     /**
      * 行业
@@ -69,7 +69,7 @@ public class User implements Serializable {
     /**
      * 情感状态
      */
-    private Byte emotionStatus;
+    private String emotionStatus;
 
     /**
      * MBTI类型
@@ -79,17 +79,17 @@ public class User implements Serializable {
     /**
      * 交友目的
      */
-    private Byte datingPurpose;
+    private String datingPurpose;
 
     /**
      * 兴趣爱好
      */
-    private Object interests;
+    private String interests;
 
     /**
      * 运动爱好
      */
-    private Object sports;
+    private String sports;
 
     /**
      * IP地址

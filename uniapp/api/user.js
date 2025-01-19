@@ -63,7 +63,6 @@ export function updateUser(data) {
 export function uploadFile(file) {
   const formData = new FormData()
   formData.append('file', file)
-  
   return request({
     url: '/file/upload',
     method: 'POST',
@@ -74,5 +73,56 @@ export function uploadFile(file) {
     transformRequest: [function (data) {
       return data // 不转换formData
     }]
+  })
+}
+
+// 保存头像
+export function saveAvatar(data) {
+  return request({
+    url: '/UserAvatar/save',
+    method: 'POST',
+    data
+  })
+}
+
+// 获取我的头像列表
+export function getMyAvatarList() {
+  return request({
+    url: '/UserAvatar/myAvatarList',
+    method: 'GET'
+  })
+}
+
+// 删除头像
+export function deleteAvatar(id) {
+  return request({
+    url: `/UserAvatar/delete/${id}`,
+    method: 'POST'
+  })
+}
+
+// 根据昵称搜索用户
+export const findUserByName = (nickname) => {
+  return request({
+    url: '/user/findByName',
+    method: 'GET',
+    params: { nickname }
+  })
+}
+
+// 获取用户信息
+export const getUserInfo = (userId) => {
+  return request({
+    url: `/user/find/${userId}`,
+    method: 'GET'
+  })
+}
+
+// 获取用户头像列表
+export const getUserAvatars = (userId) => {
+  return request({
+    url: '/UserAvatar/findAvatarByUserId',
+    method: 'GET',
+    params: { userId }
   })
 } 

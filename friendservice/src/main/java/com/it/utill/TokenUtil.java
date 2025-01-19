@@ -7,6 +7,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,18 +17,26 @@ public class TokenUtil {
     @Value("${token.secretKey}")
     private String secretKey;
 
+    public static final long EXPIRE = 1000 * 60 * 60 * 24;
+
     /**
      * 加密token.
      */
     public String getToken(String userId, String nickName, String phone) {
         //这个是放到负载payLoad 里面,魔法值可以使用常量类进行封装.
+
+
+
         String token = JWT
                 .create()
                 .withClaim("userId", userId)
                 .withClaim("phone", phone)
                 .withClaim("nickName", nickName)
                 .withClaim("timeStamp", System.currentTimeMillis())
+                .withExpiresAt(new Date(System.currentTimeMillis() + EXPIRE))
                 .sign(Algorithm.HMAC256(secretKey));
+
+
         return token;
     }
 

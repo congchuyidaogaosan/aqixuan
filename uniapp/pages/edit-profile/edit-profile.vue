@@ -11,7 +11,7 @@
         >
           <image 
             v-if="item" 
-            :src="item" 
+            :src="item.avatarUrl" 
             mode="aspectFill"
             @click="previewImage(index)"
           ></image>
@@ -46,18 +46,18 @@
           </view>
         </view>
         
-        <view class="info-item" @click="goToEditItem('bio', null, formData.bio, false, 'textarea')">
+        <view class="info-item" @click="goToEditItem('introduction', null, formData.introduction, false, 'textarea')">
           <text class="label">个人介绍</text>
           <view class="value">
-            <text>{{formData.bio}}</text>
+            <text>{{formData.introduction}}</text>
             <uni-icons type="right" size="16" color="#999"></uni-icons>
           </view>
         </view>
         
-        <view class="info-item" @click="goToEditItem('region', regionColumns, formData.region, false, 'region')">
+        <view class="info-item" @click="goToEditItem('location', regionColumns, formData.location, false, 'location')">
           <text class="label">居住地</text>
           <view class="value">
-            <text>{{formData.region?.join(' ')}}</text>
+            <text>{{formData.location}}</text>
             <uni-icons type="right" size="16" color="#999"></uni-icons>
           </view>
         </view>
@@ -77,34 +77,34 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import cityData from '@/common/city.js'
-import { uploadFile as uploadFileApi, updateUser } from '@/api/user'
+import { uploadFile as uploadFileApi, updateUser, saveAvatar, getMyAvatarList, deleteAvatar } from '@/api/user'
 
 // 表单数据
 const formData = ref({
   nickname: '',
-  bio: '',
-  region: [],
+  introduction: '',
+  location: [],
   height: '',
   weight: '',
-  birth: '',
-  role: '',
+  birthday: '',
+  roleType: '',
   interests: [],
   industry: '',
   sports: [],
-  relationship: '',
+  emotionStatus: '',
   mbti: '',
-  purpose: ''
+  datingPurpose: ''
 })
 
-// 头像数组
-const avatars = ref(Array(6).fill(''))
+// 头像数组 - 修改为6个空对象
+const avatars = ref(Array(6).fill(null))
 
 // 各种选项数据
 const heightRange = Array.from({length: 81}, (_, i) => i + 130) // 130-210cm
 const weightRange = Array.from({length: 91}, (_, i) => i + 40) // 40-130kg
-const roleOptions = ['学生', '职场人', '创业者', '自由职业']
+const roleTypeOptions = ['学生', '职场人', '创业者', '自由职业']
 const interestOptions = [
   '看电影', '听音乐', '读书', '旅行', '摄影', '美食', 
   '游戏', '购物', '健身', '瑜伽', '绘画', '手工', 
@@ -117,20 +117,49 @@ const sportsOptions = [
   '网球', '乒乓球', '瑜伽', '舞蹈', '滑板', '骑行', 
   '登山', '滑雪', '冲浪', '高尔夫'
 ]
-const relationshipOptions = ['单身', '恋爱中', '已婚']
+const emotionStatusOptions = ['单身', '恋爱中', '已婚']
 const mbtiOptions = ['INTJ', 'INTP', 'ENTJ', 'ENTP', 'INFJ', 'INFP', 'ENFJ', 'ENFP', 
                      'ISTJ', 'ISFJ', 'ESTJ', 'ESFJ', 'ISTP', 'ISFP', 'ESTP', 'ESFP']
-const purposeOptions = ['找对象', '交朋友', '运动伙伴', '商务合作']
+const datingPurposeOptions = ['找对象', '交朋友', '运动伙伴', '商务合作']
 
 // 页面加载时获取用户信息
-onMounted(() => {
+onMounted(async () => {
   const userInfo = uni.getStorageSync('userInfo')
   if (userInfo) {
+    // 将兴趣和运动从字符串转换为数组
+    if (userInfo.interests && typeof userInfo.interests === 'string') {
+      userInfo.interests = userInfo.interests.split('、')
+    }
+    if (userInfo.sports && typeof userInfo.sports === 'string') {
+      userInfo.sports = userInfo.sports.split('、')
+    }
+    
     formData.value = {
       ...formData.value,
       ...userInfo
     }
+    
+    // 获取最新的头像列表
+    try {
+      const avatarRes = await getMyAvatarList()
+      if (avatarRes.data) {
+        // 先重置为6个空对象
+        avatars.value = Array(6).fill(null)
+        // 将返回的头像数据按顺序填充
+        avatarRes.data.forEach((item, index) => {
+          avatars.value[index] = item
+        })
+      }
+    } catch (error) {
+      console.error('获取头像列表失败:', error)
+    }
   }
+  uni.$on('updateUserInfo', updateFormItem)
+})
+
+// 组件卸载时移除事件监听
+onUnmounted(() => {
+  uni.$off('updateUserInfo', updateFormItem)
 })
 
 // 选择图片
@@ -152,16 +181,30 @@ const chooseImage = async (index) => {
     // 上传文件
     const uploadRes = await uploadFileApi(fileToUpload)
     console.log(uploadRes)
-    // 更新头像数组
-    avatars.value[index] = uploadRes.data
-    avatars.value = [...avatars.value]
     
-    // 保存到用户信息并更新服务器
-    const userInfo = uni.getStorageSync('userInfo') || {}
-    userInfo.avatars = avatars.value.filter(Boolean)
-    uni.setStorageSync('userInfo', userInfo)
+    // 保存头像信息
+    await saveAvatar({
+      avatarUrl: uploadRes.data
+    })
     
-    await updateUser({ avatars: userInfo.avatars })
+    // 获取最新的头像列表
+    const avatarRes = await getMyAvatarList()
+    if (avatarRes.data) {
+      // 先重置为6个空对象
+      avatars.value = Array(6).fill(null)
+      // 将返回的头像数据按顺序填充
+      avatarRes.data.forEach((item, index) => {
+        avatars.value[index] = item
+      })
+      
+      // 更新本地存储的用户信息
+      const userInfo = uni.getStorageSync('userInfo') || {}
+      userInfo.avatars = avatarRes.data.map(item => item.avatarUrl)
+      uni.setStorageSync('userInfo', userInfo)
+      
+      // 触发mine页面更新
+      uni.$emit('onShow')
+    }
     
     uni.hideLoading()
   } catch (error) {
@@ -176,7 +219,7 @@ const chooseImage = async (index) => {
 
 // 预览图片
 const previewImage = (index) => {
-  const urls = avatars.value.filter(item => item)
+  const urls = avatars.value.filter(item => item).map(item => item.avatarUrl)
   uni.previewImage({
     urls,
     current: index
@@ -188,17 +231,31 @@ const deleteImage = async (index) => {
   try {
     uni.showLoading({ title: '删除中...' })
     
-    // 更新头像数组
-    avatars.value[index] = ''
-    avatars.value = [...avatars.value]
-    
-    // 保存到用户信息
-    const userInfo = uni.getStorageSync('userInfo') || {}
-    userInfo.avatars = avatars.value.filter(Boolean)
-    uni.setStorageSync('userInfo', userInfo)
-    
-    // 调用更新接口
-    await updateUser({ avatars: userInfo.avatars })
+    // 获取要删除的头像ID
+    const avatar = avatars.value[index]
+    if (avatar && avatar.id) {
+      // 调用删除接口
+      await deleteAvatar(avatar.id)
+      
+      // 获取最新的头像列表
+      const avatarRes = await getMyAvatarList()
+      if (avatarRes.data) {
+        // 先重置为6个空对象
+        avatars.value = Array(6).fill(null)
+        // 将返回的头像数据按顺序填充
+        avatarRes.data.forEach((item, index) => {
+          avatars.value[index] = item
+        })
+        
+        // 更新本地存储的用户信息
+        const userInfo = uni.getStorageSync('userInfo') || {}
+        userInfo.avatars = avatarRes.data.map(item => item.avatarUrl)
+        uni.setStorageSync('userInfo', userInfo)
+        
+        // 触发mine页面更新
+        uni.$emit('onShow')
+      }
+    }
     
     uni.hideLoading()
   } catch (error) {
@@ -214,18 +271,18 @@ const deleteImage = async (index) => {
 const goToEditItem = (type, options, value, isMultiple = false, mode = 'select') => {
   const titles = {
     nickname: '修改昵称',
-    bio: '修改个人介绍',
-    region: '修改居住地',
+    introduction: '修改个人介绍',
+    location: '修改居住地',
     height: '修改身高',
     weight: '修改体重',
-    birth: '修改生日',
-    role: '修改角色',
+    birthday: '修改生日',
+    roleType: '修改角色',
     interests: '修改兴趣',
     industry: '修改行业',
     sports: '修改运动',
-    relationship: '修改情感状态',
+    emotionStatus: '修改情感状态',
     mbti: '修改MBTI',
-    purpose: '修改交友目的'
+    datingPurpose: '修改交友目的'
   }
   
   const params = {
@@ -248,15 +305,23 @@ const goToEditItem = (type, options, value, isMultiple = false, mode = 'select')
 }
 
 // 更新表单项
-const updateFormItem = (value) => {
-  const pages = getCurrentPages()
-  const currentPage = pages[pages.length - 1]
-  const { type } = currentPage.$page.options
+const updateFormItem = () => {
+  const userInfo = uni.getStorageSync('userInfo')
+  // 将兴趣和运动从字符串转换为数组
+  if (userInfo.interests && typeof userInfo.interests === 'string') {
+    userInfo.interests = userInfo.interests.split('、')
+  }
+  if (userInfo.sports && typeof userInfo.sports === 'string') {
+    userInfo.sports = userInfo.sports.split('、')
+  }
   
-  formData.value[type] = value
-  // 自动保存
-  uni.setStorageSync('userInfo', formData.value)
+  formData.value = { ...formData.value, ...userInfo }
 }
+
+// 暴露方法给其他页面使用
+defineExpose({
+  updateFormItem
+})
 
 // 基本信息配置
 const infoItems = {
@@ -274,15 +339,15 @@ const infoItems = {
     mode: 'select',
     format: val => val ? `${val}kg` : ''
   },
-  birth: {
+  birthday: {
     label: '生日',
-    type: 'birth',
+    type: 'birthday',
     mode: 'date'
   },
-  role: {
+  roleType: {
     label: '角色',
-    type: 'role',
-    options: roleOptions,
+    type: 'roleType',
+    options: roleTypeOptions,
     mode: 'select'
   },
   interests: {
@@ -305,10 +370,10 @@ const infoItems = {
     multiple: true,
     format: val => val?.join('、')
   },
-  relationship: {
+  emotionStatus: {
     label: '情感状态',
-    type: 'relationship',
-    options: relationshipOptions,
+    type: 'emotionStatus',
+    options: emotionStatusOptions,
     mode: 'select'
   },
   mbti: {
@@ -317,10 +382,10 @@ const infoItems = {
     options: mbtiOptions,
     mode: 'select'
   },
-  purpose: {
+  datingPurpose: {
     label: '交友目的',
-    type: 'purpose',
-    options: purposeOptions,
+    type: 'datingPurpose',
+    options: datingPurposeOptions,
     mode: 'select'
   }
 }

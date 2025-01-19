@@ -10,7 +10,11 @@
     <!-- 个人信息卡片 -->
     <view class="user-card" @click="goToProfile">
       <view class="user-info">
-        <image class="avatar" :src="userInfo.avatar || '/static/default-avatar.png'" mode="aspectFill"></image>
+        <image 
+          class="avatar" 
+          :src="userInfo.avatars[0] ? userInfo.avatars[0] : '/static/default-avatar.png'" 
+          mode="aspectFill"
+        ></image>
         <view class="info-content">
           <text class="nickname">{{userInfo.nickname || '未设置昵称'}}</text>
           <text class="bio">{{userInfo.bio || '这个人很懒，什么都没写~'}}</text>
@@ -21,11 +25,11 @@
     <!-- 统计数据 -->
     <view class="stats">
       <view class="stat-item" @click="goToFans">
-        <text class="num">{{userInfo.fansCount || 0}}</text>
+        <text class="num">{{fansCount || 0}}</text>
         <text class="label">人气</text>
       </view>
       <view class="stat-item" @click="goToFollowing">
-        <text class="num">{{userInfo.followingCount || 0}}</text>
+        <text class="num">{{followingCount || 0}}</text>
         <text class="label">关注</text>
       </view>
     </view>
@@ -36,15 +40,27 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
-// 用户信息
-const userInfo = ref({})
+// 用户信息 - 添加默认值
+const userInfo = ref({
+  avatars: [], // 添加默认的avatars数组
+  nickname: '',
+  bio: ''
+})
+// 人气
+const fansCount = ref(0)
+// 关注
+const followingCount = ref(0)
 
 // 获取用户信息
 const getUserInfo = () => {
   const info = uni.getStorageSync('userInfo')
   if (info) {
+    // 确保avatars存在
+    if (!info.avatars) {
+      info.avatars = []
+    }
     userInfo.value = info
   }
 }
@@ -52,6 +68,14 @@ const getUserInfo = () => {
 // 页面加载时获取用户信息
 onMounted(() => {
   getUserInfo()
+})
+
+// 监听页面显示
+uni.$on('onShow', getUserInfo)
+
+// 组件卸载时移除监听
+onUnmounted(() => {
+  uni.$off('onShow', getUserInfo)
 })
 
 // 跳转到设置页面

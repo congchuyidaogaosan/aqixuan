@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
+
 @RestController
 @RequestMapping("phone")
 public class PhoneController {
@@ -49,22 +51,27 @@ public class PhoneController {
 
     //
     @GetMapping("isPhone")
-    public Result isPhone(@RequestParam("phone") String phone, @RequestParam("code") String code, @RequestParam("key") String key) {
+    public Result<?> isPhone(@RequestParam("phone") String phone, @RequestParam("code") String code, @RequestParam("key") String key) {
 
         Boolean flag = userService.isUserPhone(phone);
         if (!flag) {
             return Result.fail("手机号不存在请注册");
         }
+     try {
+         HashMap<String, Object> stringObjectHashMap = new HashMap<>();
+         Result<User> duanXin = smsSendUtill.isDuanXin(phone, code, key);
+         User data = duanXin.getData();
 
-        Result<User> duanXin = smsSendUtill.isDuanXin(phone, code, key);
-        User data = duanXin.getData();
+         String token = tokenUtil.getToken(data.getId() + "", data.getNickname(), data.getPhone());
 
-        String token = tokenUtil.getToken(data.getId() + "", data.getNickname(), data.getPhone());
-        System.out.println(token);
+         stringObjectHashMap.put("token", token);
+         stringObjectHashMap.put("userInfo", data);
 
-        data.setToken(token);
 
-        return duanXin;
+         return Result.ok(stringObjectHashMap);
+     }catch (Exception e){
+         return Result.fail("用户信息异常！");
+     }
 
 
     }

@@ -19,12 +19,12 @@ public class UserAvatar implements Serializable {
      * 
      */
     @TableId(type = IdType.AUTO)
-    private Long id;
+    private Integer id;
 
     /**
      * 用户ID
      */
-    private Long userId;
+    private Integer userId;
 
     /**
      * 头像URL

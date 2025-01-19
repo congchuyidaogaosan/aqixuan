@@ -23,7 +23,7 @@
     </template>
     
     <!-- 地区选择模式 -->
-    <template v-else-if="mode === 'region'">
+    <template v-else-if="mode === 'location'">
       <view class="region-picker-container">
         <picker-view 
           class="picker-view"
@@ -110,7 +110,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import cityData from '@/common/city.js'
 import { updateUser } from '@/api/user'
 
@@ -123,18 +123,15 @@ const selectedValues = ref([])
 const selectedRegion = ref([])
 const placeholder = ref('')
 
-// 日期范围
-const startDate = '1970-01-01'
-const endDate = new Date().toISOString().split('T')[0]
-
-// 日期选择相关
-const dateIndexes = ref([20, 0, 0]) // 默认选中1990年
+// 日期范围计算
 const currentYear = new Date().getFullYear()
+const endYear = currentYear - 15  // 截止到15年前
+const startYear = endYear - 100   // 开始于100年前
 
-// 年份列表 1970-当前
+// 年份列表计算
 const yearList = computed(() => {
   const years = []
-  for (let i = 1970; i <= currentYear; i++) {
+  for (let i = startYear; i <= endYear; i++) {
     years.push(i)
   }
   return years
@@ -152,19 +149,27 @@ const dayList = computed(() => {
 const regionIndexes = ref([0, 0, 0])
 
 // 省份列表
-const provinceList = computed(() => cityData.data)
+const provinceList = computed(() => {
+  console.log('省份列表:', cityData.data)
+  return cityData.data
+})
 
 // 城市列表
 const cityList = computed(() => {
   const province = provinceList.value[regionIndexes.value[0]]
+  console.log('当前省份:', province)
   return province ? province.children : []
 })
 
 // 区县列表
 const districtList = computed(() => {
   const city = cityList.value[regionIndexes.value[1]]
+  console.log('当前城市:', city)
   return city ? city.children : []
 })
+
+// 日期选择相关
+const dateIndexes = ref([20, 0, 0]) // 默认选中1990年
 
 // 获取页面参数
 onMounted(() => {
@@ -182,25 +187,94 @@ onMounted(() => {
     options.value = JSON.parse(decodeURIComponent(list))
   }
   
-  const decodedValue = value ? JSON.parse(decodeURIComponent(value)) : ''
-  
-  switch (mode.value) {
-    case 'input':
-    case 'textarea':
-    case 'date':
-      inputValue.value = decodedValue
-      placeholder.value = getPlaceholder(type)
-      break
-    case 'region':
-      selectedRegion.value = decodedValue || []
-      break
-    case 'select':
-      if (multiple.value) {
-        selectedValues.value = decodedValue || []
-      } else {
-        selectedValue.value = decodedValue
-      }
-      break
+  try {
+    console.log('原始value:', value)
+    const decodedValue = value ? JSON.parse(decodeURIComponent(value)) : ''
+    console.log('解析后的value:', decodedValue)
+    
+    switch (mode.value) {
+      case 'input':
+      case 'textarea':
+        inputValue.value = decodedValue
+        placeholder.value = getPlaceholder(type)
+        break
+      case 'date':
+        if (decodedValue) {
+          inputValue.value = decodedValue
+          const [year, month, day] = decodedValue.split('-')
+          dateIndexes.value = [
+            yearList.value.indexOf(parseInt(year)),
+            parseInt(month) - 1,
+            parseInt(day) - 1
+          ]
+        } else {
+          // 设置默认日期为2000-01-01
+          const defaultYear = 2000
+          const yearIndex = yearList.value.indexOf(defaultYear)
+          dateIndexes.value = [
+            yearIndex >= 0 ? yearIndex : 0,
+            0,
+            0
+          ]
+          inputValue.value = `${defaultYear}-01-01`
+        }
+        break
+      case 'location':
+        // 如果是字符串，先转换为数组
+        if (typeof decodedValue === 'string' && decodedValue) {
+          selectedRegion.value = decodedValue.split(' ')
+        } else {
+          selectedRegion.value = decodedValue || []
+        }
+        
+        if (selectedRegion.value.length === 3) {
+          // 初始化索引
+          const provinceIndex = provinceList.value.findIndex(p => p.label === selectedRegion.value[0])
+          if (provinceIndex >= 0) {
+            regionIndexes.value[0] = provinceIndex
+            
+            // 等待城市列表更新
+            nextTick(() => {
+              const cityIndex = cityList.value.findIndex(c => c.label === selectedRegion.value[1])
+              if (cityIndex >= 0) {
+                regionIndexes.value[1] = cityIndex
+                
+                // 等待区县列表更新
+                nextTick(() => {
+                  const districtIndex = districtList.value.findIndex(d => d.label === selectedRegion.value[2])
+                  if (districtIndex >= 0) {
+                    regionIndexes.value[2] = districtIndex
+                  }
+                })
+              }
+            })
+          }
+        } else {
+          // 设置默认值
+          regionIndexes.value = [0, 0, 0]
+          nextTick(() => {
+            const province = provinceList.value[0]
+            const city = province?.children?.[0]
+            const district = city?.children?.[0]
+            if (province && city && district) {
+              selectedRegion.value = [province.label, city.label, district.label]
+            }
+          })
+        }
+        break
+      case 'select':
+        if (multiple.value) {
+          // 如果是多选且有值，将顿号分隔的字符串转回数组
+          selectedValues.value = decodedValue ? (typeof decodedValue === 'string' ? decodedValue.split('、') : decodedValue) : []
+          console.log('多选值:', selectedValues.value)
+        } else {
+          selectedValue.value = decodedValue
+          console.log('单选值:', selectedValue.value)
+        }
+        break
+    }
+  } catch (error) {
+    console.error('解析value出错:', error)
   }
 })
 
@@ -231,6 +305,7 @@ const handleMultiSelect = (value) => {
 // 处理地区选择
 const handleRegionChange = (e) => {
   const values = e.detail.value
+  console.log('选择的索引:', values)
   
   // 如果省份改变，重置市和区
   if (values[0] !== regionIndexes.value[0]) {
@@ -248,11 +323,14 @@ const handleRegionChange = (e) => {
   const city = cityList.value[values[1]]
   const district = districtList.value[values[2]]
   
-  selectedRegion.value = [
-    province.label,
-    city.label,
-    district.label
-  ]
+  if (province && city && district) {
+    selectedRegion.value = [
+      province.label,
+      city.label,
+      district.label
+    ]
+    console.log('选择的地区:', selectedRegion.value)
+  }
 }
 
 // 处理日期选择
@@ -270,9 +348,8 @@ const handleDateChange = (e) => {
 // 提交函数
 const handleSubmit = async () => {
   const pages = getCurrentPages()
-  const prevPage = pages[pages.length - 2]
   const currentPage = pages[pages.length - 1]
-  const { type } = currentPage.$page.options || currentPage.options // 兼容不同写法
+  const { type } = currentPage.$page.options || currentPage.options
   
   let value
   switch (mode.value) {
@@ -281,11 +358,16 @@ const handleSubmit = async () => {
     case 'date':
       value = inputValue.value
       break
-    case 'region':
-      value = selectedRegion.value
+    case 'location':
+      // 将地区数组转换为字符串
+      value = selectedRegion.value.join(' ')
       break
     case 'select':
-      value = multiple.value ? selectedValues.value : selectedValue.value
+      if (multiple.value) {
+        value = selectedValues.value.join('、')
+      } else {
+        value = selectedValue.value
+      }
       break
   }
   
@@ -293,10 +375,16 @@ const handleSubmit = async () => {
     uni.showLoading({ title: '保存中...' })
     
     // 调用更新接口
-    await updateUser({ [type]: value })
+    const res = await updateUser({ [type]: value })
+    console.log(res)
     
-    // 更新上一页数据
-    prevPage.$vm.updateFormItem(value)
+    // 保存到本地
+    const userInfo = uni.getStorageSync('userInfo') || {}
+    userInfo[type] = value
+    uni.setStorageSync('userInfo', userInfo)
+    
+    // 触发更新事件
+    uni.$emit('updateUserInfo')
     
     uni.hideLoading()
     uni.navigateBack()

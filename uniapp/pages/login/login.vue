@@ -35,7 +35,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { sendSmsCode, loginByCode } from '@/api/user.js'
+import { sendSmsCode, loginByCode, getMyAvatarList } from '@/api/user.js'
 
 const phone = ref('15845587016')
 const code = ref('')
@@ -107,14 +107,19 @@ const handleLogin = async () => {
       key: codeKey.value,
       nickname: phone.value  // 使用手机号作为默认昵称
     }
-    console.log(loginData)
+    
     const res = await loginByCode(loginData)
-    console.log('登录响应:', res)
     
     // 登录成功，保存token和用户信息
-    // uni.setStorageSync('token', res.data.token)
+    uni.setStorageSync('token', res.data.token)
+    
+    // 获取头像列表
+    const avatarRes = await getMyAvatarList()
+    // 保存头像列表到用户信息
+    res.data.userInfo.avatars = avatarRes.data.map(item => item.avatarUrl)
+    
     // 保存用户信息
-    uni.setStorageSync('userInfo', res.data)
+    uni.setStorageSync('userInfo', res.data.userInfo)
     
     uni.showToast({
       title: '登录成功',
@@ -124,13 +129,7 @@ const handleLogin = async () => {
     // 修改登录成功后的跳转
     setTimeout(() => {
       uni.reLaunch({
-        url: '/pages/index/index',
-        success: () => {
-          console.log('跳转成功')
-        },
-        fail: (err) => {
-          console.error('跳转失败:', err)
-        }
+        url: '/pages/index/index'
       })
     }, 1500)
     

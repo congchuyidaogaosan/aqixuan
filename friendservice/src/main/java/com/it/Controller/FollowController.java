@@ -18,7 +18,7 @@ public class FollowController {
     private FollowService followService;
 
     @RequestMapping("list")
-    public Result list(@RequestBody User user) {
+    public Result list(@RequestBody Follow follow) {
 
         List<Follow> list = followService.list();
         return Result.ok(list);

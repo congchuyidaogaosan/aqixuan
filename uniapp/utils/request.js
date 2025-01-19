@@ -12,7 +12,7 @@ request.interceptors.request.use(
     // 获取token
     const token = uni.getStorageSync('token')
     if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`
+      config.headers['token'] = `${token}`
     }
     return config
   },
