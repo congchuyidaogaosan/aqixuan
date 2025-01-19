@@ -10,7 +10,7 @@ spring:
     static-locations: classpath:/templates/
   datasource:
     username: root
-    password: 20020309
+    password: 123456
     url: jdbc:mysql://localhost:3306/servie0118?useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useSSL=false
     driver-class-name: com.mysql.jdbc.Driver
   servlet:
@@ -40,3 +40,5 @@ spring:
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+token:
+  secretKey: glagjilwagiolawgl

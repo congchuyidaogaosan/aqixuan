@@ -105,7 +105,7 @@ public class SmsSendUtill {
 
     }
 
-    public Result<?> isDuanXin(@NotNull String phone, @NotNull String code, @NotNull String key) {
+    public Result<User> isDuanXin(@NotNull String phone, @NotNull String code, @NotNull String key) {
         String RedisCode = (String) redisTemplate.opsForValue().get(key);
         assert RedisCode != null;
         if (RedisCode.equals(code)) {
@@ -116,6 +116,6 @@ public class SmsSendUtill {
                 return Result.ok(users.get(0));
             }
         }
-        return Result.fail();
+       throw new RuntimeException();
     }
 }

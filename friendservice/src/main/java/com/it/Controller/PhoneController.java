@@ -1,8 +1,10 @@
 package com.it.Controller;
 
+import com.it.domain.User;
 import com.it.domain.common.Result;
 import com.it.service.UserService;
 import com.it.utill.SmsSendUtill;
+import com.it.utill.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +21,8 @@ public class PhoneController {
     @Autowired
     private SmsSendUtill smsSendUtill;
 
+    @Autowired
+    private TokenUtil tokenUtil;
 
     @GetMapping("getPhone")
     public Result getPhone(@RequestParam("phone") String phone, @RequestParam(defaultValue = "", name = "isFlag") String isFlag) {
@@ -52,7 +56,14 @@ public class PhoneController {
             return Result.fail("手机号不存在请注册");
         }
 
-        Result<?> duanXin = smsSendUtill.isDuanXin(phone, code, key);
+        Result<User> duanXin = smsSendUtill.isDuanXin(phone, code, key);
+        User data = duanXin.getData();
+
+        String token = tokenUtil.getToken(data.getId() + "", data.getNickname(), data.getPhone());
+        System.out.println(token);
+
+        data.setToken(token);
+
         return duanXin;
 
 

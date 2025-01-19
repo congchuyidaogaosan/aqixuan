@@ -122,6 +122,9 @@ public class User implements Serializable {
     private Date updatedAt;
 
     @TableField(exist = false)
+    private String token;
+
+    @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 
     @Override

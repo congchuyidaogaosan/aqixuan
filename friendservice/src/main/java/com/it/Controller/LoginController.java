@@ -4,6 +4,7 @@ package com.it.Controller;
 import com.it.domain.User;
 import com.it.domain.common.Result;
 import com.it.service.UserService;
+import com.it.utill.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +19,9 @@ public class LoginController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private TokenUtil tokenUtil;
 
     //login
     @PostMapping("/login")
@@ -45,21 +49,11 @@ public class LoginController {
     @GetMapping("/info")
     public Result info(HttpServletRequest request) {
 
-//        String token = request.getHeader("token");
-//
-//        String username = JwtHelper.getUsername(token);
-//
-//        Map<String, Object> map = rootService.getUserInfo(username);
+        String token = request.getHeader("token");
 
-        Map<String, Object> map = new HashMap<>();
+        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
 
-        map.put("avatar", "https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif");
-        map.put("introduction", "I am a super administrator");
-        map.put("name", "Super Admin");
-
-        map.put("roles", "[admin]");
-
-        return Result.ok(map);
+        return Result.ok(stringStringMap);
     }
 
 }

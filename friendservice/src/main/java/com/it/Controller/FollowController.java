@@ -1,8 +1,9 @@
 package com.it.Controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.it.domain.Follow;
 import com.it.domain.User;
 import com.it.domain.common.Result;
+import com.it.service.FollowService;
 import com.it.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -10,46 +11,42 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpSession;
 import java.util.List;
 
-@RequestMapping("user")
+@RequestMapping("Follow")
 @RestController
-public class UserController {
-
-
+public class FollowController {
     @Autowired
-    private UserService userService;
+    private FollowService followService;
 
     @RequestMapping("list")
     public Result list(@RequestBody User user) {
 
-        List<User> list = userService.list();
+        List<Follow> list = followService.list();
         return Result.ok(list);
 
     }
 
     @GetMapping("find/{id}")
     public Result find(@PathVariable("id") Integer id, HttpSession session) {
-        User user = (User) session.getAttribute("info");
-        if (user == null) {
-            return Result.fail("请登入用户");
-        }
 
-        User byId = userService.getById(id);
+
+        Follow byId = followService.getById(id);
         return Result.ok(byId);
 
     }
 
     @PostMapping("update")
-    public Result update(@RequestBody User user) {
+    public Result update(@RequestBody Follow follow) {
 
-        boolean b = userService.updateById(user);
-        User byId = userService.getById(user.getId());
+        boolean b = followService.updateById(follow);
+        Follow byId = followService.getById(follow.getId());
 
         return Result.ok(byId);
     }
 
     @GetMapping("delete/{id}")
     public Result delete(@PathVariable("id") Integer id) {
-        boolean byId = userService.removeById(id);
+        boolean byId = followService.removeById(id);
         return Result.ok();
     }
+
 }
