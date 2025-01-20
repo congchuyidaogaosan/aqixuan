@@ -70,9 +70,6 @@ public class UserAvatarController {
 
         UserAvatar byId = userAvatarService.getById(id);
 
-
-
-
         return Result.ok(byId);
 
     }
@@ -109,7 +106,7 @@ public class UserAvatarController {
     @GetMapping("findAvatarByUserId")
     public Result findAvatarByUserId(@RequestParam("userId") Integer userId) {
         QueryWrapper<UserAvatar> userAvatarQueryWrapper = new QueryWrapper<>();
-        userAvatarQueryWrapper.eq("user_id",userId);
+        userAvatarQueryWrapper.eq("user_id",userId).orderByAsc("create_time");
         List<UserAvatar> list = userAvatarService.list(userAvatarQueryWrapper);
         return Result.ok(list);
     }

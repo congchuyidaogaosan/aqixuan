@@ -60,7 +60,7 @@ public class UserController {
         for (User user : userList) {
 
             QueryWrapper<UserAvatar> userAvatarQueryWrapper = new QueryWrapper<>();
-            userAvatarQueryWrapper.eq("user_id", user.getId()).orderByDesc("created_at").last("limit 1");
+            userAvatarQueryWrapper.eq("user_id", user.getId()).orderByAsc("created_at").last("limit 1");
             UserAvatar one = userAvatarService.getOne(userAvatarQueryWrapper);
             user.setHandImg(one.getAvatarUrl());
         }

@@ -40,7 +40,7 @@
           <view class="left">
             <text class="nickname">{{userInfo.nickname || '未设置昵称'}}</text>
             <view class="stats">
-              <text class="stat">{{userInfo.age || '--'}}岁</text>
+              <text class="stat">{{calculateAge(userInfo.birthday) || '--'}}岁</text>
               <text class="dot">·</text>
               <text class="stat">{{userInfo.height || '--'}}cm</text>
               <text class="dot">/</text>
@@ -53,7 +53,7 @@
             </view>
           </view>
           <view class="right">
-            <view class="ip">IP：{{ipLocation || '未知'}}</view>
+            <view class="ip">IP属地：{{ipLocation || '未知'}}</view>
           </view>
         </view>
       </view>
@@ -79,6 +79,11 @@
           <text class="label">从事的行业是</text>
           <text class="value">{{userInfo.industry}}</text>
         </view>
+        <view class="tag-item" v-if="userInfo.location">
+          <image src="/static/images/juzhudi.png" mode="aspectFill" class="icon"></image>
+          <text class="label">居住地址</text>
+          <text class="value">{{userInfo.location}}</text>
+        </view>
         <view class="tag-item" v-if="userInfo.emotionStatus">
           <image src="/static/images/ganqing.png" mode="aspectFill" class="icon"></image>
           <!-- <text class="label">感情状况</text> -->
@@ -94,9 +99,9 @@
     
      <!-- 星座和MBTI -->
      <view class="constellation-mbti">
-        <view class="constellation">
+        <view class="constellation" v-if="userInfo.constellation">
           <image 
-            :src="`/static/images/constellation/${userInfo.constellation}.png`" 
+            :src="`/static/images/${constellations[userInfo.constellation]}.png`"
             mode="aspectFill" 
             class="icon"
           ></image>
@@ -199,7 +204,60 @@ const getSystemInfo = () => {
   swiperHeight.value = systemInfo.windowWidth
 }
 
+// 计算年龄
+const calculateAge = (birthday) => {
+  if (!birthday) return null
+  
+  const birthDate = new Date(birthday)
+  const today = new Date()
+  
+  let age = today.getFullYear() - birthDate.getFullYear()
+  const monthDiff = today.getMonth() - birthDate.getMonth()
+  
+  // 如果还没到生日月份，或者到了生日月份但还没到具体日期，年龄减1
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--
+  }
+  
+  return age
+}
 
+// 计算星座
+const calculateConstellation = (birthday) => {
+  if (!birthday) return null
+  
+  const date = new Date(birthday)
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  
+  const constellationDates = {
+    '白羊座': [3, 21, 4, 19],
+    '金牛座': [4, 20, 5, 20],
+    '双子座': [5, 21, 6, 21],
+    '巨蟹座': [6, 22, 7, 22],
+    '狮子座': [7, 23, 8, 22],
+    '处女座': [8, 23, 9, 22],
+    '天秤座': [9, 23, 10, 23],
+    '天蝎座': [10, 24, 11, 22],
+    '射手座': [11, 23, 12, 21],
+    '摩羯座': [12, 22, 1, 19],
+    '水瓶座': [1, 20, 2, 18],
+    '双鱼座': [2, 19, 3, 20]
+  }
+  
+  for (const [constellation, [startMonth, startDay, endMonth, endDay]] of Object.entries(constellationDates)) {
+    if (
+      (month === startMonth && day >= startDay) ||
+      (month === endMonth && day <= endDay) ||
+      // 特殊处理摩羯座跨年的情况
+      (constellation === '摩羯座' && ((month === 12 && day >= 22) || (month === 1 && day <= 19)))
+    ) {
+      return constellation
+    }
+  }
+  
+  return null
+}
 
 // 获取用户信息
 const loadUserInfo = async (userId) => {
@@ -213,11 +271,12 @@ const loadUserInfo = async (userId) => {
       
       if (userRes.data) {
         const info = userRes.data
-        // 处理头像列表路径
-        info.avatars = avatarRes.data 
+        info.avatars = avatarRes.data
         if (typeof info.interests === 'string') {
           info.interests = info.interests.split('、')
         }
+        // 计算星座
+        info.constellation = calculateConstellation(info.birthday)
         userInfo.value = info
         console.log(userInfo.value)
       }
@@ -225,7 +284,6 @@ const loadUserInfo = async (userId) => {
       // 获取当前登录用户信息
       const info = uni.getStorageSync('userInfo')
       if (info) {
-        // 获取当前用户的头像列表
         try {
           const avatarRes = await getMyAvatarList()
           info.avatars = avatarRes.data
@@ -236,6 +294,8 @@ const loadUserInfo = async (userId) => {
         if (typeof info.interests === 'string') {
           info.interests = info.interests.split('、')
         }
+        // 计算星座
+        info.constellation = calculateConstellation(info.birthday)
         userInfo.value = info
       }
     }
@@ -436,7 +496,7 @@ onMounted(() => {
   .user-info {
     padding: 20rpx;
     background: #fff;
-    margin-bottom: 20rpx;
+    // margin-bottom: 20rpx;
     
     .introduction {
       font-size: 28rpx;
@@ -476,15 +536,26 @@ onMounted(() => {
       align-items: center;
       
       .icon {
-        width: 80rpx;
-        height: 80rpx;
+        width: 70rpx;
+        height: 70rpx;
         margin-right: 8rpx;
+        background: #8F8BFA;  // 添加背景色
+        border-radius: 50%;  // 圆形
+        padding: 16rpx;  // 添加内边距使图标居中
+        box-sizing: border-box;  // 确保padding不会增加总宽高
       }
       
       .value {
         font-size: 24rpx;
         color: #333;
       }
+    }
+    
+    // MBTI图标不需要背景色和圆形
+    .mbti .icon {
+      background: transparent;
+      border-radius: 0;
+      padding: 0;
     }
   }
   

@@ -14,7 +14,7 @@ import java.util.List;
 
 
 @RestController
-@RequestMapping("user")
+@RequestMapping("userPrivacy")
 public class UserPrivacyController {
 
 

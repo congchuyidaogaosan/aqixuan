@@ -24,7 +24,7 @@
         :key="user.id"
         @click="goToProfile(user.id)"
       >
-        <image :src="handleAvatarPath(user.avatars?.[0])" mode="aspectFill" class="avatar"></image>
+        <image :src="user.handImg" mode="aspectFill" class="avatar"></image>
         <view class="info">
           <text class="nickname">{{user.nickname}}</text>
           <text class="age" v-if="user.age">{{user.age}}岁</text>
@@ -77,12 +77,6 @@ const goBack = () => {
   uni.navigateBack()
 }
 
-// 处理头像路径
-const handleAvatarPath = (filePath) => {
-  if (!filePath) return ''
-  if (filePath.indexOf('http') === 0) return filePath
-  return 'http://localhost:9090' + filePath
-}
 </script>
 
 <style lang="less" scoped>
