@@ -24,6 +24,24 @@ const api = {
       method: 'get',
       params: data
     })
+  },
+
+  // 更新用户信息
+  updateUser: (data) => {
+    return request({
+      url: '/user/update',
+      method: 'POST',
+      data
+    })
+  },
+
+  // 获取IP地址信息
+  getIpLocation: (ip) => {
+    return request({
+      url: '/ip/getIpLocation',
+      method: 'GET',
+      params: { ip }
+    })
   }
 }
 
@@ -51,12 +69,19 @@ export const loginByCode = async (data) => {
 }
 
 // 更新用户信息
-export function updateUser(data) {
-  return request({
-    url: '/user/update',
-    method: 'POST',
-    data
-  })
+export const updateUser = async (data) => {
+  try {
+    const res = await api.updateUser(data)
+    const userInfo = uni.getStorageSync('userInfo')
+    const newUserInfo = {
+      ...userInfo,
+      ...res.data
+    }
+    uni.setStorageSync('userInfo', newUserInfo)
+    return res
+  } catch (e) {
+    throw new Error(e.message || '更新用户信息失败')
+  }
 }
 
 // 上传文件
@@ -125,4 +150,20 @@ export const getUserAvatars = (userId) => {
     method: 'GET',
     params: { userId }
   })
+}
+
+// 获取IP地址信息
+export const getIpLocation = async (ip) => {
+  try {
+    const res = await api.getIpLocation(ip)
+    if (res.code === 200) {
+      return res.data
+    } else {
+      console.log('获取IP地址信息失败：', res.msg)
+      return null
+    }
+  } catch (e) {
+    console.log('获取IP地址信息失败：', e)
+    return null
+  }
 } 

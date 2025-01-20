@@ -106,7 +106,7 @@ public class UserAvatarController {
     @GetMapping("findAvatarByUserId")
     public Result findAvatarByUserId(@RequestParam("userId") Integer userId) {
         QueryWrapper<UserAvatar> userAvatarQueryWrapper = new QueryWrapper<>();
-        userAvatarQueryWrapper.eq("user_id",userId).orderByAsc("create_time");
+        userAvatarQueryWrapper.eq("user_id",userId).orderByDesc("created_at");
         List<UserAvatar> list = userAvatarService.list(userAvatarQueryWrapper);
         return Result.ok(list);
     }

@@ -137,6 +137,14 @@
         </button>
       </template>
       <template v-else>
+        <!-- 关注 -->
+        <button class="action-btn" @click="followUser">
+          <!-- 已关注 -->
+          <image src="/static/images/yiguanzhu.png" mode="aspectFill" class="icon"></image>
+          <!-- 未关注 -->
+          <image src="/static/images/weiguanzhu.png" mode="aspectFill" class="icon"></image>
+        </button>
+        <!-- 私信 -->
         <button class="action-btn" @click="sendMessage">
           <image src="/static/images/dazhaohu.png" mode="aspectFill" class="icon"></image>
         </button>
@@ -147,7 +155,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getUserInfo as fetchUserInfo, getUserAvatars, getMyAvatarList } from '@/api/user.js'
+import { getUserInfo as fetchUserInfo, getUserAvatars, getMyAvatarList, getIpLocation } from '@/api/user.js'
+import { calculateDistance, formatDistance, parseLocation } from '@/utils/distance.js'
 
 // 用户信息
 const userInfo = ref({
@@ -259,11 +268,23 @@ const calculateConstellation = (birthday) => {
   return null
 }
 
+// 获取IP地址信息
+const getLocationByIp = async (ip) => {
+  try {
+    const res = await getIpLocation(ip)
+    if (res) {
+      ipLocation.value = res.location || '未知'
+    }
+  } catch (error) {
+    console.log('获取IP地址信息失败：', error)
+    ipLocation.value = '未知'
+  }
+}
+
 // 获取用户信息
 const loadUserInfo = async (userId) => {
   try {
     if (userId) {
-      // 获取指定用户信息
       const [userRes, avatarRes] = await Promise.all([
         fetchUserInfo(userId),
         getUserAvatars(userId)
@@ -271,6 +292,7 @@ const loadUserInfo = async (userId) => {
       
       if (userRes.data) {
         const info = userRes.data
+        console.log(info)
         info.avatars = avatarRes.data
         if (typeof info.interests === 'string') {
           info.interests = info.interests.split('、')
@@ -279,6 +301,24 @@ const loadUserInfo = async (userId) => {
         info.constellation = calculateConstellation(info.birthday)
         userInfo.value = info
         console.log(userInfo.value)
+
+        // 计算距离
+        const myInfo = uni.getStorageSync('userInfo')
+        if (myInfo?.ipAddress && info.ipAddress) {
+          console.log(myInfo.ipAddress)
+          console.log(info.ipAddress)
+          const myLocation = parseLocation(myInfo.ipAddress)
+          const targetLocation = parseLocation(info.ipAddress)
+          if (myLocation && targetLocation) {
+            const dist = calculateDistance(myLocation, targetLocation)
+            distance.value = formatDistance(dist)
+          }
+        }
+
+        // 获取IP地址信息
+        if (info.ip) {
+          await getLocationByIp(info.ip)
+        }
       }
     } else {
       // 获取当前登录用户信息
@@ -298,6 +338,10 @@ const loadUserInfo = async (userId) => {
         info.constellation = calculateConstellation(info.birthday)
         userInfo.value = info
       }
+      // 获取IP地址信息
+      if (info.ip) {
+          await getLocationByIp(info.ip)
+        }
     }
   } catch (error) {
     uni.showToast({

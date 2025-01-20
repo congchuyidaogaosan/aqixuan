@@ -19,8 +19,69 @@
 
 <script setup>
 import { ref } from 'vue'
+import { onLoad, onShow } from '@dcloudio/uni-app'
+import { updateUser } from '@/api/user.js'
 
 const title = ref('Hello')
+// 获取地理位置
+const location = ref('')
+const getLocation = async () => {
+  // #ifdef H5
+  const res = await uni.getLocation({
+    type: 'wgs84', // H5环境使用wgs84
+    success: (res) => {
+      location.value = {
+        latitude: res.latitude,
+        longitude: res.longitude
+      }
+      console.log('位置信息：', location.value)
+      updateUserLocation(location.value)
+    },
+    fail: (err) => {
+      console.log('获取位置失败：', err)
+    }
+  })
+  // #endif
+  
+  // #ifdef MP-WEIXIN
+  const res = await uni.getLocation({
+    type: 'gcj02', // 微信小程序使用gcj02
+    success: (res) => {
+      location.value = {
+        latitude: res.latitude,
+        longitude: res.longitude
+      }
+      console.log('位置信息：', location.value)
+      updateUserLocation(location.value)
+    },
+    fail: (err) => {
+      console.log('获取位置失败：', err)
+    }
+  })
+  // #endif
+}
+
+// 更新用户位置信息
+const updateUserLocation = async (location) => {
+  try {
+      await updateUser({
+        ipAddress: location.latitude+","+location.longitude
+      })
+  } catch (error) {
+    console.log('更新位置失败：', error)
+  }
+}
+
+// 页面生命周期
+// onLoad(() => {
+//   console.log('页面加载')
+//   getLocation()
+// })
+
+onShow(() => {
+	console.log('页面显示')
+	getLocation()
+})
 
 // 跳转到搜索页面
 const goToSearch = () => {

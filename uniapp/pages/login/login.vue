@@ -51,7 +51,6 @@ const sendCode = async () => {
     })
     return
   }
-  
   try {
     const res = await sendSmsCode(phone.value)
     startCount()
@@ -59,10 +58,8 @@ const sendCode = async () => {
       title: '验证码已发送',
       icon: 'none'
     })
-    console.log(res)
     codeKey.value = res.key
     code.value = res.code
-    console.log(codeKey.value)
   } catch(e) {
     uni.showToast({
       title: e.message || '发送失败',
@@ -99,40 +96,31 @@ const handleLogin = async () => {
     })
     return
   }
-  
   try {
     const loginData = {
       phone: phone.value,
       code: code.value,
       key: codeKey.value,
-      nickname: phone.value  // 使用手机号作为默认昵称
     }
-    
     const res = await loginByCode(loginData)
-    
     // 登录成功，保存token和用户信息
     uni.setStorageSync('token', res.data.token)
-    
     // 获取头像列表
     const avatarRes = await getMyAvatarList()
     // 保存头像列表到用户信息
     res.data.userInfo.avatars = avatarRes.data.map(item => item.avatarUrl)
-    
     // 保存用户信息
     uni.setStorageSync('userInfo', res.data.userInfo)
-    
     uni.showToast({
       title: '登录成功',
       icon: 'success'
     })
-    
     // 修改登录成功后的跳转
     setTimeout(() => {
       uni.reLaunch({
         url: '/pages/index/index'
       })
     }, 1500)
-    
   } catch(e) {
     uni.showToast({
       title: e.message || '登录失败',
