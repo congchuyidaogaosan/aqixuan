@@ -122,6 +122,11 @@ public class User implements Serializable {
     private Date updatedAt;
 
     @TableField(exist = false)
+    private String handImg;
+
+
+
+    @TableField(exist = false)
     private String token;
 
     @TableField(exist = false)

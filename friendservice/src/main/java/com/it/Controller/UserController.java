@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.it.domain.User;
 import com.it.domain.UserAvatar;
 import com.it.domain.common.Result;
+import com.it.service.UserAvatarService;
 import com.it.service.UserService;
 import com.it.utill.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,8 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private UserAvatarService userAvatarService;
 
     @Autowired
     private TokenUtil tokenUtil;
@@ -31,8 +34,8 @@ public class UserController {
     public Result list(@RequestBody User user) {
 
         QueryWrapper<UserAvatar> userAvatarQueryWrapper = new QueryWrapper<>();
-        if (user.getNickname()!=null && !user.getNickname().isEmpty()){
-            userAvatarQueryWrapper.like("nick_Name",user.getNickname());
+        if (user.getNickname() != null && !user.getNickname().isEmpty()) {
+            userAvatarQueryWrapper.like("nick_Name", user.getNickname());
         }
 
         List<User> list = userService.list();
@@ -51,11 +54,22 @@ public class UserController {
     public Result findByName(@RequestParam String nickname) {
 
         QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-        userQueryWrapper.like("nickname",nickname);
+        userQueryWrapper.like("nickname", nickname);
         List<User> userList = userService.list(userQueryWrapper);
+
+        for (User user : userList) {
+
+            QueryWrapper<UserAvatar> userAvatarQueryWrapper = new QueryWrapper<>();
+            userAvatarQueryWrapper.eq("user_id", user.getId()).orderByDesc("created_at").last("limit 1");
+            UserAvatar one = userAvatarService.getOne(userAvatarQueryWrapper);
+            user.setHandImg(one.getAvatarUrl());
+        }
+
         return Result.ok(userList);
 
     }
+
+
 
 
     @PostMapping("update")

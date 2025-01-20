@@ -69,6 +69,10 @@ public class UserAvatarController {
     public Result find(@PathVariable("id") Integer id, HttpSession session) {
 
         UserAvatar byId = userAvatarService.getById(id);
+
+
+
+
         return Result.ok(byId);
 
     }

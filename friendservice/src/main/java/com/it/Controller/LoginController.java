@@ -27,7 +27,6 @@ public class LoginController {
     @PostMapping("/login")
     public Result login(@RequestBody User root) {
 
-
 //        User user = userService.getUserInfoByUserName(root.getUsername());
 //
 //        if (user == null) {
@@ -56,4 +55,10 @@ public class LoginController {
         return Result.ok(stringStringMap);
     }
 
+    @GetMapping("/output")
+    public Result output(HttpServletRequest request) {
+        request.getSession().invalidate();
+
+        return Result.ok();
+    }
 }
