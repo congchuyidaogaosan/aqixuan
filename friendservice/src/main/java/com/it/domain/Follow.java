@@ -21,17 +21,17 @@ public class Follow implements Serializable {
      * 
      */
     @TableId(type = IdType.AUTO)
-    private Long id;
+    private Integer id;
 
     /**
      * 关注者ID
      */
-    private Long userId;
+    private Integer userId;
 
     /**
      * 被关注者ID
      */
-    private Long followedUserId;
+    private Integer followedUserId;
 
     /**
      * 

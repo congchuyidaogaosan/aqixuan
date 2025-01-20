@@ -42,6 +42,33 @@ const api = {
       method: 'GET',
       params: { ip }
     })
+  },
+
+  // 关注用户
+  followUser: (followedUserId) => {
+    return request({
+      url: '/follow/add',
+      method: 'POST',
+      data: { followedUserId }
+    })
+  },
+
+  // 取消关注
+  unfollowUser: (id) => {
+    return request({
+      url: '/follow/delete',
+      method: 'GET',
+      params: { id }
+    })
+  },
+
+  // 检查是否已关注
+  checkFollow: (userId) => {
+    return request({
+      url: '/follow/check',
+      method: 'GET',
+      params: { userId }
+    })
   }
 }
 
@@ -165,5 +192,40 @@ export const getIpLocation = async (ip) => {
   } catch (e) {
     console.log('获取IP地址信息失败：', e)
     return null
+  }
+}
+
+// 关注用户
+export const followUser = async (followedUserId) => {
+  try {
+    const res = await api.followUser(followedUserId)
+    return res.code === 200
+  } catch (e) {
+    console.log('关注失败：', e)
+    return false
+  }
+}
+
+// 取消关注
+export const unfollowUser = async (id) => {
+  try {
+    const res = await api.unfollowUser(id)
+    return res.code === 200
+  } catch (e) {
+    console.log('取消关注失败：', e)
+    return false
+  }
+}
+
+// 检查是否已关注
+export const checkFollow = async (userId) => {
+  try {
+    const res = await api.checkFollow(userId)
+    if (res.code === 200) {
+        return res.data
+    }
+  } catch (e) {
+    console.log('检查关注状态失败：', e)
+    return false
   }
 } 

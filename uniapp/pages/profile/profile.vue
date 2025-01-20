@@ -138,11 +138,16 @@
       </template>
       <template v-else>
         <!-- 关注 -->
-        <button class="action-btn" @click="followUser">
-          <!-- 已关注 -->
-          <image src="/static/images/yiguanzhu.png" mode="aspectFill" class="icon"></image>
-          <!-- 未关注 -->
-          <image src="/static/images/weiguanzhu.png" mode="aspectFill" class="icon"></image>
+        <button 
+          class="action-btn" 
+          :class="{ followed: isFollowed }"
+          @click="handleFollow"
+        >
+          <image 
+            :src="isFollowed ? '/static/images/yiguanzhu.png' : '/static/images/weiguanzhu.png'" 
+            mode="aspectFill" 
+            class="icon"
+          ></image>
         </button>
         <!-- 私信 -->
         <button class="action-btn" @click="sendMessage">
@@ -155,7 +160,15 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getUserInfo as fetchUserInfo, getUserAvatars, getMyAvatarList, getIpLocation } from '@/api/user.js'
+import { 
+  getUserInfo as fetchUserInfo, 
+  getUserAvatars, 
+  getMyAvatarList, 
+  getIpLocation,
+  followUser,
+  unfollowUser,
+  checkFollow,
+} from '@/api/user.js'
 import { calculateDistance, formatDistance, parseLocation } from '@/utils/distance.js'
 
 // 用户信息
@@ -202,6 +215,9 @@ const constellations = {
   '双鱼座': 'shuangyuzuo'
 }
 
+// 关注状态
+const isFollowed = ref(false)
+const followed = ref({})
 // 监听轮播图变化
 const handleChange = (e) => {
   currentIndex.value = e.detail.current
@@ -377,21 +393,62 @@ const goBack = () => {
   uni.navigateBack()
 }
 
+// 检查关注状态
+const checkFollowStatus = async (userId) => {
+  if (!userId) return
+  const res = await checkFollow(userId)
+  if(res){
+    followed.value = res
+    isFollowed.value = true
+  }else{
+    isFollowed.value = false
+  }
+}
+
+// 处理关注/取消关注
+const handleFollow = async () => {
+  if (!userInfo.value.id) return
+  
+  try {
+    const success = isFollowed.value 
+      ? await unfollowUser(followed.value.id)
+      : await followUser(userInfo.value.id)
+      
+    if (success) {
+      isFollowed.value = !isFollowed.value
+      followed.value = {}
+      checkFollowStatus(userInfo.value.id)
+      uni.showToast({
+        title: isFollowed.value ? '关注成功' : '已取消关注',
+        icon: 'none'
+      })
+    }
+  } catch (error) {
+    uni.showToast({
+      title: '操作失败',
+      icon: 'none'
+    })
+  }
+}
+
 // 页面加载时获取用户信息和设备信息
 onMounted(() => {
   // 获取页面参数
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1]
   const userId = currentPage.options?.userId
-  
-  console.log('当前用户ID：', userId)
-  
+
   // 根据userId判断是否是我的主页
   isMyProfile.value = !userId || userId === uni.getStorageSync('userInfo')?.id
   
   // 获取用户信息
   loadUserInfo(userId)
   getSystemInfo()
+  
+  // 如果不是自己的主页，检查关注状态
+  if (!isMyProfile.value && userId) {
+    checkFollowStatus(userId)
+  }
 })
 </script>
 
@@ -510,6 +567,22 @@ onMounted(() => {
             
             .dot {
               margin: 0 10rpx;
+            }
+          }
+          
+          .follow-stats {
+            display: flex;
+            align-items: center;
+            color: rgba(255,255,255,0.9);
+            font-size: 24rpx;
+            margin-top: 8rpx;
+            
+            .dot {
+              margin: 0 10rpx;
+            }
+            
+            .stat {
+              color: rgba(255,255,255,0.9);
             }
           }
           
@@ -633,9 +706,11 @@ onMounted(() => {
   
   .bottom-btns {
     position: fixed;
-    bottom: 40rpx;  // 距离底部的距离
+    bottom: 40rpx;
     left: 50%;
-    transform: translateX(-50%);  // 水平居中
+    transform: translateX(-50%);
+    display: flex;  // 添加flex布局
+    gap: 20rpx;    // 按钮之间的间距
     
     .action-btn {
       width: 100rpx;
@@ -645,17 +720,28 @@ onMounted(() => {
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 50%;  // 圆形按钮
-      background: linear-gradient(135deg, #ffd700, #ff4d4f);  // 黄到红的渐变
-      box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.1);  // 添加阴影效果
+      border-radius: 50%;
+      background: linear-gradient(135deg, #8F8BFA, #7B78F9);  // 修改为紫色渐变
+      box-shadow: 0 4rpx 16rpx rgba(143,139,250,0.3);  // 添加带颜色的阴影
+      transition: all 0.3s ease;  // 添加过渡效果
+      
+      &:active {
+        transform: scale(0.95);  // 点击时缩小效果
+      }
       
       &::after {
-        border: none;  // 移除默认边框
+        border: none;
       }
       
       .icon {
         width: 48rpx;
         height: 48rpx;
+      }
+      
+      // 已关注状态的样式
+      &.followed {
+        background: linear-gradient(135deg, #F0F0F0, #E0E0E0);  // 灰色渐变
+        box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.1);
       }
     }
   }
