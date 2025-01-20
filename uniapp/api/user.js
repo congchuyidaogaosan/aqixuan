@@ -69,6 +69,14 @@ const api = {
       method: 'GET',
       params: { userId }
     })
+  },
+
+  // 获取关注统计
+  getFollowStats: () => {
+    return request({
+      url: '/follow/stats',
+      method: 'GET'
+    })
   }
 }
 
@@ -227,5 +235,28 @@ export const checkFollow = async (userId) => {
   } catch (e) {
     console.log('检查关注状态失败：', e)
     return false
+  }
+}
+
+// 获取关注统计
+export const getFollowStats = async () => {
+  try {
+    const res = await api.getFollowStats()
+    if (res.code === 200) {
+      return {
+        followCount: res.data.followCount || 0, // 关注数
+        fansCount: res.data.fansCount || 0      // 粉丝数（人气值）
+      }
+    }
+    return {
+      followCount: 0,
+      fansCount: 0
+    }
+  } catch (e) {
+    console.log('获取关注统计失败：', e)
+    return {
+      followCount: 0,
+      fansCount: 0
+    }
   }
 } 

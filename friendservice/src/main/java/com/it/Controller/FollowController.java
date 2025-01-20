@@ -95,4 +95,38 @@ public class FollowController {
         return Result.ok();
     }
 
+    //获取关注统计
+    @GetMapping("stats")
+    public Result getFollowStats(HttpServletRequest request){
+        String token = request.getHeader("token");
+        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
+        String userId = stringStringMap.get("userId");
+        QueryWrapper<Follow> followQueryWrapper = new QueryWrapper<>();
+        followQueryWrapper.eq("user_id",userId).select("count(*) as count");
+        followService.list(followQueryWrapper);
+
+    }
+
+    // 获取关注列表
+    @GetMapping("GuanZhuList")
+    public Result getGuanZhuList(HttpServletRequest request){
+        String token = request.getHeader("token");
+        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
+        String userId = stringStringMap.get("userId");
+        QueryWrapper<Follow> followQueryWrapper = new QueryWrapper<>();
+        followQueryWrapper.eq("user_id",userId);
+        List<Follow> list = followService.list(followQueryWrapper);
+        return Result.ok(list);
+    }
+    // 获取粉丝列表
+    @GetMapping("FenSiList")
+    public Result getFenSiList(HttpServletRequest request){
+        String token = request.getHeader("token");
+        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
+        String userId = stringStringMap.get("userId");
+        QueryWrapper<Follow> followQueryWrapper = new QueryWrapper<>();
+        followQueryWrapper.eq("followed_user_id",userId);
+        List<Follow> list = followService.list(followQueryWrapper);
+        return Result.ok(list);
+    }
 }

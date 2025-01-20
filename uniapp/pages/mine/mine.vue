@@ -34,13 +34,26 @@
       </view>
     </view>
     
+    <!-- 添加关注统计显示 -->
+    <view class="follow-stats">
+      <view class="stat-item">
+        <text class="count">{{followCount}}</text>
+        <text class="label">关注</text>
+      </view>
+      <view class="stat-item">
+        <text class="count">{{fansCount}}</text>
+        <text class="label">人气</text>
+      </view>
+    </view>
+    
     <!-- 编辑资料按钮 -->
     <button class="edit-btn" @click="goToEdit">编辑资料</button>
   </view>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, onShow } from 'vue'
+import { getFollowStats } from '@/api/user.js'
 
 // 用户信息 - 添加默认值
 const userInfo = ref({
@@ -52,6 +65,9 @@ const userInfo = ref({
 const fansCount = ref(0)
 // 关注
 const followingCount = ref(0)
+
+// 关注统计
+const followCount = ref(0)
 
 // 获取用户信息
 const getUserInfo = () => {
@@ -65,9 +81,21 @@ const getUserInfo = () => {
   }
 }
 
+// 获取关注统计
+const loadFollowStats = async () => {
+  const stats = await getFollowStats()
+  followCount.value = stats.followCount
+  fansCount.value = stats.fansCount
+}
+
 // 页面加载时获取用户信息
 onMounted(() => {
   getUserInfo()
+})
+
+// 每次显示页面时更新统计数据
+onShow(() => {
+  loadFollowStats()
 })
 
 // 监听页面显示
@@ -198,6 +226,32 @@ const goToEdit = () => {
       .label {
         font-size: 28rpx;
         color: #666;
+      }
+    }
+  }
+  
+  .follow-stats {
+    display: flex;
+    padding: 20rpx 30rpx;
+    background: #fff;
+    margin-top: 20rpx;
+    
+    .stat-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      
+      .count {
+        font-size: 32rpx;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 4rpx;
+      }
+      
+      .label {
+        font-size: 24rpx;
+        color: #999;
       }
     }
   }
