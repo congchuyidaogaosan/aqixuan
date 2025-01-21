@@ -52,7 +52,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, onShow } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { getFollowStats } from '@/api/user.js'
 
 // 用户信息 - 添加默认值
