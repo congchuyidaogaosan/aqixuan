@@ -21,12 +21,12 @@ public class MomentMedia implements Serializable {
      * 
      */
     @TableId(type = IdType.AUTO)
-    private Long id;
+    private Integer id;
 
     /**
      * 动态ID
      */
-    private Long momentId;
+    private Integer momentId;
 
     /**
      * 媒体类型：1图片 2视频

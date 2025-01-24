@@ -157,9 +157,9 @@ const handlePublish = async () => {
     const momentData = {
       content: content.value,
       location: location.value,
-      mediaList: mediaList.value.map(item => ({
-        url: item.url,
-        type: isVideo(item.url) ? '1' : '2'
+      list: mediaList.value.map(item => ({
+        mediaUrl: item.url,
+        mediaType: isVideo(item.url) ? '2' : '1'
       }))
     }
     

@@ -56,19 +56,24 @@ public class MomentController {
     }
 
     @PostMapping("save")
-    public Result save(@RequestBody MomentDTO moment) {
+    public Result save(@RequestBody MomentDTO moment, HttpServletRequest request) {
 
+        String token = request.getHeader("token");
+        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
+        String userId = stringStringMap.get("userId");
+
+        moment.setUserId(Integer.valueOf(userId));
         moment.setLikesCount(0);
         moment.setCommentsCount(0);
 
         boolean b = momentService.save(moment);
-        Moment byId = momentService.getById(moment.getId());
 
-        MomentMedia momentMedia = new MomentMedia();
-        momentMedia.setMomentId(moment.getId());
-        momentMedia.setMediaType(moment.getMediaType());
-        momentMedia.setMediaUrl(moment.getMediaUrl());
-        momentMediaService.save(momentMedia);
+        for (MomentMedia media : moment.getList()) {
+            media.setMomentId(moment.getId());
+        }
+
+
+        momentMediaService.saveBatch(moment.getList());
 
         return Result.ok("添加成功");
     }

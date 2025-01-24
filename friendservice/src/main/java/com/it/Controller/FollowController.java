@@ -104,12 +104,12 @@ public class FollowController {
         Map<String, String> stringStringMap = tokenUtil.parseToken(token);
         String userId = stringStringMap.get("userId");
         QueryWrapper<Follow> followQueryWrapper = new QueryWrapper<>();
-        followQueryWrapper.eq("user_id", userId).select("count(user_id) as count");
+        followQueryWrapper.eq("user_id", userId);
         long count1 = followService.count(followQueryWrapper);
 
         map.put("followingCount", count1);
         followQueryWrapper = new QueryWrapper<>();
-        followQueryWrapper.eq("followed_user_id", userId).select("count(followed_user_id) as count");
+        followQueryWrapper.eq("followed_user_id", userId);
         long count2 = followService.count(followQueryWrapper);
         map.put("fansCount", count2);
         return Result.ok(map);
