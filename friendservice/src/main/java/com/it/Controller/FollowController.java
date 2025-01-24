@@ -1,6 +1,7 @@
 package com.it.Controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.it.domain.DTO.FollowAllDTO;
 import com.it.domain.Follow;
 import com.it.domain.User;
 import com.it.domain.common.Result;
@@ -99,17 +100,19 @@ public class FollowController {
     //获取关注统计
     @GetMapping("stats")
     public Result getFollowStats(HttpServletRequest request) {
+
+
         HashMap<String, Long> map = new HashMap<>();
         String token = request.getHeader("token");
         Map<String, String> stringStringMap = tokenUtil.parseToken(token);
         String userId = stringStringMap.get("userId");
         QueryWrapper<Follow> followQueryWrapper = new QueryWrapper<>();
-        followQueryWrapper.eq("user_id", userId);
+        followQueryWrapper.eq("user_id", userId).select("count(user_id) as count");
         long count1 = followService.count(followQueryWrapper);
 
         map.put("followingCount", count1);
         followQueryWrapper = new QueryWrapper<>();
-        followQueryWrapper.eq("followed_user_id", userId);
+        followQueryWrapper.eq("followed_user_id", userId).select("count(followed_user_id) as count");
         long count2 = followService.count(followQueryWrapper);
         map.put("fansCount", count2);
         return Result.ok(map);
@@ -121,9 +124,11 @@ public class FollowController {
         String token = request.getHeader("token");
         Map<String, String> stringStringMap = tokenUtil.parseToken(token);
         String userId = stringStringMap.get("userId");
-        QueryWrapper<Follow> followQueryWrapper = new QueryWrapper<>();
-        followQueryWrapper.eq("user_id", userId);
-        List<Follow> list = followService.list(followQueryWrapper);
+
+//        String userId = "1";
+        List<FollowAllDTO> list = followService.listJoinUserAndUserPrivacy(userId, "user_id");
+
+
         return Result.ok(list);
 
     }
@@ -134,9 +139,8 @@ public class FollowController {
         String token = request.getHeader("token");
         Map<String, String> stringStringMap = tokenUtil.parseToken(token);
         String userId = stringStringMap.get("userId");
-        QueryWrapper<Follow> followQueryWrapper = new QueryWrapper<>();
-        followQueryWrapper.eq("followed_user_id", userId);
-        List<Follow> list = followService.list(followQueryWrapper);
+//        String userId = "1";
+        List<FollowAllDTO> list = followService.listJoinUserAndUserPrivacy(userId, "followed_user_id");
         return Result.ok(list);
     }
 }
