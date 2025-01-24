@@ -80,8 +80,8 @@ public class MomentController {
         boolean b = momentService.updateById(moment);
         Moment byId = momentService.getById(moment.getId());
 
-        MomentMedia momentId = momentMediaService.list(new QueryWrapper<MomentMedia>().eq("moment_id", byId.getId())).get(0);
-        MomentDTO momentDTO = new MomentDTO(byId, momentId);
+        List<MomentMedia> moment_id = momentMediaService.list(new QueryWrapper<MomentMedia>().eq("moment_id", byId.getId()));
+        MomentDTO momentDTO = new MomentDTO(byId, moment_id);
 
         return Result.ok(momentDTO);
     }

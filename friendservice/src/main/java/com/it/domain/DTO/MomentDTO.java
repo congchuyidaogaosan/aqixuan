@@ -9,6 +9,7 @@ import com.it.domain.MomentMedia;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 public class MomentDTO extends Moment {
@@ -59,11 +60,15 @@ public class MomentDTO extends Moment {
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 
+
+    private List<MomentMedia> list;
+
+
     private String mediaUrl;
 
     private String mediaType;
 
-    public MomentDTO(Moment moment, MomentMedia momentMedia) {
+    public MomentDTO(Moment moment, List<MomentMedia> list) {
         this.id = moment.getId();
         this.userId = moment.getUserId();
         this.content = moment.getContent();
@@ -72,7 +77,6 @@ public class MomentDTO extends Moment {
         this.commentsCount = moment.getCommentsCount();
         this.createdAt = moment.getCreatedAt();
         this.updatedAt = moment.getUpdatedAt();
-        this.mediaUrl = momentMedia.getMediaUrl();
-        this.mediaType = momentMedia.getMediaType();
+        this.list = list;
     }
 }
