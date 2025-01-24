@@ -1,6 +1,7 @@
 package com.it.Controller;
 
 
+import com.it.domain.DTO.MomentDTO;
 import com.it.domain.Follow;
 import com.it.domain.Moment;
 import com.it.domain.MomentMedia;
@@ -41,17 +42,21 @@ public class MomentController {
     }
 
     @PostMapping("save")
-    public Result save(@RequestBody Moment moment) {
+    public Result save(@RequestBody MomentDTO moment) {
+
+        moment.setLikesCount(0);
+        moment.setCommentsCount(0);
 
         boolean b = momentService.save(moment);
         Moment byId = momentService.getById(moment.getId());
 
         MomentMedia momentMedia = new MomentMedia();
         momentMedia.setMomentId(moment.getId());
+        momentMedia.setMediaType(moment.getMediaType());
+        momentMedia.setMediaUrl(moment.getMediaUrl());
+        momentMediaService.save(momentMedia);
 
-
-
-        return Result.ok(byId);
+        return Result.ok("添加成功");
     }
 
 

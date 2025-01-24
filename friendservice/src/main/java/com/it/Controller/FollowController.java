@@ -7,11 +7,13 @@ import com.it.domain.common.Result;
 import com.it.service.FollowService;
 import com.it.service.UserService;
 import com.it.utill.TokenUtil;
+import com.sun.org.apache.bcel.internal.generic.NEW;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,9 +55,9 @@ public class FollowController {
         // 检查是否关注
         Follow one = followService.getOne(eq);
 
-        if (one==null){
+        if (one == null) {
             return Result.ok();
-        }else {
+        } else {
             return Result.ok(one);
         }
 
@@ -79,7 +81,6 @@ public class FollowController {
     }
 
 
-
     @PostMapping("update")
     public Result update(@RequestBody Follow follow) {
 
@@ -97,36 +98,44 @@ public class FollowController {
 
     //获取关注统计
     @GetMapping("stats")
-    public Result getFollowStats(HttpServletRequest request){
+    public Result getFollowStats(HttpServletRequest request) {
+        HashMap<String, Long> map = new HashMap<>();
         String token = request.getHeader("token");
         Map<String, String> stringStringMap = tokenUtil.parseToken(token);
         String userId = stringStringMap.get("userId");
         QueryWrapper<Follow> followQueryWrapper = new QueryWrapper<>();
-        followQueryWrapper.eq("user_id",userId).select("count(*) as count");
-        long count = followService.count(followQueryWrapper);
-        return Result.ok(count);
+        followQueryWrapper.eq("user_id", userId).select("count(user_id) as count");
+        long count1 = followService.count(followQueryWrapper);
+
+        map.put("guanzhuze", count1);
+        followQueryWrapper = new QueryWrapper<>();
+        followQueryWrapper.eq("followed_user_id", userId).select("count(followed_user_id) as count");
+        long count2 = followService.count(followQueryWrapper);
+        map.put("fensi", count2);
+        return Result.ok(map);
     }
 
     // 获取关注列表
     @GetMapping("GuanZhuList")
-    public Result getGuanZhuList(HttpServletRequest request){
+    public Result getGuanZhuList(HttpServletRequest request) {
         String token = request.getHeader("token");
         Map<String, String> stringStringMap = tokenUtil.parseToken(token);
         String userId = stringStringMap.get("userId");
         QueryWrapper<Follow> followQueryWrapper = new QueryWrapper<>();
-        followQueryWrapper.eq("user_id",userId);
+        followQueryWrapper.eq("user_id", userId);
         List<Follow> list = followService.list(followQueryWrapper);
         return Result.ok(list);
 
     }
+
     // 获取粉丝列表
     @GetMapping("FenSiList")
-    public Result getFenSiList(HttpServletRequest request){
+    public Result getFenSiList(HttpServletRequest request) {
         String token = request.getHeader("token");
         Map<String, String> stringStringMap = tokenUtil.parseToken(token);
         String userId = stringStringMap.get("userId");
         QueryWrapper<Follow> followQueryWrapper = new QueryWrapper<>();
-        followQueryWrapper.eq("followed_user_id",userId);
+        followQueryWrapper.eq("followed_user_id", userId);
         List<Follow> list = followService.list(followQueryWrapper);
         return Result.ok(list);
     }

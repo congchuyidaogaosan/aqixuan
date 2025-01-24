@@ -31,7 +31,7 @@ public class MomentMedia implements Serializable {
     /**
      * 媒体类型：1图片 2视频
      */
-    private Byte mediaType;
+    private String mediaType;
 
     /**
      * 媒体URL
