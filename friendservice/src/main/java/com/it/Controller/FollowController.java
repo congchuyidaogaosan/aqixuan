@@ -1,10 +1,12 @@
 package com.it.Controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.it.domain.DTO.FollowAllDTO;
 import com.it.domain.Follow;
 import com.it.domain.User;
 import com.it.domain.common.Result;
+import com.it.domain.query.FollowQuery;
 import com.it.service.FollowService;
 import com.it.service.UserService;
 import com.it.utill.TokenUtil;
@@ -120,13 +122,15 @@ public class FollowController {
 
     // 获取关注列表
     @GetMapping("GuanZhuList")
-    public Result getGuanZhuList(HttpServletRequest request) {
+    public Result getGuanZhuList(HttpServletRequest request, FollowQuery followQuery) {
         String token = request.getHeader("token");
         Map<String, String> stringStringMap = tokenUtil.parseToken(token);
         String userId = stringStringMap.get("userId");
 
-//        String userId = "1";
-        List<FollowAllDTO> list = followService.listJoinUserAndUserPrivacy(userId, "user_id");
+
+        followQuery.setUserId(userId);
+
+        Page<FollowAllDTO> list = followService.listJoinUserAndUserPrivacy(followQuery, "user_id");
 
 
         return Result.ok(list);
@@ -135,12 +139,12 @@ public class FollowController {
 
     // 获取粉丝列表
     @GetMapping("FenSiList")
-    public Result getFenSiList(HttpServletRequest request) {
+    public Result getFenSiList(HttpServletRequest request, FollowQuery followQuery) {
         String token = request.getHeader("token");
         Map<String, String> stringStringMap = tokenUtil.parseToken(token);
         String userId = stringStringMap.get("userId");
 //        String userId = "1";
-        List<FollowAllDTO> list = followService.listJoinUserAndUserPrivacy(userId, "followed_user_id");
+        Page<FollowAllDTO> list = followService.listJoinUserAndUserPrivacy(followQuery, "followed_user_id");
         return Result.ok(list);
     }
 }
