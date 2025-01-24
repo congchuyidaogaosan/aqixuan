@@ -15,8 +15,8 @@ public class FollowQuery {
 
     private String ORDER="DESC";
 
-    private Boolean payAttentionToTime;
-    private Boolean Distance;
+    private Boolean payAttentionToTime=false;
+    private Boolean Distance=false;;
 
     private String NickName;
     private String UserId;

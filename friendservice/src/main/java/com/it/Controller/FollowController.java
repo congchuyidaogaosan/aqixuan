@@ -102,8 +102,6 @@ public class FollowController {
     //获取关注统计
     @GetMapping("stats")
     public Result getFollowStats(HttpServletRequest request) {
-
-
         HashMap<String, Long> map = new HashMap<>();
         String token = request.getHeader("token");
         Map<String, String> stringStringMap = tokenUtil.parseToken(token);
@@ -144,6 +142,7 @@ public class FollowController {
         Map<String, String> stringStringMap = tokenUtil.parseToken(token);
         String userId = stringStringMap.get("userId");
 //        String userId = "1";
+        followQuery.setUserId(userId);
         Page<FollowAllDTO> list = followService.listJoinUserAndUserPrivacy(followQuery, "followed_user_id");
         return Result.ok(list);
     }

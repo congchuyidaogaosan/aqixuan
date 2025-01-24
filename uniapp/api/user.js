@@ -86,6 +86,24 @@ const api = {
       method: 'POST',
       data
     })
+  },
+
+  // 获取关注列表
+  getFollowingList: (params) => {
+    return request({
+      url: '/follow/GuanZhuList',
+      method: 'GET',
+      params
+    })
+  },
+
+  // 获取粉丝列表
+  getFansList: (params) => {
+    return request({
+      url: '/follow/FenSiList',
+      method: 'GET',
+      params
+    })
   }
 }
 
@@ -253,18 +271,18 @@ export const getFollowStats = async () => {
     const res = await api.getFollowStats()
     if (res.code === 200) {
       return {
-        followCount: res.data.followCount || 0, // 关注数
+        followingCount: res.data.followingCount || 0, // 关注数
         fansCount: res.data.fansCount || 0      // 粉丝数（人气值）
       }
     }
     return {
-      followCount: 0,
+      followingCount: 0,
       fansCount: 0
     }
   } catch (e) {
     console.log('获取关注统计失败：', e)
     return {
-      followCount: 0,
+      followingCount: 0,
       fansCount: 0
     }
   }
@@ -278,5 +296,27 @@ export const publishMoment = async (data) => {
   } catch (e) {
     console.log('发布动态失败：', e)
     return false
+  }
+}
+
+// 获取关注列表
+export const getFollowingList = async (params) => {
+  try {
+    const res = await api.getFollowingList(params)
+    return res.code === 200 ? res.data : []
+  } catch (e) {
+    console.log('获取关注列表失败：', e)
+    return []
+  }
+}
+
+// 获取粉丝列表
+export const getFansList = async (params) => {
+  try {
+    const res = await api.getFansList(params)
+    return res.code === 200 ? res.data : []
+  } catch (e) {
+    console.log('获取粉丝列表失败：', e)
+    return []
   }
 } 

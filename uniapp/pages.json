@@ -60,6 +60,20 @@
 				"navigationBarTitleText": "发布动态",
 				"navigationBarTextStyle": "black"
 			}
+		},
+		{
+			"path": "pages/following/following",
+			"style": {
+				"navigationBarTitleText": "我的关注",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/fans/fans",
+			"style": {
+				"navigationBarTitleText": "我的粉丝",
+				"enablePullDownRefresh": true
+			}
 		}
 	],
 	"globalStyle": {

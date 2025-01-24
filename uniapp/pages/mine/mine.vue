@@ -85,6 +85,7 @@ const loadFollowStats = async () => {
   const stats = await getFollowStats()
   fansCount.value = stats.fansCount
   followingCount.value = stats.followingCount
+  console.log(stats)
 }
 
 // 页面加载时获取用户信息
