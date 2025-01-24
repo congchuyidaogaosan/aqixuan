@@ -16,7 +16,11 @@ public class FollowQuery {
     private String ORDER="DESC";
 
     private Boolean payAttentionToTime=false;
+<<<<<<< HEAD
     private Boolean Distance=false;;
+=======
+    private Boolean Distance=false;
+>>>>>>> f387c18a38b395cba81bd79627447da65f8a4166
 
     private String NickName;
     private String UserId;
