@@ -1,6 +1,7 @@
 package com.it.Controller;
 
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.it.domain.DTO.MomentDTO;
 import com.it.domain.Follow;
 import com.it.domain.Moment;
@@ -79,7 +80,10 @@ public class MomentController {
         boolean b = momentService.updateById(moment);
         Moment byId = momentService.getById(moment.getId());
 
-        return Result.ok(byId);
+        MomentMedia momentId = momentMediaService.list(new QueryWrapper<MomentMedia>().eq("moment_id", byId.getId())).get(0);
+        MomentDTO momentDTO = new MomentDTO(byId, momentId);
+
+        return Result.ok(momentDTO);
     }
 
     @GetMapping("delete/{id}")

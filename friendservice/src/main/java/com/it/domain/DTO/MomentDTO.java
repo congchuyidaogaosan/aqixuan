@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.it.domain.Moment;
+import com.it.domain.MomentMedia;
 import lombok.Data;
 
 import java.util.Date;
@@ -62,4 +63,16 @@ public class MomentDTO extends Moment {
 
     private String mediaType;
 
+    public MomentDTO(Moment moment, MomentMedia momentMedia) {
+        this.id = moment.getId();
+        this.userId = moment.getUserId();
+        this.content = moment.getContent();
+        this.location = moment.getLocation();
+        this.likesCount = moment.getLikesCount();
+        this.commentsCount = moment.getCommentsCount();
+        this.createdAt = moment.getCreatedAt();
+        this.updatedAt = moment.getUpdatedAt();
+        this.mediaUrl = momentMedia.getMediaUrl();
+        this.mediaType = momentMedia.getMediaType();
+    }
 }
