@@ -1,5 +1,6 @@
 package com.it.Controller;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.it.domain.common.Result;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,31 @@ public class PositioningController {
 
     @Autowired
     private RestTemplate restTemplate;
+
+
+    /**
+     *
+     */
+    @GetMapping("CalculateTwoPlaces")
+    public Result CalculateTwoPlaces(
+//            @RequestParam("APlaces") String APlaces, @RequestParam("BPlaces") String BPlaces
+    ) {
+
+        String url = "https://restapi.amap.com/v3/distance" +
+                "?origins=116.481028,39.989643&destination=114.465302,40.004717&key=" + key;
+
+        String result = restTemplate.getForObject(url, String.class);
+        Object o = JSONObject.parseObject(result).getJSONArray("results").getJSONObject(0).get("distance");
+
+//        jsonObject.getJSONObject()
+//getJSONObject("results").getString("distance")
+
+
+//        System.out.println(string);
+
+
+        return Result.ok(o);
+    }
 
     /**
      * 地址方法

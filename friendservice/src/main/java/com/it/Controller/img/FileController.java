@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.UUID;
 
 /**
@@ -33,6 +34,8 @@ public class FileController {
         if (file.isEmpty()) {
 
         }
+
+        HashMap<String, String> hashMap = new HashMap<>();
 
         String userDir = System.getProperty("user.dir");
 
@@ -61,6 +64,8 @@ public class FileController {
         }
 
         String str = "http://localhost:8081/" + "image/" + name + type;
+        hashMap.put("url",str);
+        hashMap.put("type",type);
         return Result.ok(str);
     }
 
@@ -74,7 +79,7 @@ public class FileController {
         if (file.isEmpty()) {
 
         }
-
+        HashMap<String, String> hashMap = new HashMap<>();
         String userDir = System.getProperty("user.dir");
 
         String name = UUID.randomUUID().toString().replace("-", "").substring(0, 10);
@@ -102,6 +107,8 @@ public class FileController {
         }
 
         String str = "http://localhost:8081/" + "image/" + name + type;
+        hashMap.put("url",str);
+        hashMap.put("type",type);
         return Result.ok(str);
     }
 
