@@ -47,10 +47,9 @@ public class UserAvatarController {
     @GetMapping("myAvatarList")
     public Result list(HttpServletRequest request) {
         UserAvatar userAvatar = new UserAvatar();
+
         String token = request.getHeader("token");
-
         Map<String, String> stringStringMap = tokenUtil.parseToken(token);
-
         String userId = stringStringMap.get("userId");
 
         userAvatar.setUserId(Integer.valueOf(userId));

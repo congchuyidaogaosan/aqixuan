@@ -9,14 +9,19 @@ import com.it.domain.common.Result;
 import com.it.service.FollowService;
 import com.it.service.MomentMediaService;
 import com.it.service.MomentService;
+import com.it.utill.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpRequest;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.List;
+import java.util.Map;
 
+
+@RestController
 @RequestMapping("Moment")
-@RestController()
 public class MomentController {
 
     @Autowired
@@ -25,10 +30,18 @@ public class MomentController {
     @Autowired
     private MomentMediaService momentMediaService;
 
-    @RequestMapping("list")
-    public Result list(@RequestBody Moment moment) {
+    @Autowired
+    private TokenUtil tokenUtil;
 
-        List<Moment> list = momentService.list();
+    @RequestMapping("list")
+    public Result list(@RequestBody Moment moment, HttpServletRequest request) {
+
+
+        String token = request.getHeader("token");
+        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
+        String userId = stringStringMap.get("userId");
+
+        List<MomentDTO> list = momentService.ListMomentDTO(userId);
         return Result.ok(list);
 
     }

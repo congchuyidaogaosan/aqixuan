@@ -1,12 +1,13 @@
 package com.it.mapper;
 
+import com.github.yulichang.base.MPJBaseMapper;
 import com.it.domain.UserPrivacy;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
  * @Entity com.it.domain.UserPrivacy
  */
-public interface UserPrivacyMapper extends BaseMapper<UserPrivacy> {
+public interface UserPrivacyMapper extends MPJBaseMapper<UserPrivacy> {
 
 }
 
