@@ -144,6 +144,7 @@ public class FollowController {
         Map<String, String> stringStringMap = tokenUtil.parseToken(token);
         String userId = stringStringMap.get("userId");
 //        String userId = "1";
+        followQuery.setUserId(userId);
         Page<FollowAllDTO> list = followService.listJoinUserAndUserPrivacy(followQuery, "followed_user_id");
         return Result.ok(list);
     }

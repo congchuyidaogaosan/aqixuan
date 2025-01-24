@@ -1,7 +1,9 @@
 package com.it.Controller;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.it.domain.DTO.Results;
 import com.it.domain.common.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping("/Positioning")
@@ -26,24 +31,36 @@ public class PositioningController {
      */
     @GetMapping("CalculateTwoPlaces")
     public Result CalculateTwoPlaces(
-//            @RequestParam("APlaces") String APlaces, @RequestParam("BPlaces") String BPlaces
+            @RequestParam("APlaces") String APlaces, @RequestParam("BPlaces") String BPlaces
     ) {
 
         String url = "https://restapi.amap.com/v3/distance" +
-                "?origins=116.481028,39.989643&destination=114.465302,40.004717&key=" + key;
+                "?origins=" + APlaces + "&destination=" + APlaces + "&key=" + key;
 
         String result = restTemplate.getForObject(url, String.class);
         Object o = JSONObject.parseObject(result).getJSONArray("results").getJSONObject(0).get("distance");
 
-//        jsonObject.getJSONObject()
-//getJSONObject("results").getString("distance")
-
-
-//        System.out.println(string);
-
-
         return Result.ok(o);
     }
+
+
+    @GetMapping("CalculateTwoPlacesAll")
+    public Result<List<Results>> CalculateTwoPlacesAll(
+            @RequestParam("APlaces") String APlaces, @RequestParam("BPlaces") String BPlaces
+    ) {
+
+        String url = "https://restapi.amap.com/v3/distance" +
+                "?origins=" + APlaces + "&destination=" + APlaces + "&key=" + key;
+
+        String result = restTemplate.getForObject(url, String.class);
+        List<Results> results = JSONObject.parseObject(result).getJSONArray("results").toJavaList(Results.class);
+
+
+
+        return Result.ok(results);
+    }
+
+
 
     /**
      * 地址方法

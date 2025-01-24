@@ -130,6 +130,8 @@ public class FollowAllDTO {
      */
     private Boolean isVerified;
 
+    private String Positioning;
+
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
