@@ -184,7 +184,7 @@ const chooseImage = async (index) => {
     
     // 保存头像信息
     await saveAvatar({
-      avatarUrl: uploadRes.data
+      avatarUrl: uploadRes.data.url
     })
     
     // 获取最新的头像列表

@@ -77,6 +77,15 @@ const api = {
       url: '/follow/stats',
       method: 'GET'
     })
+  },
+
+  // 发布动态
+  publishMoment: (data) => {
+    return request({
+      url: '/Moment/save',
+      method: 'POST',
+      data
+    })
   }
 }
 
@@ -258,5 +267,16 @@ export const getFollowStats = async () => {
       followCount: 0,
       fansCount: 0
     }
+  }
+}
+
+// 发布动态
+export const publishMoment = async (data) => {
+  try {
+    const res = await api.publishMoment(data)
+    return res.code === 200
+  } catch (e) {
+    console.log('发布动态失败：', e)
+    return false
   }
 } 

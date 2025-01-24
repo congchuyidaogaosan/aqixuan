@@ -17,7 +17,7 @@
         ></image>
         <view class="info-content">
           <text class="nickname">{{userInfo.nickname || '未设置昵称'}}</text>
-          <text class="bio">{{userInfo.bio || '这个人很懒，什么都没写~'}}</text>
+          <text class="bio">{{userInfo.introduction || '这个人很懒，什么都没写~'}}</text>
         </view>
       </view>
     </view>
@@ -34,7 +34,7 @@
       </view>
     </view>
     
-    <!-- 添加关注统计显示 -->
+    <!-- 添加关注统计显示
     <view class="follow-stats">
       <view class="stat-item">
         <text class="count">{{followCount}}</text>
@@ -44,7 +44,7 @@
         <text class="count">{{fansCount}}</text>
         <text class="label">人气</text>
       </view>
-    </view>
+    </view> -->
     
     <!-- 编辑资料按钮 -->
     <button class="edit-btn" @click="goToEdit">编辑资料</button>
@@ -68,9 +68,6 @@ const fansCount = ref(0)
 // 关注
 const followingCount = ref(0)
 
-// 关注统计
-const followCount = ref(0)
-
 // 获取用户信息
 const getUserInfo = () => {
   const info = uni.getStorageSync('userInfo')
@@ -86,8 +83,8 @@ const getUserInfo = () => {
 // 获取关注统计
 const loadFollowStats = async () => {
   const stats = await getFollowStats()
-  followCount.value = stats.followCount
   fansCount.value = stats.fansCount
+  followingCount.value = stats.followingCount
 }
 
 // 页面加载时获取用户信息

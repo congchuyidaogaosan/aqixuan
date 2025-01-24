@@ -66,7 +66,7 @@ public class FileController {
         String str = "http://localhost:8081/" + "image/" + name + type;
         hashMap.put("url",str);
         hashMap.put("type",type);
-        return Result.ok(str);
+        return Result.ok(hashMap);
     }
 
 
@@ -109,7 +109,7 @@ public class FileController {
         String str = "http://localhost:8081/" + "image/" + name + type;
         hashMap.put("url",str);
         hashMap.put("type",type);
-        return Result.ok(str);
+        return Result.ok(hashMap);
     }
 
 

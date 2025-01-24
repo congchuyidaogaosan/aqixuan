@@ -107,11 +107,11 @@ public class FollowController {
         followQueryWrapper.eq("user_id", userId).select("count(user_id) as count");
         long count1 = followService.count(followQueryWrapper);
 
-        map.put("guanzhuze", count1);
+        map.put("followingCount", count1);
         followQueryWrapper = new QueryWrapper<>();
         followQueryWrapper.eq("followed_user_id", userId).select("count(followed_user_id) as count");
         long count2 = followService.count(followQueryWrapper);
-        map.put("fensi", count2);
+        map.put("fansCount", count2);
         return Result.ok(map);
     }
 

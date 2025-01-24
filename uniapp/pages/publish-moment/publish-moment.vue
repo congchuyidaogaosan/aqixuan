@@ -9,7 +9,7 @@
       >
         <!-- 视频预览 -->
         <video 
-          v-if="item.type === 'video'"
+          v-if="isVideo(item.url)"
           :src="item.url" 
           class="video"
           :controls="false"
@@ -30,11 +30,12 @@
       <!-- 添加媒体按钮 -->
       <view 
         class="add-media" 
-        @click="showMediaPicker"
-        v-if="mediaList.length === 0"
+        @click="chooseMedia"
+        v-if="mediaList.length < 6"
       >
         <uni-icons type="plusempty" size="40" color="#999"></uni-icons>
-        <text class="tip">添加图片或视频</text>
+        <text class="tip">{{mediaList.length ? '继续添加' : '添加图片或视频'}}</text>
+        <text class="count">{{mediaList.length}}/6</text>
       </view>
     </view>
     
@@ -72,7 +73,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { uploadFile } from '@/api/user.js'
+import { uploadFile, publishMoment } from '@/api/user.js'
 
 // 媒体列表
 const mediaList = ref([])
@@ -81,74 +82,48 @@ const content = ref('')
 // 位置信息
 const location = ref('')
 
-// 显示媒体选择器
-const showMediaPicker = () => {
-  uni.showActionSheet({
-    itemList: ['拍摄', '从相册选择'],
-    success: (res) => {
-      if (res.tapIndex === 0) {
-        chooseVideo()
-      } else {
-        chooseImage()
-      }
-    }
-  })
+// 判断是否为视频文件
+const isVideo = (url) => {
+  const videoExtensions = ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.mkv', '.m4v', '.3gp']
+  const extension = url.toLowerCase().substring(url.lastIndexOf('.'))
+  return videoExtensions.includes(extension)
 }
 
-// 选择视频
-const chooseVideo = async () => {
-  try {
-    const res = await uni.chooseVideo({
-      maxDuration: 60,
-      compressed: true,
-      sourceType: ['camera', 'album']
-    })
-    
-    // 检查视频大小
-    if (res.size > 50 * 1024 * 1024) {
-      uni.showToast({
-        title: '视频大小不能超过50MB',
-        icon: 'none'
-      })
-      return
-    }
-    
-    // 上传视频
-    try {
-      const uploadRes = await uploadFile(res.tempFilePath)
-      mediaList.value.push({
-        type: 'video',
-        url: uploadRes.data.url
-      })
-    } catch (error) {
-      console.log('上传视频失败：', error)
-    }
-  } catch (error) {
-    console.log('选择视频失败：', error)
-  }
-}
-
-// 选择图片
-const chooseImage = async () => {
+// 选择媒体
+const chooseMedia = async () => {
   try {
     const res = await uni.chooseImage({
-      count: 1,
+      count: 6 - mediaList.value.length, // 最多可选数量
       sizeType: ['compressed'],
       sourceType: ['album', 'camera']
     })
     
-    // 上传图片
+    uni.showLoading({ title: '上传中...' })
+    
     try {
-      const uploadRes = await uploadFile(res.tempFilePaths[0])
-      mediaList.value.push({
-        type: 'image',
-        url: uploadRes.data.url
-      })
+      // 上传所有选中的文件
+      for (const file of res.tempFiles) {
+        const blob = new Blob([file], { type: file.type || 'image/jpeg' })
+        const fileToUpload = new File([blob], file.name || 'image.jpg', {
+          type: file.type || 'image/jpeg'
+        })
+        
+        const uploadRes = await uploadFile(fileToUpload)
+        mediaList.value.push({
+          url: uploadRes.data.url
+        })
+      }
     } catch (error) {
-      console.log('上传图片失败：', error)
+      console.log('上传失败：', error)
+      uni.showToast({
+        title: '上传失败',
+        icon: 'none'
+      })
+    } finally {
+      uni.hideLoading()
     }
   } catch (error) {
-    console.log('选择图片失败：', error)
+    console.log('选择媒体失败：', error)
   }
 }
 
@@ -178,30 +153,50 @@ const handlePublish = async () => {
       title: '发布中...'
     })
     
-    // TODO: 调用发布动态API
+    // 构建动态数据
+    const momentData = {
+      content: content.value,
+      location: location.value,
+      mediaList: mediaList.value.map(item => ({
+        url: item.url,
+        type: isVideo(item.url) ? '1' : '2'
+      }))
+    }
     
-    setTimeout(() => {
-      uni.hideLoading()
+    // 调用发布接口
+    const success = await publishMoment(momentData)
+    
+    if (success) {
       uni.showToast({
         title: '发布成功',
         icon: 'success'
       })
       
+      // 返回上一页并刷新列表
       setTimeout(() => {
+        uni.$emit('refreshMoments') // 触发刷新事件
         uni.navigateBack()
       }, 1500)
-    }, 1000)
+    } else {
+      uni.showToast({
+        title: '发布失败',
+        icon: 'none'
+      })
+    }
   } catch (error) {
+    console.log('发布失败：', error)
     uni.showToast({
       title: '发布失败',
       icon: 'none'
     })
+  } finally {
+    uni.hideLoading()
   }
 }
 
 // 页面加载时自动打开媒体选择器
 onMounted(() => {
-  showMediaPicker()
+  chooseMedia()
 })
 </script>
 
@@ -212,13 +207,15 @@ onMounted(() => {
   padding: 20rpx;
   
   .media-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20rpx;
     margin-bottom: 20rpx;
     
     .media-item {
-      width: 100%;
-      height: 400rpx;
+      width: 220rpx;
+      height: 220rpx;
       position: relative;
-      margin-bottom: 20rpx;
       
       image, .video {
         width: 100%;
@@ -228,8 +225,8 @@ onMounted(() => {
       
       .delete-btn {
         position: absolute;
-        top: 20rpx;
-        right: 20rpx;
+        top: -20rpx;
+        right: -20rpx;
         width: 40rpx;
         height: 40rpx;
         background: rgba(0,0,0,0.5);
@@ -241,8 +238,8 @@ onMounted(() => {
     }
     
     .add-media {
-      width: 100%;
-      height: 400rpx;
+      width: 220rpx;
+      height: 220rpx;
       background: #fff;
       border-radius: 12rpx;
       display: flex;
@@ -255,6 +252,12 @@ onMounted(() => {
         font-size: 28rpx;
         color: #999;
         margin-top: 20rpx;
+      }
+      
+      .count {
+        font-size: 24rpx;
+        color: #999;
+        margin-top: 8rpx;
       }
     }
   }

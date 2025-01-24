@@ -41,17 +41,17 @@ public class MomentController {
         String token = request.getHeader("token");
         Map<String, String> stringStringMap = tokenUtil.parseToken(token);
         String userId = stringStringMap.get("userId");
-
         List<MomentDTO> list = momentService.ListMomentDTO(userId);
+
         return Result.ok(list);
 
     }
 
     @GetMapping("find/{id}")
-    public Result find(@PathVariable("id") Integer id, HttpSession session) {
+    public Result find(@PathVariable("userId") Integer userId, HttpSession session) {
 
-        Moment byId = momentService.getById(id);
-        return Result.ok(byId);
+        List<MomentDTO> list = momentService.ListMomentDTO(Integer.toString(userId));
+        return Result.ok(list);
 
     }
 
