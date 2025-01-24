@@ -3,8 +3,10 @@ package com.it.Controller;
 
 import com.it.domain.Follow;
 import com.it.domain.Moment;
+import com.it.domain.MomentMedia;
 import com.it.domain.common.Result;
 import com.it.service.FollowService;
+import com.it.service.MomentMediaService;
 import com.it.service.MomentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +20,9 @@ public class MomentController {
 
     @Autowired
     private MomentService momentService;
+
+    @Autowired
+    private MomentMediaService momentMediaService;
 
     @RequestMapping("list")
     public Result list(@RequestBody Moment moment) {
@@ -40,6 +45,11 @@ public class MomentController {
 
         boolean b = momentService.save(moment);
         Moment byId = momentService.getById(moment.getId());
+
+        MomentMedia momentMedia = new MomentMedia();
+        momentMedia.setMomentId(moment.getId());
+
+
 
         return Result.ok(byId);
     }

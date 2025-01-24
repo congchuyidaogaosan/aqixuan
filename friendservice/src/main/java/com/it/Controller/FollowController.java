@@ -103,8 +103,8 @@ public class FollowController {
         String userId = stringStringMap.get("userId");
         QueryWrapper<Follow> followQueryWrapper = new QueryWrapper<>();
         followQueryWrapper.eq("user_id",userId).select("count(*) as count");
-        followService.list(followQueryWrapper);
-
+        long count = followService.count(followQueryWrapper);
+        return Result.ok(count);
     }
 
     // 获取关注列表
@@ -117,6 +117,7 @@ public class FollowController {
         followQueryWrapper.eq("user_id",userId);
         List<Follow> list = followService.list(followQueryWrapper);
         return Result.ok(list);
+
     }
     // 获取粉丝列表
     @GetMapping("FenSiList")

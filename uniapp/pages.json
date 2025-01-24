@@ -53,6 +53,13 @@
 			"style": {
 				"navigationStyle": "custom"
 			}
+		},
+		{
+			"path": "pages/publish-moment/publish-moment",
+			"style": {
+				"navigationBarTitleText": "发布动态",
+				"navigationBarTextStyle": "black"
+			}
 		}
 	],
 	"globalStyle": {
