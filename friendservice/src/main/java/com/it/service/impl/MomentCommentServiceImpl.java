@@ -34,7 +34,7 @@ public class MomentCommentServiceImpl extends ServiceImpl<MomentCommentMapper, M
         queryWrapper.eq("moment_id",momentId).eq("parent_id",0);
         List<MomentComment> momentComments = momentCommentMapper.selectList(queryWrapper);
 
-        if (momentComments.size()==1){
+        if (momentComments.size()<=1){
             return momentComments;
         }
 
@@ -52,7 +52,7 @@ public class MomentCommentServiceImpl extends ServiceImpl<MomentCommentMapper, M
         }
 
         ArrayList<MomentComment> momentComments1 = new ArrayList<>();
-    momentComments1.add(returnMomentComment);
+       momentComments1.add(returnMomentComment);
         return momentComments1;
 
     }

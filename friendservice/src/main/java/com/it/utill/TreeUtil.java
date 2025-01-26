@@ -28,8 +28,13 @@ public class TreeUtil {
                 e.printStackTrace();
             }
         }
+        if (commentList.size()==1){
+            return commentTreeList;
+        }
 
         LinkedList<MomentCommentTree> momentComments = new LinkedList<>();
+
+
 
         for (MomentCommentTree commentTree : commentTreeList) {
             if (commentTree.getParentId() == pid) {
