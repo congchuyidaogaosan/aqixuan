@@ -6,11 +6,14 @@ import com.it.domain.MomentComment;
 import com.it.domain.common.Result;
 import com.it.service.MomentCommentService;
 import com.it.service.MomentService;
+import com.it.utill.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.List;
+import java.util.Map;
 
 @RequestMapping("MomentComment")
 @RestController()
@@ -19,6 +22,13 @@ public class MomentCommentController {
 
     @Autowired
     private MomentCommentService momentCommentService;
+
+    @Autowired
+    private MomentService momentService;
+
+    @Autowired
+    private TokenUtil tokenUtil;
+
 
     @RequestMapping("list")
     public Result list(@RequestBody MomentComment moment) {
@@ -37,12 +47,18 @@ public class MomentCommentController {
     }
 
     @PostMapping("save")
-    public Result save(@RequestBody MomentComment momentComment) {
-
+    public Result save(@RequestBody MomentComment momentComment, HttpServletRequest request) {
+        //获取当前登录用户
+        String token = request.getHeader("token");
+        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
+        String userId = stringStringMap.get("userId");
+        momentComment.setUserId(Integer.parseInt(userId));
         boolean b = momentCommentService.save(momentComment);
-        MomentComment byId = momentCommentService.getById(momentComment.getId());
-
-        return Result.ok(byId);
+        //动态的评论数+1
+        Moment moment = momentService.getById(momentComment.getMomentId());
+        moment.setCommentsCount(moment.getCommentsCount() + 1);
+        momentService.updateById(moment);
+        return Result.ok("评论成功");
     }
 
 

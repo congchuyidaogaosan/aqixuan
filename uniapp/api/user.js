@@ -152,7 +152,7 @@ const api = {
   // 发表评论
   addComment: (data) => {
     return request({
-      url: '/MomentComment/add',
+      url: '/MomentComment/save',
       method: 'POST',
       data
     })

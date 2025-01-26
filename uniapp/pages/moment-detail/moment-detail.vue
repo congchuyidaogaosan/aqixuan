@@ -27,10 +27,16 @@
           </view>
         </view>
         
+        <!-- 动态内容 -->
+        <view class="text-content" v-if="momentDetail.content">
+          <text>{{momentDetail.content}}</text>
+        </view>
+        
         <!-- 媒体内容 -->
         <swiper 
+          v-if="momentDetail.list && momentDetail.list.length > 0"
           class="media-swiper" 
-          :indicator-dots="momentDetail.list?.length > 1"
+          :indicator-dots="momentDetail.list.length > 1"
           :autoplay="false"
           :duration="500"
           :circular="true"
@@ -49,6 +55,7 @@
               :src="media.mediaUrl"
               mode="aspectFill"
               class="media-item"
+              @click="previewImage(momentDetail.list.filter(item => item.mediaType === '1').map(item => item.mediaUrl), media.mediaUrl)"
             ></image>
           </swiper-item>
         </swiper>
@@ -136,7 +143,8 @@ import {
   likeMoment, 
   unlikeMoment,
   addComment,
-  deleteComment
+  deleteComment,
+  getUserInfo
 } from '@/api/user.js'
 
 const momentDetail = ref(null)
@@ -162,7 +170,17 @@ const loadMomentDetail = async () => {
     }
 
     const res = await getMomentDetail(momentId)
-    momentDetail.value = res
+    if (res && res.length > 0) {
+      // 获取用户信息
+      const userRes = await getUserInfo(res[0].userId)
+      
+      momentDetail.value = {
+        ...res[0],
+        userNickname: userRes.nickname,
+        userAvatarUrl: userRes.avatarUrl,
+        isLiked: false, // TODO: 需要后端返回是否已点赞
+      }
+    }
   } catch (error) {
     console.log('获取动态详情失败：', error)
     uni.showToast({
@@ -222,7 +240,7 @@ const submitComment = async () => {
       momentId: momentDetail.value.id,
       content: commentContent.value,
       parentId: replyTo.value?.parentId || replyTo.value?.id || null,
-      replyToUserId: replyTo.value?.userId || null
+    //   replyToUserId: replyTo.value?.userId || null
     }
 
     await addComment(data)
@@ -272,6 +290,14 @@ const goBack = () => {
 const refresh = () => {
   refreshing.value = true
   loadMomentDetail()
+}
+
+// 预览图片
+const previewImage = (urls, current) => {
+  uni.previewImage({
+    urls,
+    current
+  })
 }
 
 onMounted(() => {
@@ -353,6 +379,13 @@ onMounted(() => {
             color: #999;
           }
         }
+      }
+      
+      .text-content {
+        padding: 20rpx;
+        font-size: 28rpx;
+        color: #333;
+        line-height: 1.5;
       }
       
       .media-swiper {
