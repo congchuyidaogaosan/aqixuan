@@ -13,6 +13,13 @@ spring:
     password: Tabangjiuyuan@#$321
     url: jdbc:mysql://121.40.178.23:3306/servie0118?useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useSSL=false
     driver-class-name: com.mysql.jdbc.Driver
+    hikari:
+      connection-timeout: 10000
+      validation-timeout: 3000
+      idle-timeout: 60000
+      login-timeout: 5
+      max-lifetime: 60000
+
   servlet:
     multipart:
       max-file-size: 10MB

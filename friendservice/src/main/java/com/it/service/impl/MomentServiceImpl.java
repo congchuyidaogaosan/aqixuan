@@ -49,7 +49,7 @@ public class MomentServiceImpl extends ServiceImpl<MomentMapper, Moment>
     private UserAvatarService userAvatarService;
 
     @Override
-    public List<MomentDTO> ListMomentDTO(String userId) {
+    public List<MomentDTO> ListMomentDTO(String userId,Integer thisUserID) {
 
         QueryWrapper<Moment> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", userId);
@@ -60,7 +60,7 @@ public class MomentServiceImpl extends ServiceImpl<MomentMapper, Moment>
             momentMediaQueryWrapper.eq("moment_id", moment.getId());
             List<MomentMedia> list = momentMediaService.list(momentMediaQueryWrapper);
             MomentDTO momentDTO = new MomentDTO(moment, list);
-            Boolean aBoolean = momentLikeService.listMoment(moment.getId());
+            Boolean aBoolean = momentLikeService.listMoment(moment.getId(),thisUserID);
             momentDTO.setIsLike(aBoolean);
             arrayList.add(momentDTO);
             momentDTO.setMomentComments(momentCommentService.selectParentId( moment.getId()));
@@ -69,7 +69,7 @@ public class MomentServiceImpl extends ServiceImpl<MomentMapper, Moment>
     }
 
     @Override
-    public List<MomentDTO> ListMomentDTOByID(String id) {
+    public List<MomentDTO> ListMomentDTOByID(String id,Integer thisUserID) {
         QueryWrapper<Moment> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("id", id);
        Moment moment = momentMapper.selectList(queryWrapper).get(0);
@@ -79,7 +79,7 @@ public class MomentServiceImpl extends ServiceImpl<MomentMapper, Moment>
             QueryWrapper<MomentMedia> momentMediaQueryWrapper = new QueryWrapper<>();
             momentMediaQueryWrapper.eq("moment_id", moment.getId());
             List<MomentMedia> list = momentMediaService.list(momentMediaQueryWrapper);
-            Boolean aBoolean = momentLikeService.listMoment(moment.getId());
+            Boolean aBoolean = momentLikeService.listMoment(moment.getId(),thisUserID);
             momentDTO= new MomentDTO(moment, list);
             momentDTO.setIsLike(aBoolean);
 
@@ -92,7 +92,7 @@ public class MomentServiceImpl extends ServiceImpl<MomentMapper, Moment>
             }
 
             List<MomentCommentTree> tree = treeUtil.getDetailTree(moment_id,moment.getId());
-           
+
             momentDTO.setMomentCommentTree(tree);
             arrayList.add(momentDTO);
 

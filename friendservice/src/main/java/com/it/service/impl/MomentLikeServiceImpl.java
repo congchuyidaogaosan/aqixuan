@@ -1,5 +1,6 @@
 package com.it.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.it.domain.MomentLike;
 import com.it.service.MomentLikeService;
@@ -21,9 +22,10 @@ public class MomentLikeServiceImpl extends ServiceImpl<MomentLikeMapper, MomentL
     private MomentLikeMapper momentLikeMapper;
 
     @Override
-    public Boolean listMoment(Integer id) {
+    public Boolean listMoment(Integer id,Integer userId) {
 
-        MomentLike momentLike = momentLikeMapper.selectById(id);
+        MomentLike momentLike = momentLikeMapper.selectOne(new QueryWrapper<MomentLike>()
+                .eq("moment_id",id).eq("user_id",userId));
         if (momentLike==null){
             return true;
         }else {

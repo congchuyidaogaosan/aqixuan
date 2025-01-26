@@ -46,25 +46,32 @@ public class MomentController {
         Map<String, String> stringStringMap = tokenUtil.parseToken(token);
         String userId = stringStringMap.get("userId");
 
-        List<MomentDTO> list = momentService.ListMomentDTO(userId);
+        List<MomentDTO> list = momentService.ListMomentDTO(userId,Integer.valueOf(userId));
 
         return Result.ok(list);
 
     }
 
     @GetMapping("find/{userId}")
-    public Result find(@PathVariable("userId") Integer userId, HttpSession session) {
-
-        List<MomentDTO> list = momentService.ListMomentDTO(Integer.toString(userId));
+    public Result find(@PathVariable("userId") Integer userId,HttpServletRequest request) {
+        String token = request.getHeader("token");
+        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
+        String myuserId = stringStringMap.get("userId");
+        // 第一个是根据这个userid查询动态列表，第二个是我的id 查询我是否对这条动态点赞了
+        List<MomentDTO> list = momentService.ListMomentDTO(Integer.toString(userId),Integer.valueOf(myuserId));
         return Result.ok(list);
 
     }
 
 
     @GetMapping("detail/{id}")
-    public Result detail(@PathVariable("id") Integer id, HttpSession session) {
+    public Result detail(@PathVariable("id") Integer id, HttpServletRequest request) {
 
-        List<MomentDTO> list = momentService.ListMomentDTOByID(Integer.toString(id));
+        String token = request.getHeader("token");
+        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
+        String userId = stringStringMap.get("userId");
+
+        List<MomentDTO> list = momentService.ListMomentDTOByID(Integer.toString(id),Integer.valueOf(userId));
 
         return Result.ok(list);
 

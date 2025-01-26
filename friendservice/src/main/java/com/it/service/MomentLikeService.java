@@ -10,5 +10,5 @@ import java.util.List;
  */
 public interface MomentLikeService extends IService<MomentLike> {
 
-    Boolean listMoment(Integer id);
+    Boolean listMoment(Integer id,Integer userId);
 }

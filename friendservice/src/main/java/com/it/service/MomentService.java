@@ -11,8 +11,8 @@ import java.util.List;
  */
 public interface MomentService extends IService<Moment> {
 
-    List<MomentDTO> ListMomentDTO(String userId);
+    List<MomentDTO> ListMomentDTO(String userId,Integer thisUserID);
 
-    List<MomentDTO> ListMomentDTOByID(String id);
+    List<MomentDTO> ListMomentDTOByID(String id,Integer thisUserID);
 
 }
