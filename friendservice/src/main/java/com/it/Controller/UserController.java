@@ -71,19 +71,13 @@ public class UserController {
 
     @GetMapping("findById")
     public Result findById(@RequestParam Integer id) {
-        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-        userQueryWrapper.like("id", id);
-        List<User> userList = userService.list(userQueryWrapper);
 
-        for (User user : userList) {
+        User one =   userAvatarService.findById(id);
 
-            QueryWrapper<UserAvatar> userAvatarQueryWrapper = new QueryWrapper<>();
-            userAvatarQueryWrapper.eq("user_id", user.getId()).orderByAsc("created_at").last("limit 1");
-            UserAvatar one = userAvatarService.getOne(userAvatarQueryWrapper);
-            user.setHandImg(one.getAvatarUrl());
-        }
 
-        return Result.ok(userList);
+
+
+        return Result.ok(one);
     }
 
 

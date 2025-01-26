@@ -45,6 +45,12 @@ public class MomentComment implements Serializable {
      */
     private Integer parentId;
 
+    @TableField(exist = false)
+    private String handImg;
+    @TableField(exist = false)
+    private String nickname;
+
+
     /**
      *
      */

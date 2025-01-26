@@ -1,22 +1,14 @@
-package com.it.domain.tree;
+package com.it.domain.DTO;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.it.domain.MomentComment;
 import lombok.Data;
 
 import java.util.Date;
-import java.util.List;
 
 @Data
-public class MomentCommentTree  {
+public class MomentCommentDTO {
 
 
-    /**
-     *
-     */
     private Integer id;
 
     /**
@@ -39,18 +31,15 @@ public class MomentCommentTree  {
      */
     private Integer parentId;
 
-    @TableField(exist = false)
-    private String handImg;
-
-    @TableField(exist = false)
-    private String nickname;
-
     /**
      *
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date createdAt;
 
-    private List<MomentCommentTree> momentCommentTree;
+    private String avatarUrl;
+
+
+    private String nickname;
 
 }
