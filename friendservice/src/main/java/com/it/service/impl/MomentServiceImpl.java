@@ -91,7 +91,7 @@ public class MomentServiceImpl extends ServiceImpl<MomentMapper, Moment>
                 momentComment.setHandImg(byId.getHandImg());
             }
 
-            List<MomentCommentTree> tree = treeUtil.getDetailTree(moment_id,moment.getId());
+            List<MomentCommentTree> tree = treeUtil.getDetailTree(moment_id,0);
 
             momentDTO.setMomentCommentTree(tree);
             arrayList.add(momentDTO);

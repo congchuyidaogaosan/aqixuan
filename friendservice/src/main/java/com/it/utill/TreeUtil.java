@@ -40,6 +40,7 @@ public class TreeUtil {
         for (MomentCommentTree commentTree : commentList) {
             if (commentTree.getParentId() == pid) {
                 commentTree.setMomentCommentTree(createTree(commentList, commentTree.getId()));
+                momentComments.add(commentTree);
             }
         }
         return momentComments;
