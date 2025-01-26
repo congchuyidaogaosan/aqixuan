@@ -21,17 +21,17 @@ public class MomentLike implements Serializable {
      * 
      */
     @TableId(type = IdType.AUTO)
-    private Long id;
+    private Integer id;
 
     /**
      * 动态ID
      */
-    private Long momentId;
+    private Integer momentId;
 
     /**
      * 点赞用户ID
      */
-    private Long userId;
+    private Integer userId;
 
     /**
      * 

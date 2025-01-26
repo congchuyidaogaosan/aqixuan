@@ -121,6 +121,59 @@ const api = {
       url: `/Moment/find/${userId}`,
       method: 'GET',
     })
+  },
+
+  // 获取动态详情
+  getMomentDetail: (momentId) => {
+    return request({
+      url: `/Moment/detail/${momentId}`,
+      method: 'GET'
+    })
+  },
+
+  // 点赞动态
+  likeMoment: (momentId) => {
+    return request({
+      url: '/MomentLike/like',
+      method: 'POST',
+      data: { momentId }
+    })
+  },
+
+  // 取消点赞
+  unlikeMoment: (momentId) => {
+    return request({
+      url: '/MomentLike/unlike',
+      method: 'POST',
+      data: { momentId }
+    })
+  },
+
+  // 发表评论
+  addComment: (data) => {
+    return request({
+      url: '/MomentComment/add',
+      method: 'POST',
+      data
+    })
+  },
+
+  // 获取评论列表
+  getCommentList: (momentId) => {
+    return request({
+      url: '/MomentComment/list',
+      method: 'GET',
+      params: { momentId }
+    })
+  },
+
+  // 删除评论
+  deleteComment: (commentId) => {
+    return request({
+      url: '/MomentComment/delete',
+      method: 'POST',
+      data: { commentId }
+    })
   }
 }
 
@@ -357,5 +410,67 @@ export const getMomentListByUserId = async (userId) => {
   } catch (e) {
     console.log('获取动态列表失败：', e)
     return []
+  }
+}
+
+// 获取动态详情
+export const getMomentDetail = async (momentId) => {
+  try {
+    const res = await api.getMomentDetail(momentId)
+    return res.code === 200 ? res.data : null
+  } catch (e) {
+    console.log('获取动态详情失败：', e)
+    return null
+  }
+}
+
+// 点赞动态
+export const likeMoment = async (momentId) => {
+  try {
+    const res = await api.likeMoment(momentId)
+    return res
+  } catch (e) {
+    throw new Error(e.message || '点赞失败')
+  }
+}
+
+// 取消点赞
+export const unlikeMoment = async (momentId) => {
+  try {
+    const res = await api.unlikeMoment(momentId)
+    return res
+  } catch (e) {
+    throw new Error(e.message || '取消点赞失败')
+  }
+}
+
+// 获取评论列表
+export const getCommentList = async (momentId) => {
+  try {
+    const res = await api.getCommentList(momentId)
+    return res.code === 200 ? res.data : []
+  } catch (e) {
+    console.log('获取评论列表失败：', e)
+    return []
+  }
+}
+
+// 发表评论
+export const addComment = async (data) => {
+  try {
+    const res = await api.addComment(data)
+    return res.code === 200 ? res.data : null
+  } catch (e) {
+    throw new Error(e.message || '发表评论失败')
+  }
+}
+
+// 删除评论
+export const deleteComment = async (commentId) => {
+  try {
+    const res = await api.deleteComment(commentId)
+    return res.code === 200
+  } catch (e) {
+    throw new Error(e.message || '删除评论失败')
   }
 }

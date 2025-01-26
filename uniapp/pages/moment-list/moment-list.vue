@@ -26,9 +26,10 @@
         :key="moment.id"
         :id="`moment-${moment.id}`"
         class="moment-item"
+        @click="goToMomentDetail(moment.id)"
       >
         <!-- 用户信息 -->
-        <view class="user-info">
+        <view class="user-info" @click.stop>
           <image :src="userInfo.avatarUrl" mode="aspectFill" class="avatar"></image>
           <text class="nickname">{{userInfo.nickname}}</text>
         </view>
@@ -40,6 +41,7 @@
           :autoplay="false"
           :duration="500"
           :circular="true"
+          @click.stop
         >
           <swiper-item v-for="media in moment.list" :key="media.id">
             <video
@@ -62,18 +64,46 @@
         <!-- 互动数据 -->
         <view class="interaction">
           <view class="stats">
-            <view class="item">
+            <view class="item" @click.stop="handleLike(moment)">
+              <image 
+                :src="moment.isLiked ? '/static/images/liked.png' : '/static/images/like.png'" 
+                mode="aspectFit" 
+                class="like-icon"
+              ></image>
               <text class="count">{{moment.likesCount || 0}}</text>
               <text class="label">点赞</text>
             </view>
             <view class="item">
-              <text class="count">{{moment.commentsCount || 0}}</text>
+              <image src="/static/images/pinglun.png" mode="aspectFit" class="comment-icon"></image>
+              <!-- <text class="count">{{moment.commentsCount || 0}}</text> -->
               <text class="label">评论</text>
             </view>
           </view>
           <view class="time-location">
             <text class="time">{{(moment.createdAt)}}</text>
             <text class="location" v-if="moment.location">{{moment.location}}</text>
+          </view>
+        </view>
+
+        <!-- 评论列表 -->
+        <view class="comments" v-if="moment.comments && moment.comments.length > 0">
+          <view 
+            class="comment-item"
+            v-for="(comment, index) in moment.comments.slice(0, 3)"
+            :key="comment.id"
+          >
+            <view class="comment-user">
+              <view class="comment-info">
+                <view class="comment-content">
+                  <text class="comment-nickname">{{comment.userNickname}}</text>
+                  <text v-if="comment.replyToNickname" class="reply-to">回复 {{comment.replyToNickname}}：</text>
+                  {{comment.content}}
+                </view>
+              </view>
+            </view>
+          </view>
+          <view class="more-comments" v-if="moment.comments.length > 3">
+            <text>查看全部{{moment.comments.length}}条评论</text>
           </view>
         </view>
       </view>
@@ -84,7 +114,12 @@
 <script setup>
 import { ref, onMounted, watch, nextTick } from 'vue'
 import { formatTime } from '@/utils/date.js'
-import { getMomentList, getMomentListByUserId } from '@/api/user.js'
+import { 
+  getMomentList, 
+  getMomentListByUserId, 
+  likeMoment, 
+  unlikeMoment
+} from '@/api/user.js'
 
 const userInfo = ref({})
 const momentList = ref([])
@@ -93,6 +128,10 @@ const scrollTop = ref(0)
 const refreshing = ref(false)
 const loading = ref(false)
 const loadingStatus = ref('more')
+const showCommentInput = ref(false)
+const currentMoment = ref(null)
+const replyTo = ref(null)
+const commentContent = ref('')
 
 // 获取动态列表
 const loadMoments = async (userId) => {
@@ -104,6 +143,7 @@ const loadMoments = async (userId) => {
     } else {
       res = await getMomentList()
     }
+    
     momentList.value = res || []
     
     // 获取要滚动到的动态ID
@@ -161,6 +201,34 @@ const initUserInfo = () => {
     avatarUrl: decodeURIComponent(options.avatarUrl || ''),
   }
   // console.log(options)
+}
+
+// 处理点赞
+const handleLike = async (moment) => {
+  try {
+    if (moment.isLiked) {
+      await unlikeMoment(moment.id)
+      moment.isLiked = false
+      moment.likesCount = (moment.likesCount || 1) - 1
+    } else {
+      await likeMoment(moment.id)
+      moment.isLiked = true
+      moment.likesCount = (moment.likesCount || 0) + 1
+    }
+  } catch (error) {
+    console.log('点赞操作失败：', error)
+    uni.showToast({
+      title: error.message || '操作失败',
+      icon: 'none'
+    })
+  }
+}
+
+// 跳转到动态详情页
+const goToMomentDetail = (momentId) => {
+  uni.navigateTo({
+    url: `/pages/moment-detail/moment-detail?momentId=${momentId}`
+  })
 }
 
 onMounted(() => {
@@ -265,6 +333,15 @@ onMounted(() => {
             align-items: center;
             gap: 8rpx;
             
+            .like-icon {
+              width: 40rpx;
+              height: 40rpx;
+            }
+            .comment-icon {
+              width: 40rpx;
+              height: 40rpx;
+            }
+            
             .count {
               font-size: 28rpx;
               color: #333;
@@ -288,6 +365,40 @@ onMounted(() => {
         }
       }
     }
+  }
+}
+
+.comments {
+  padding: 20rpx;
+  background: #f8f8f8;
+  
+  .comment-item {
+    margin-bottom: 12rpx;
+    
+    .comment-user {
+      .comment-info {
+        .comment-content {
+          font-size: 28rpx;
+          color: #333;
+          
+          .comment-nickname {
+            color: #007AFF;
+            margin-right: 8rpx;
+          }
+          
+          .reply-to {
+            color: #007AFF;
+            margin-right: 8rpx;
+          }
+        }
+      }
+    }
+  }
+  
+  .more-comments {
+    font-size: 26rpx;
+    color: #666;
+    padding: 10rpx 0;
   }
 }
 </style> 
