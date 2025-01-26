@@ -72,6 +72,8 @@ public class MomentDTO extends Moment {
 
     private String mediaType;
 
+    private Boolean isLike=false;
+
     public MomentDTO(Moment moment, List<MomentMedia> list) {
         this.id = moment.getId();
         this.userId = moment.getUserId();
