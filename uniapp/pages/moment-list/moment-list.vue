@@ -86,10 +86,10 @@
         </view>
 
         <!-- 评论列表 -->
-        <view class="comments" v-if="moment.comments && moment.comments.length > 0">
+        <view class="comments" v-if="moment.momentComments && moment.momentComments.length > 0">
           <view 
             class="comment-item"
-            v-for="(comment, index) in moment.comments.slice(0, 3)"
+            v-for="(comment, index) in moment.momentComments"
             :key="comment.id"
           >
             <view class="comment-user">
@@ -200,7 +200,7 @@ const initUserInfo = () => {
     nickname: decodeURIComponent(options.nickname || ''),
     avatarUrl: decodeURIComponent(options.avatarUrl || ''),
   }
-  // console.log(options)
+  console.log(options)
 }
 
 // 处理点赞

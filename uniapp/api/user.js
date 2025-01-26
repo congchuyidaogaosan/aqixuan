@@ -275,6 +275,16 @@ export const getUserInfo = (userId) => {
   })
 }
 
+// 获取用户信息有头像
+export const getUserInfoById = (id) => {
+  return request({
+    url: `/user/findById`,
+    method: 'GET',
+    params: { id }
+  })
+}
+
+
 // 获取用户头像列表
 export const getUserAvatars = (userId) => {
   return request({

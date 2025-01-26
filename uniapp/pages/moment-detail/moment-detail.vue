@@ -144,7 +144,7 @@ import {
   unlikeMoment,
   addComment,
   deleteComment,
-  getUserInfo
+  getUserInfoById
 } from '@/api/user.js'
 
 const momentDetail = ref(null)
@@ -172,12 +172,14 @@ const loadMomentDetail = async () => {
     const res = await getMomentDetail(momentId)
     if (res && res.length > 0) {
       // 获取用户信息
-      const userRes = await getUserInfo(res[0].userId)
-      
+      const userRes = await getUserInfoById(res[0].userId)
+      console.log(userRes)
+
+
       momentDetail.value = {
         ...res[0],
-        userNickname: userRes.nickname,
-        userAvatarUrl: userRes.avatarUrl,
+        userNickname: userRes.data[0].nickname,
+        userAvatarUrl: userRes.data[0].handImg,
         isLiked: false, // TODO: 需要后端返回是否已点赞
       }
     }
