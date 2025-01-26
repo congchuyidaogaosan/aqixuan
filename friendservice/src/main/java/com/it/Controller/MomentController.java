@@ -55,6 +55,16 @@ public class MomentController {
 
     }
 
+
+    @GetMapping("detail/{id}")
+    public Result detail(@PathVariable("id") Integer id, HttpSession session) {
+
+        List<MomentDTO> list = momentService.ListMomentDTOByID(Integer.toString(id));
+        return Result.ok(list);
+
+    }
+
+
     @PostMapping("save")
     public Result save(@RequestBody MomentDTO moment, HttpServletRequest request) {
 

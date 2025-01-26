@@ -41,13 +41,25 @@ public class MomentServiceImpl extends ServiceImpl<MomentMapper, Moment>
             MomentDTO momentDTO = new MomentDTO(moment, list);
             arrayList.add(momentDTO);
         }
-
-//        lambdaWrapper.selectAll(Moment.class).select(MomentMedia::getMediaUrl).select(MomentMedia::getMediaType)
-//                .leftJoin(Moment.class, Moment::getId, MomentMedia::getMomentId);
-//        List<MomentDTO> list = momentMapper.selectJoinList(MomentDTO.class, lambdaWrapper);
-
         return arrayList;
     }
+
+    @Override
+    public List<MomentDTO> ListMomentDTOByID(String id) {
+        QueryWrapper<Moment> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("id", id);
+        List<Moment> moments = momentMapper.selectList(queryWrapper);
+        List<MomentDTO> arrayList = new ArrayList<>();
+        for (Moment moment : moments) {
+            QueryWrapper<MomentMedia> momentMediaQueryWrapper = new QueryWrapper<>();
+            momentMediaQueryWrapper.eq("moment_id", moment.getId());
+            List<MomentMedia> list = momentMediaService.list(momentMediaQueryWrapper);
+            MomentDTO momentDTO = new MomentDTO(moment, list);
+            arrayList.add(momentDTO);
+        }
+        return arrayList;
+    }
+
 }
 
 

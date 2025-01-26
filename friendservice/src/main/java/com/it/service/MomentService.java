@@ -12,4 +12,7 @@ import java.util.List;
 public interface MomentService extends IService<Moment> {
 
     List<MomentDTO> ListMomentDTO(String userId);
+
+    List<MomentDTO>    ListMomentDTOByID(String id);
+
 }
