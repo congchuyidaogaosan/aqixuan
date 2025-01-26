@@ -85,18 +85,15 @@ public class MomentServiceImpl extends ServiceImpl<MomentMapper, Moment>
 
             List<MomentComment> moment_id = momentCommentService.list(new QueryWrapper<MomentComment>().eq("moment_id", moment.getId()));
 
-
             for (MomentComment momentComment:moment_id){
                 User byId = userAvatarService.findById(momentComment.getUserId());
                 momentComment.setNickname(byId.getNickname());
                 momentComment.setHandImg(byId.getHandImg());
             }
 
-
-            List<MomentCommentTree> tree = treeUtil.createTree(moment_id, 1);
-            MomentCommentTree commentTree = new MomentCommentTree();
-            commentTree.setMomentCommentTree(tree);
-            momentDTO.setMomentCommentTree(commentTree);
+            List<MomentCommentTree> tree = treeUtil.getDetailTree(moment_id,moment.getId());
+           
+            momentDTO.setMomentCommentTree(tree);
             arrayList.add(momentDTO);
 
 

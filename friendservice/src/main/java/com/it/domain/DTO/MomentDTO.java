@@ -51,7 +51,7 @@ public class MomentDTO extends Moment {
      */
     private Integer commentsCount;
 
-    private MomentCommentTree momentCommentTree;
+    private List<MomentCommentTree> momentCommentTree;
     /**
      *
      */

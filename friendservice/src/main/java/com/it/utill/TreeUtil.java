@@ -15,8 +15,7 @@ import java.util.List;
 public class TreeUtil {
 
 
-    public List<MomentCommentTree> createTree(List<MomentComment> commentList, int pid) {
-
+    public List<MomentCommentTree> getDetailTree(List<MomentComment> commentList,int pid){
         List<MomentCommentTree> commentTreeList =new ArrayList<>();
         for (MomentComment momentComment:commentList){
             MomentCommentTree vo = new MomentCommentTree();
@@ -31,12 +30,14 @@ public class TreeUtil {
         if (commentList.size()==1){
             return commentTreeList;
         }
+       return createTree(commentTreeList,pid);
+    }
+
+    public List<MomentCommentTree> createTree(List<MomentCommentTree> commentList, int pid) {
 
         LinkedList<MomentCommentTree> momentComments = new LinkedList<>();
 
-
-
-        for (MomentCommentTree commentTree : commentTreeList) {
+        for (MomentCommentTree commentTree : commentList) {
             if (commentTree.getParentId() == pid) {
                 commentTree.setMomentCommentTree(createTree(commentList, commentTree.getId()));
             }
