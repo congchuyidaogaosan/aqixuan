@@ -5,9 +5,11 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.it.domain.DTO.MomentDTO;
 import com.it.domain.Follow;
 import com.it.domain.Moment;
+import com.it.domain.MomentLike;
 import com.it.domain.MomentMedia;
 import com.it.domain.common.Result;
 import com.it.service.FollowService;
+import com.it.service.MomentLikeService;
 import com.it.service.MomentMediaService;
 import com.it.service.MomentService;
 import com.it.utill.TokenUtil;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +33,8 @@ public class MomentController {
 
     @Autowired
     private MomentMediaService momentMediaService;
+
+
 
     @Autowired
     private TokenUtil tokenUtil;
@@ -60,6 +65,7 @@ public class MomentController {
     public Result detail(@PathVariable("id") Integer id, HttpSession session) {
 
         List<MomentDTO> list = momentService.ListMomentDTOByID(Integer.toString(id));
+
         return Result.ok(list);
 
     }

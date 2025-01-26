@@ -5,7 +5,9 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.it.domain.Moment;
+import com.it.domain.MomentComment;
 import com.it.domain.MomentMedia;
+import com.it.domain.tree.MomentCommentTree;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -49,6 +51,7 @@ public class MomentDTO extends Moment {
      */
     private Integer commentsCount;
 
+    private MomentCommentTree momentCommentTree;
     /**
      *
      */
@@ -67,6 +70,7 @@ public class MomentDTO extends Moment {
 
     private List<MomentMedia> list;
 
+    private List<MomentComment> momentComments;
 
     private String mediaUrl;
 
