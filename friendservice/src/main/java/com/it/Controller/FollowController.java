@@ -123,6 +123,7 @@ public class FollowController {
     public Result getGuanZhuList(HttpServletRequest request, FollowQuery followQuery) {
         String token = request.getHeader("token");
         Map<String, String> stringStringMap = tokenUtil.parseToken(token);
+        //我的ID
         String userId = stringStringMap.get("userId");
 
 

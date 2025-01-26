@@ -48,8 +48,8 @@ const getLocation = async () => {
     type: 'gcj02', // 微信小程序使用gcj02
     success: (res) => {
       location.value = {
-        latitude: res.latitude,
-        longitude: res.longitude
+        longitude: res.longitude,
+		latitude: res.latitude
       }
       console.log('位置信息：', location.value)
       updateUserLocation(location.value)
@@ -65,7 +65,7 @@ const getLocation = async () => {
 const updateUserLocation = async (location) => {
   try {
       await updateUser({
-        ipAddress: location.latitude+","+location.longitude
+        ipAddress: location.longitude+","+location.latitude
       })
   } catch (error) {
     console.log('更新位置失败：', error)

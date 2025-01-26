@@ -115,19 +115,56 @@
       </view>
 
     <!-- 动态列表 -->
-    <view class="moments">
-      <view class="section-title">动态</view>
-      <view class="moment-list">
-        <view 
-          class="moment-item" 
-          v-for="(item, index) in moments" 
-          :key="index"
-          @click="goToMomentDetail(item.id)"
-        >
-          <image :src="item.image" mode="aspectFill" class="moment-image"></image>
-        </view>
+    <scroll-view 
+      class="moment-list"
+      scroll-y
+      @scrolltolower="loadMore"
+      :refresher-enabled="true"
+      :refresher-triggered="refreshing"
+      @refresherrefresh="refresh"
+    >
+      <!-- 空状态 -->
+      <view class="empty-state" v-if="!loading && momentList.length === 0">
+        <image 
+          src="/static/images/empty-moment.png" 
+          mode="aspectFit" 
+          class="empty-image"
+        ></image>
+        <text class="empty-text">还没有发布任何动态哦~</text>
       </view>
-    </view>
+      
+      <!-- 动态列表 -->
+      <template v-else>
+        <!-- 媒体网格 -->
+        <view class="media-grid">
+          <template v-for="moment in momentList" :key="moment.id">
+            <template v-if="moment.list && moment.list.length">
+              <template v-for="(media, index) in moment.list" :key="media.id">
+                <video
+                  v-if="media.mediaType === '2'"
+                  :src="media.mediaUrl"
+                  class="media-item"
+                  :controls="true"
+                  :show-center-play-btn="true"
+                  object-fit="cover"
+                  @click="goToMomentList(moment.id)"
+                ></video>
+                <image 
+                  v-else
+                  :src="media.mediaUrl"
+                  mode="aspectFill"
+                  class="media-item"
+                  @click="goToMomentList(moment.id)"
+                ></image>
+              </template>
+            </template>
+          </template>
+        </view>
+        
+        <!-- 加载更多 -->
+        <uni-load-more :status="loadingStatus" :content-text="loadMoreText"></uni-load-more>
+      </template>
+    </scroll-view>
     
     <!-- 底部按钮 -->
     <view class="bottom-btns">
@@ -168,8 +205,11 @@ import {
   followUser,
   unfollowUser,
   checkFollow,
+  getMomentList,
+  getMomentListByUserId
 } from '@/api/user.js'
 import { calculateDistance, formatDistance, parseLocation } from '@/utils/distance.js'
+// import { formatTime } from '@/utils/date.js'
 
 // 用户信息
 const userInfo = ref({
@@ -190,7 +230,7 @@ const userInfo = ref({
 const fansCount = ref(0)
 const distance = ref('') // 距离
 const ipLocation = ref('') // IP地址
-const moments = ref([]) // 动态列表
+const momentList = ref([])
 const isMyProfile = ref(false) // 是否是我的主页
 
 // 设备宽度
@@ -218,6 +258,18 @@ const constellations = {
 // 关注状态
 const isFollowed = ref(false)
 const followed = ref({})
+
+// 动态列表数据
+const loadingStatus = ref('more')
+const refreshing = ref(false)
+const loading = ref(false)
+
+const loadMoreText = {
+  contentdown: '上拉加载更多',
+  contentrefresh: '加载中...',
+  contentnomore: '没有更多了'
+}
+
 // 监听轮播图变化
 const handleChange = (e) => {
   currentIndex.value = e.detail.current
@@ -367,10 +419,73 @@ const loadUserInfo = async (userId) => {
   }
 }
 
-// 跳转到动态详情
-const goToMomentDetail = (id) => {
+// 获取动态列表
+const loadMoments = async (userId, isRefresh = false) => {
+  if (loadingStatus.value === 'loading') return
+  
+  if (isRefresh) {
+    loading.value = true
+  } else {
+    loadingStatus.value = 'loading'
+  }
+  
+  try {
+    let res = []
+    if (userId) {
+      res = await getMomentListByUserId(userId)
+    } else {
+      res = await getMomentList()
+    }
+    const list = res || []
+    if (isRefresh) {
+      momentList.value = list
+    } else {
+      momentList.value.push(...list)
+    }
+    
+    // 由于返回的是完整列表，所以加载完就没有更多了
+    loadingStatus.value = 'noMore'
+  } catch (error) {
+    console.log('获取动态列表失败：', error)
+    uni.showToast({
+      title: '加载失败',
+      icon: 'none'
+    })
+    loadingStatus.value = 'more'
+  } finally {
+    loading.value = false
+    if (isRefresh) {
+      refreshing.value = false
+      uni.stopPullDownRefresh()
+    }
+  }
+}
+
+// 跳转到动态列表
+const goToMomentList = (momentId) => {
+  // 获取当前用户ID
+  const pages = getCurrentPages()
+  const currentPage = pages[pages.length - 1]
+  const currentUserId = currentPage.options?.userId || uni.getStorageSync('userInfo')?.id
+  
+  // 构建跳转参数
+  const params = {
+    userId: currentUserId,
+    nickname: userInfo.value.nickname,
+    avatarUrl: userInfo.value.avatars[0].avatarUrl,
+    momentId: momentId // 添加momentId参数
+  }
+  
+  console.log(userInfo.value)
+
+  // 将参数转换为查询字符串
+  const query = Object.entries(params)
+    .filter(([_, value]) => value !== undefined)
+    .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+    .join('&')
+  
   uni.navigateTo({
-    url: `/pages/moment-detail/moment-detail?id=${id}`
+    url: `/pages/moment-list/moment-list?${query}`
   })
 }
 
@@ -431,6 +546,17 @@ const handleFollow = async () => {
   }
 }
 
+// 加载更多
+const loadMore = () => {
+  loadMoments()
+}
+
+// 刷新
+const refresh = async () => {
+  refreshing.value = true
+  await loadMoments(true)
+}
+
 // 页面加载时获取用户信息和设备信息
 onMounted(() => {
   // 获取页面参数
@@ -443,12 +569,15 @@ onMounted(() => {
   
   // 获取用户信息
   loadUserInfo(userId)
+  // 获取动态列表
+  loadMoments(userId)
   getSystemInfo()
   
   // 如果不是自己的主页，检查关注状态
   if (!isMyProfile.value && userId) {
     checkFollowStatus(userId)
   }
+  
 })
 </script>
 
@@ -676,29 +805,41 @@ onMounted(() => {
     }
   }
   
-  .moments {
-    padding: 30rpx;
-    background: #fff;
+  .moment-list {
+    padding: 20rpx;
     
-    .section-title {
-      font-size: 32rpx;
-      font-weight: bold;
-      margin-bottom: 20rpx;
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-top: 200rpx;
+      
+      .empty-image {
+        width: 240rpx;
+        height: 240rpx;
+        margin-bottom: 20rpx;
+      }
+      
+      .empty-text {
+        font-size: 28rpx;
+        color: #999;
+      }
     }
     
-    .moment-list {
+    .media-grid {
       display: flex;
       flex-wrap: wrap;
       gap: 10rpx;
       
-      .moment-item {
-        width: 226rpx;
-        height: 226rpx;
+      .media-item {
+        width: calc((100% - 20rpx) / 3);  // 三列布局，减去间距
+        height: 220rpx;
+        border-radius: 8rpx;
         
-        .moment-image {
-          width: 100%;
-          height: 100%;
-          border-radius: 12rpx;
+        // 添加点击效果
+        &:active {
+          opacity: 0.8;
         }
       }
     }

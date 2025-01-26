@@ -35,19 +35,19 @@ public class MomentController {
     private TokenUtil tokenUtil;
 
     @RequestMapping("list")
-    public Result list(@RequestBody Moment moment, HttpServletRequest request) {
-
+    public Result list(HttpServletRequest request) {
 
         String token = request.getHeader("token");
         Map<String, String> stringStringMap = tokenUtil.parseToken(token);
         String userId = stringStringMap.get("userId");
+
         List<MomentDTO> list = momentService.ListMomentDTO(userId);
 
         return Result.ok(list);
 
     }
 
-    @GetMapping("find/{id}")
+    @GetMapping("find/{userId}")
     public Result find(@PathVariable("userId") Integer userId, HttpSession session) {
 
         List<MomentDTO> list = momentService.ListMomentDTO(Integer.toString(userId));

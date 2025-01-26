@@ -74,6 +74,12 @@
 				"navigationBarTitleText": "我的粉丝",
 				"enablePullDownRefresh": true
 			}
+		},
+		{
+			"path": "pages/moment-list/moment-list",
+			"style": {
+				"navigationStyle": "custom"
+			}
 		}
 	],
 	"globalStyle": {

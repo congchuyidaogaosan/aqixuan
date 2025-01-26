@@ -104,6 +104,23 @@ const api = {
       method: 'GET',
       params
     })
+  },
+
+  // 获取用户动态列表
+  getMomentList: () => {
+    return request({
+      url: '/Moment/list',
+      method: 'POST',
+      
+    })
+  },
+
+  // 获取用户动态列表
+  getMomentListByUserId: (userId) => {
+    return request({
+      url: `/Moment/find/${userId}`,
+      method: 'GET',
+    })
   }
 }
 
@@ -319,4 +336,26 @@ export const getFansList = async (params) => {
     console.log('获取粉丝列表失败：', e)
     return []
   }
+}
+
+// 获取用户动态列表
+export const getMomentList = async () => {
+  try {
+    const res = await api.getMomentList()
+    return res.code === 200 ? res.data : []
+  } catch (e) {
+    console.log('获取动态列表失败：', e)
+    return []
+  }
 } 
+
+// 获取用户动态列表
+export const getMomentListByUserId = async (userId) => {
+  try {
+    const res = await api.getMomentListByUserId(userId)
+    return res.code === 200 ? res.data : []
+  } catch (e) {
+    console.log('获取动态列表失败：', e)
+    return []
+  }
+}
