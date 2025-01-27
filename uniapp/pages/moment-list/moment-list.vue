@@ -66,7 +66,7 @@
           <view class="stats">
             <view class="item" @click.stop="handleLike(moment)">
               <image 
-                :src="moment.isLiked ? '/static/images/liked.png' : '/static/images/like.png'" 
+                :src="moment.isLike ? '/static/images/like.png' : '/static/images/liked.png'" 
                 mode="aspectFit" 
                 class="like-icon"
               ></image>
@@ -120,6 +120,10 @@ import {
   likeMoment, 
   unlikeMoment
 } from '@/api/user.js'
+
+const pages = getCurrentPages()
+  const currentPage = pages[pages.length - 1]
+  const userId = currentPage.options?.userId
 
 const userInfo = ref({})
 const momentList = ref([])
@@ -206,15 +210,13 @@ const initUserInfo = () => {
 // 处理点赞
 const handleLike = async (moment) => {
   try {
-    if (moment.isLiked) {
-      await unlikeMoment(moment.id)
-      moment.isLiked = false
-      moment.likesCount = (moment.likesCount || 1) - 1
-    } else {
+    if (moment.isLike) {
       await likeMoment(moment.id)
-      moment.isLiked = true
-      moment.likesCount = (moment.likesCount || 0) + 1
+    } else {
+      await unlikeMoment(moment.id)
     }
+    // 刷新列表
+    loadMoments(userId)
   } catch (error) {
     console.log('点赞操作失败：', error)
     uni.showToast({
@@ -232,9 +234,7 @@ const goToMomentDetail = (momentId) => {
 }
 
 onMounted(() => {
-  const pages = getCurrentPages()
-  const currentPage = pages[pages.length - 1]
-  const userId = currentPage.options?.userId
+  
   
   // 初始化用户信息
   initUserInfo()

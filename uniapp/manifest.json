@@ -1,47 +1,121 @@
 {
-    "name": "uniapp",
-    "appid": "",
-    "description": "",
-    "versionName": "1.0.0",
-    "versionCode": "100",
-    "transformPx": false,
-    "app-plus": {
-        "usingComponents": true,
-        "nvueStyleCompiler": "uni-app",
-        "compilerVersion": 3,
-        "splashscreen": {
-            "alwaysShowBeforeRender": true,
-            "waiting": true,
-            "autoclose": true,
-            "delay": 0
+    "name" : "uniapp",
+    "appid" : "__UNI__C77A770",
+    "description" : "",
+    "versionName" : "1.0.0",
+    "versionCode" : "100",
+    "transformPx" : false,
+    "app-plus" : {
+        "usingComponents" : true,
+        "nvueStyleCompiler" : "uni-app",
+        "compilerVersion" : 3,
+        "splashscreen" : {
+            "alwaysShowBeforeRender" : true,
+            "waiting" : true,
+            "autoclose" : true,
+            "delay" : 0
         },
-        "modules": {},
-        "distribute": {
-            "android": {
-                "permissions": []
+        "modules" : {
+            "Barcode" : {},
+            "Bluetooth" : {},
+            "Camera" : {},
+            "FaceID" : {},
+            "Geolocation" : {},
+            "Maps" : {},
+            "Push" : {}
+        },
+        "distribute" : {
+            "android" : {
+                "permissions" : []
             },
-            "ios": {},
-            "sdkConfigs": {}
+            "ios" : {},
+            "sdkConfigs" : {
+                "geolocation" : {
+                    "amap" : {
+                        "name" : "amapCGFsrCvn2",
+                        "__platform__" : [ "ios", "android" ],
+                        "appkey_ios" : "ca498aecc13c4cb3e25d19e57dfb009b",
+                        "appkey_android" : "398fa49ae85393fc115badaab88bafb5"
+                    },
+                    "system" : {
+                        "__platform__" : [ "ios", "android" ]
+                    }
+                },
+                "maps" : {
+                    "amap" : {
+                        "name" : "amapCGFsrCvn2",
+                        "appkey_ios" : "ca498aecc13c4cb3e25d19e57dfb009b",
+                        "appkey_android" : "398fa49ae85393fc115badaab88bafb5"
+                    }
+                },
+                "push" : {
+                    "unipush" : {
+                        "version" : "2",
+                        "offline" : false
+                    }
+                }
+            },
+            "icons" : {
+                "android" : {
+                    "hdpi" : "",
+                    "xhdpi" : "",
+                    "xxhdpi" : "",
+                    "xxxhdpi" : ""
+                },
+                "ios" : {
+                    "appstore" : "",
+                    "iphone" : {
+                        "app@2x" : "",
+                        "app@3x" : "",
+                        "spotlight@2x" : "",
+                        "spotlight@3x" : "",
+                        "settings@2x" : ""
+                    }
+                }
+            },
+            "splashscreen" : {
+                "androidStyle" : "common"
+            }
         }
     },
-    "quickapp": {},
-    "mp-weixin": {
-        "appid": "",
-        "setting": {
-            "urlCheck": false
+    "quickapp" : {},
+    "mp-weixin" : {
+        "appid" : "",
+        "setting" : {
+            "urlCheck" : false
         },
-        "usingComponents": true
-    },
-    "vueVersion": "3",
-    "h5": {
-        "title": "aqixuan",
-        "router": {
-            "mode": "hash"
+        "usingComponents" : true,
+        "unipush" : {
+            "enable" : true
+        },
+        "permission" : {
+            "scope.userLocation" : {
+                "desc" : "获取地理位置"
+            }
         }
     },
-    "permission": {
-        "scope.userLocation": {
-            "desc": "获取你的地理位置信息"
+    "vueVersion" : "3",
+    "h5" : {
+        "title" : "aqixuan",
+        "router" : {
+            "mode" : "hash"
+        },
+        "unipush" : {
+            "enable" : true
+        },
+        "sdkConfigs" : {
+            "maps" : {
+                "amap" : {
+                    "key" : "cbc165eb11799f54604d2a48d18b74c6",
+                    "securityJsCode" : "",
+                    "serviceHost" : ""
+                }
+            }
+        }
+    },
+    "permission" : {
+        "scope.userLocation" : {
+            "desc" : "获取你的地理位置信息"
         }
     }
 }

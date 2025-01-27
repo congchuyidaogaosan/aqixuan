@@ -65,7 +65,7 @@
           <view class="stats">
             <view class="item" @click="handleLike">
               <image 
-                :src="momentDetail.isLiked ? '/static/images/liked.png' : '/static/images/like.png'" 
+                :src="momentDetail.isLike ? '/static/images/like.png' : '/static/images/liked.png'" 
                 mode="aspectFit" 
                 class="like-icon"
               ></image>
@@ -89,31 +89,58 @@
         <view class="comment-header">
           <text class="title">评论 {{momentDetail?.commentsCount || 0}}</text>
         </view>
-        <view 
-          class="comment-item"
-          v-for="comment in momentDetail?.comments"
-          :key="comment.id"
-          :style="{ marginLeft: comment.parentId ? '40rpx' : '0' }"
-        >
-          <view class="comment-user">
-            <image :src="comment.userAvatarUrl" mode="aspectFill" class="comment-avatar"></image>
-            <view class="comment-info">
-              <view class="comment-nickname">{{comment.userNickname}}</view>
-              <view class="comment-content">
-                <text v-if="comment.replyToNickname" class="reply-to">回复 {{comment.replyToNickname}}：</text>
-                {{comment.content}}
+        <view class="comment-list">
+          <template v-for="comment in momentDetail?.momentCommentTree" :key="comment.id">
+            <view class="comment-item">
+              <view class="comment-user">
+                <image :src="comment.handImg" mode="aspectFill" class="comment-avatar"></image>
+                <view class="comment-info">
+                  <view class="comment-nickname">{{comment.nickname}}</view>
+                  <view class="comment-content">
+                    {{comment.content}}
+                  </view>
+                  <view class="comment-footer">
+                    <text class="comment-time">{{formatTime(comment.createdAt)}}</text>
+                    <text class="reply-btn" @click="showCommentBox(comment, comment.nickname)">回复</text>
+                    <text 
+                      v-if="comment.userId === userInfo.id" 
+                      class="delete-btn" 
+                      @click="handleDeleteComment(comment)"
+                    >删除</text>
+                  </view>
+                </view>
               </view>
-              <view class="comment-footer">
-                <text class="comment-time">{{formatTime(comment.createdAt)}}</text>
-                <text class="reply-btn" @click="showCommentBox(comment)">回复</text>
-                <text 
-                  v-if="comment.userId === userInfo.id" 
-                  class="delete-btn" 
-                  @click="handleDeleteComment(comment)"
-                >删除</text>
+              <!-- 递归渲染子评论 -->
+              <view 
+                class="sub-comments" 
+                v-if="comment.momentCommentTree && comment.momentCommentTree.length > 0"
+              >
+                <template v-for="subComment in comment.momentCommentTree" :key="subComment.id">
+                  <view class="comment-item">
+                    <view class="comment-user">
+                      <image :src="subComment.handImg" mode="aspectFill" class="comment-avatar"></image>
+                      <view class="comment-info">
+                        <view class="comment-nickname">{{subComment.nickname}}</view>
+                        <view class="comment-content">
+                          <text class="reply-to">回复 {{comment.nickname}}：</text>
+                          {{subComment.content}}
+                        </view>
+                        <view class="comment-footer">
+                          <text class="comment-time">{{formatTime(subComment.createdAt)}}</text>
+                          <text class="reply-btn" @click="showCommentBox(subComment, comment.nickname)">回复</text>
+                          <text 
+                            v-if="subComment.userId === userInfo.id" 
+                            class="delete-btn" 
+                            @click="handleDeleteComment(subComment)"
+                          >删除</text>
+                        </view>
+                      </view>
+                    </view>
+                  </view>
+                </template>
               </view>
             </view>
-          </view>
+          </template>
         </view>
       </view>
     </scroll-view>
@@ -173,13 +200,11 @@ const loadMomentDetail = async () => {
     if (res && res.length > 0) {
       // 获取用户信息
       const userRes = await getUserInfoById(res[0].userId)
-      console.log(userRes)
-
 
       momentDetail.value = {
         ...res[0],
-        userNickname: userRes.data[0].nickname,
-        userAvatarUrl: userRes.data[0].handImg,
+        userNickname: userRes.data.nickname,
+        userAvatarUrl: userRes.data.handImg,
         isLiked: false, // TODO: 需要后端返回是否已点赞
       }
     }
@@ -197,15 +222,15 @@ const loadMomentDetail = async () => {
 // 处理点赞
 const handleLike = async () => {
   try {
-    if (momentDetail.value.isLiked) {
-      await unlikeMoment(momentDetail.value.id)
-      momentDetail.value.isLiked = false
-      momentDetail.value.likesCount = (momentDetail.value.likesCount || 1) - 1
-    } else {
+    if (momentDetail.value.isLike) {
       await likeMoment(momentDetail.value.id)
-      momentDetail.value.isLiked = true
-      momentDetail.value.likesCount = (momentDetail.value.likesCount || 0) + 1
+      
+    } else {
+      await unlikeMoment(momentDetail.value.id)
+      
     }
+    loadMomentDetail()
+
   } catch (error) {
     uni.showToast({
       title: error.message || '操作失败',
@@ -215,8 +240,11 @@ const handleLike = async () => {
 }
 
 // 显示评论框
-const showCommentBox = (comment = null) => {
-  replyTo.value = comment
+const showCommentBox = (comment = null, replyToNickname = null) => {
+  replyTo.value = {
+    ...comment,
+    replyToNickname
+  }
   showCommentInput.value = true
 }
 
@@ -242,7 +270,8 @@ const submitComment = async () => {
       momentId: momentDetail.value.id,
       content: commentContent.value,
       parentId: replyTo.value?.parentId || replyTo.value?.id || null,
-    //   replyToUserId: replyTo.value?.userId || null
+      replyToUserId: replyTo.value?.userId || null,
+      replyToNickname: replyTo.value?.replyToNickname || null
     }
 
     await addComment(data)
@@ -452,54 +481,63 @@ onMounted(() => {
         }
       }
       
-      .comment-item {
-        margin-bottom: 20rpx;
-        
-        .comment-user {
-          display: flex;
-          align-items: flex-start;
+      .comment-list {
+        .comment-item {
+          margin-bottom: 20rpx;
           
-          .comment-avatar {
-            width: 60rpx;
-            height: 60rpx;
-            border-radius: 50%;
-            margin-right: 16rpx;
-          }
-          
-          .comment-info {
-            flex: 1;
+          .comment-user {
+            display: flex;
+            align-items: flex-start;
             
-            .comment-nickname {
-              font-size: 26rpx;
-              color: #666;
-              margin-bottom: 8rpx;
+            .comment-avatar {
+              width: 60rpx;
+              height: 60rpx;
+              border-radius: 50%;
+              margin-right: 16rpx;
             }
             
-            .comment-content {
-              font-size: 28rpx;
-              color: #333;
-              margin-bottom: 8rpx;
+            .comment-info {
+              flex: 1;
               
-              .reply-to {
-                color: #007AFF;
-                margin-right: 8rpx;
+              .comment-nickname {
+                font-size: 26rpx;
+                color: #666;
+                margin-bottom: 8rpx;
               }
-            }
-            
-            .comment-footer {
-              display: flex;
-              align-items: center;
-              gap: 16rpx;
               
-              .comment-time {
+              .comment-content {
+                font-size: 28rpx;
+                color: #333;
+                margin-bottom: 8rpx;
+                
+                .reply-to {
+                  color: #007AFF;
+                }
+              }
+              
+              .comment-footer {
+                display: flex;
+                align-items: center;
+                gap: 20rpx;
                 font-size: 24rpx;
                 color: #999;
+                
+                .reply-btn, .delete-btn {
+                  color: #666;
+                }
               }
+            }
+          }
+          
+          .sub-comments {
+            margin-left: 76rpx;
+            margin-top: 16rpx;
+            
+            .comment-item {
+              margin-bottom: 16rpx;
               
-              .reply-btn, .delete-btn {
-                font-size: 24rpx;
-                color: #666;
-                padding: 4rpx 8rpx;
+              &:last-child {
+                margin-bottom: 0;
               }
             }
           }
