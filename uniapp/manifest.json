@@ -34,8 +34,8 @@
                     "amap" : {
                         "name" : "amapCGFsrCvn2",
                         "__platform__" : [ "ios", "android" ],
-                        "appkey_ios" : "ca498aecc13c4cb3e25d19e57dfb009b",
-                        "appkey_android" : "398fa49ae85393fc115badaab88bafb5"
+                        "appkey_ios" : "164515b053e070f155d3fd55b58a578b",
+                        "appkey_android" : "cf9fad21e3d55f15acb6e7a8bad3604e"
                     },
                     "system" : {
                         "__platform__" : [ "ios", "android" ]
@@ -44,8 +44,8 @@
                 "maps" : {
                     "amap" : {
                         "name" : "amapCGFsrCvn2",
-                        "appkey_ios" : "ca498aecc13c4cb3e25d19e57dfb009b",
-                        "appkey_android" : "398fa49ae85393fc115badaab88bafb5"
+                        "appkey_ios" : "164515b053e070f155d3fd55b58a578b",
+                        "appkey_android" : "cf9fad21e3d55f15acb6e7a8bad3604e"
                     }
                 },
                 "push" : {
@@ -106,8 +106,8 @@
         "sdkConfigs" : {
             "maps" : {
                 "amap" : {
-                    "key" : "cbc165eb11799f54604d2a48d18b74c6",
-                    "securityJsCode" : "",
+                    "key" : "a21f508ee17b66065836350d335df33b",
+                    "securityJsCode" : "1dd26bd9b2e4fa1d26341defa9f950d6",
                     "serviceHost" : ""
                 }
             }
