@@ -6,11 +6,14 @@ import com.it.domain.MomentLike;
 import com.it.domain.UserAvatar;
 import com.it.domain.common.Result;
 import com.it.service.ActivityService;
+import com.it.utill.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("Activity")
@@ -18,7 +21,8 @@ public class ActivityController {
 
     @Autowired
     private ActivityService activityService;
-
+    @Autowired
+    private TokenUtil tokenUtil;
 
     @RequestMapping("list")
     public Result list(@RequestBody UserAvatar user) {
@@ -32,7 +36,7 @@ public class ActivityController {
         List<Activity> list = activityService.list(userAvatarQueryWrapper);
         return Result.ok(list);
     }
-
+    
 
     @GetMapping("find/{id}")
     public Result find(@PathVariable("id") Integer id, HttpSession session) {
@@ -43,10 +47,16 @@ public class ActivityController {
     }
 
     @PostMapping("save")
-    public Result save(@RequestBody Activity momentLike) {
+    public Result save(@RequestBody Activity activity, HttpServletRequest request) {
+        //更新
+        String token = request.getHeader("token");
 
-        boolean b = activityService.save(momentLike);
-        Activity byId = activityService.getById(momentLike.getId());
+        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
+
+        String userId = stringStringMap.get("userId");
+        activity.setUserId(Integer.parseInt(userId));
+        boolean b = activityService.save(activity);
+        Activity byId = activityService.getById(activity.getId());
 
         return Result.ok(byId);
     }

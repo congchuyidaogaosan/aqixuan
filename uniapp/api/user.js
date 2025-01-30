@@ -174,6 +174,15 @@ const api = {
       method: 'POST',
       data: { commentId }
     })
+  },
+
+  // 发布活动
+  publishActivity: (data) => {
+    return request({
+      url: '/Activity/save',
+      method: 'POST',
+      data
+    })
   }
 }
 
@@ -482,5 +491,15 @@ export const deleteComment = async (commentId) => {
     return res.code === 200
   } catch (e) {
     throw new Error(e.message || '删除评论失败')
+  }
+}
+
+// 发布活动
+export const publishActivity = async (data) => {
+  try {
+    const res = await api.publishActivity(data)
+    return res.code === 200 ? res.data : null
+  } catch (e) {
+    throw new Error(e.message || '发布活动失败')
   }
 }

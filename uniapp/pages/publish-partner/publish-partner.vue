@@ -15,7 +15,9 @@
       <view class="form-item" @click="showActivityTypePopup">
         <view class="label">活动类型</view>
         <view class="value">
-          <text :class="{'placeholder': !formData.activityType}">{{formData.activityType || '请选择活动类型'}}</text>
+          <text :class="{'placeholder': formData.activityType === ''}">
+            {{formData.activityType !== '' ? activityTypes.find(t => t.value === formData.activityType)?.label : '请选择活动类型'}}
+          </text>
           <image src="/static/images/arrow-right.png" mode="aspectFit" class="arrow-icon"></image>
         </view>
       </view>
@@ -47,7 +49,7 @@
         <view class="input-item">
           <input 
             type="number" 
-            v-model="formData.peopleCount"
+            v-model="formData.totalNumber"
             placeholder="请填写活动人数(含发起人)"
             placeholder-class="placeholder"
           />
@@ -55,47 +57,28 @@
         
         <!-- 活动时间 -->
         <view class="time-section">
-          <view class="time-type">
-            <text 
-              :class="['type-btn', {'active': formData.timeType === 'specific'}]"
-              @click="formData.timeType = 'specific'"
-            >具体时间</text>
-            <text 
-              :class="['type-btn', {'active': formData.timeType === 'long'}]"
-              @click="formData.timeType = 'long'"
-            >长期</text>
+          <view class="time-picker">
+            <text class="label">开始时间</text>
+            <view class="picker-wrapper" @click="showTimePicker('start')">
+              <view class="picker-group">
+                <view :class="{'placeholder': !formData.startTime}">
+                  {{formData.startTime ? formatDateTimeString(formData.startTime) : '选择时间'}}
+                </view>
+              </view>
+              <image src="/static/images/arrow-right.png" mode="aspectFit" class="arrow-icon"></image>
+            </view>
           </view>
-          
-          <block v-if="formData.timeType === 'specific'">
-            <view class="time-picker">
-              <text class="label">开始时间</text>
-              <view class="picker-wrapper" @click="showTimePicker('start')">
-                <view class="picker-group">
-                  <view :class="{'placeholder': !formData.startDate}">
-                    {{formData.startDate || '选择日期'}}
-                  </view>
-                  <view :class="{'placeholder': !formData.startTime}">
-                    {{formData.startTime || '选择时间'}}
-                  </view>
+          <view class="time-picker">
+            <text class="label">结束时间</text>
+            <view class="picker-wrapper" @click="showTimePicker('end')">
+              <view class="picker-group">
+                <view :class="{'placeholder': !formData.endTime}">
+                  {{formData.endTime ? formatDateTimeString(formData.endTime) : '选择时间'}}
                 </view>
-                <image src="/static/images/arrow-right.png" mode="aspectFit" class="arrow-icon"></image>
               </view>
+              <image src="/static/images/arrow-right.png" mode="aspectFit" class="arrow-icon"></image>
             </view>
-            <view class="time-picker">
-              <text class="label">结束时间</text>
-              <view class="picker-wrapper" @click="showTimePicker('end')">
-                <view class="picker-group">
-                  <view :class="{'placeholder': !formData.endDate}">
-                    {{formData.endDate || '选择日期'}}
-                  </view>
-                  <view :class="{'placeholder': !formData.endTime}">
-                    {{formData.endTime || '选择时间'}}
-                  </view>
-                </view>
-                <image src="/static/images/arrow-right.png" mode="aspectFit" class="arrow-icon"></image>
-              </view>
-            </view>
-          </block>
+          </view>
         </view>
         
         <!-- 活动地点 -->
@@ -111,27 +94,48 @@
         <view class="cost-section">
           <view class="cost-type">
             <text 
-              :class="['type-btn', {'active': formData.costType === 'free'}]"
-              @click="formData.costType = 'free'"
+              :class="['type-btn', {'active': formData.costType === 0}]"
+              @click="handleCostTypeChange('free')"
             >免费</text>
             <text 
-              :class="['type-btn', {'active': formData.costType === 'aa'}]"
-              @click="formData.costType = 'aa'"
+              :class="['type-btn', {'active': formData.costType === 1}]"
+              @click="handleCostTypeChange('aa')"
             >AA</text>
             <text 
-              :class="['type-btn', {'active': formData.costType === 'other'}]"
-              @click="formData.costType = 'other'"
+              :class="['type-btn', {'active': formData.costType === 2}]"
+              @click="handleCostTypeChange('other')"
             >其他</text>
           </view>
           
-          <view class="deposit-input" v-if="formData.costType === 'other'">
+          <view class="deposit-input" v-if="formData.costType === 1 || formData.costType === 2">
             <input 
               type="digit" 
-              v-model="formData.deposit"
-              placeholder="请输入金额"
+              v-model="formData.cost"
+              :placeholder="formData.costType === 1 ? '请输入总费用（将平均分配）' : '请输入总费用金额'"
               placeholder-class="placeholder"
             />
             <text class="unit">元</text>
+          </view>
+          
+          <view class="cost-tip" v-if="formData.costType === 1">
+            <text>每人预计支付：{{calculateAACost}}元</text>
+          </view>
+
+          <!-- 添加鸽子费输入框 -->
+          <view class="penalty-section" v-if="formData.costType !== 0">
+            <view class="penalty-title">
+              <text>鸽子费设置</text>
+              <text class="penalty-tip">（报名后不参加将扣除该费用）</text>
+            </view>
+            <view class="deposit-input">
+              <input 
+                type="digit" 
+                v-model="formData.penaltyCost"
+                placeholder="请输入鸽子费金额"
+                placeholder-class="placeholder"
+              />
+              <text class="unit">元</text>
+            </view>
           </view>
         </view>
         
@@ -168,7 +172,7 @@
             :key="type.value"
             @click="selectActivityType(type)"
           >
-            <text :class="{'active': formData.activityType === type.label}">{{type.label}}</text>
+            <text :class="{'active': formData.activityType === type.value}">{{type.label}}</text>
           </view>
         </view>
       </view>
@@ -234,8 +238,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-
+import { ref, onMounted, computed } from 'vue'
+import { publishActivity } from '@/api/user'
 // 获取当前时间作为默认值
 const now = new Date()
 const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
@@ -257,32 +261,52 @@ const formatTime = (date) => {
   return `${hour}:${minute}`
 }
 
+// 格式化日期时间为指定格式
+const formatDateTimeString = (date) => {
+  if (!date) return ''
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const hour = String(d.getHours()).padStart(2, '0')
+  const minute = String(d.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hour}:${minute}`
+}
+
+// 计算AA费用
+const calculateAACost = computed(() => {
+  if (formData.value.costType !== 1 || !formData.value.cost || !formData.value.totalNumber) {
+    return '0.00'
+  }
+  const perPersonCost = parseFloat(formData.value.cost) / parseInt(formData.value.totalNumber)
+  return perPersonCost.toFixed(2)
+})
+
 // 表单数据
 const formData = ref({
   activityType: '',
   visibility: '公开',
   title: '',
-  peopleCount: '',
-  timeType: 'specific',
-  startDate: formatDate(now),
-  startTime: formatTime(now),
-  endDate: formatDate(tomorrow),
-  endTime: formatTime(now),
+  totalNumber: '',
+  currentNumber: 1,
+  startTime: '',
+  endTime: '',
   location: '',
-  costType: 'free',
-  deposit: '',
+  costType: 0,
+  cost: 0,
+  penaltyCost: 0,
   description: ''
 })
 
 // 活动类型选项
 const activityTypes = [
-  { label: '运动', value: 'sports' },
-  { label: '游戏', value: 'games' },
-  { label: '旅行', value: 'travel' },
-  { label: '学习', value: 'study' },
-  { label: '美食', value: 'food' },
-  { label: '电影', value: 'movie' },
-  { label: '其他', value: 'other' }
+  { label: '运动', value: 0 },
+  { label: '游戏', value: 1 },
+  { label: '旅行', value: 2 },
+  { label: '学习', value: 3 },
+  { label: '美食', value: 4 },
+  { label: '电影', value: 5 },
+  { label: '其他', value: 6 }
 ]
 
 // 可见范围选项
@@ -300,7 +324,7 @@ const hideActivityTypePopup = () => {
   activityTypePopup.value.close()
 }
 const selectActivityType = (type) => {
-  formData.value.activityType = type.label
+  formData.value.activityType = type.value
   hideActivityTypePopup()
 }
 
@@ -373,13 +397,18 @@ const updateDays = () => {
       {length: daysInMonth - currentDate.getDate() + 1}, 
       (_, i) => currentDate.getDate() + i
     )
-    // 如果当前选择的日期小于当前日期，重置为当前日期
-    if (currentDateTimeIndexes.value[2] < currentDate.getDate() - 1) {
-      currentDateTimeIndexes.value[2] = 0 // 重置为当前可选日期的第一个
+    // 如果当前选择的日期超出了当月天数或小于当前日期，重置为第一个可选日期
+    if (currentDateTimeIndexes.value[2] >= days.value.length || 
+        currentDateTimeIndexes.value[2] < 0) {
+      currentDateTimeIndexes.value[2] = 0
     }
   } else {
     // 如果是未来年月，显示所有日期
     days.value = Array.from({length: daysInMonth}, (_, i) => i + 1)
+    // 如果当前选择的日期超出了当月天数，重置为当月最后一天
+    if (currentDateTimeIndexes.value[2] >= daysInMonth) {
+      currentDateTimeIndexes.value[2] = daysInMonth - 1
+    }
   }
   
   updateHours()
@@ -461,8 +490,6 @@ const onPickerChange = (e) => {
         case 3: // 小时变化
           updateMinutes()
           break
-        case 4: // 分钟变化
-          break
       }
       break
     }
@@ -473,8 +500,8 @@ const onPickerChange = (e) => {
 const showTimePicker = (type) => {
   currentTimeType.value = type
   let currentDate = type === 'start' ? 
-    new Date(`${formData.value.startDate} ${formData.value.startTime}`) :
-    new Date(`${formData.value.endDate} ${formData.value.endTime}`)
+    (formData.value.startTime ? new Date(formData.value.startTime) : new Date()) :
+    (formData.value.endTime ? new Date(formData.value.endTime) : new Date())
   
   // 如果时间早于当前时间，使用当前时间
   const now = new Date()
@@ -483,13 +510,25 @@ const showTimePicker = (type) => {
   }
   
   // 设置当前选中值
+  const yearIndex = years.value.indexOf(currentDate.getFullYear())
+  const monthIndex = months.value.indexOf(currentDate.getMonth() + 1)
+  const dayIndex = days.value.indexOf(currentDate.getDate())
+  const hourIndex = hours.value.indexOf(String(currentDate.getHours()).padStart(2, '0'))
+  const minuteIndex = minutes.value.indexOf(String(currentDate.getMinutes()).padStart(2, '0'))
+  
   currentDateTimeIndexes.value = [
-    years.value.indexOf(currentDate.getFullYear()),
-    currentDate.getMonth(),
-    currentDate.getDate() - 1,
-    currentDate.getHours(),
-    currentDate.getMinutes()
+    yearIndex >= 0 ? yearIndex : 0,
+    monthIndex >= 0 ? monthIndex : 0,
+    dayIndex >= 0 ? dayIndex : 0,
+    hourIndex >= 0 ? hourIndex : 0,
+    minuteIndex >= 0 ? minuteIndex : 0
   ]
+  
+  // 确保所有选项都已更新
+  updateMonths()
+  updateDays()
+  updateHours()
+  updateMinutes()
   
   timePopup.value.open()
 }
@@ -525,15 +564,11 @@ const confirmDateTime = () => {
     return
   }
   
-  const dateStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`
-  const timeStr = `${selectedHour}:${selectedMinute}`
-  
+  // 直接设置为Date对象
   if (currentTimeType.value === 'start') {
-    formData.value.startDate = dateStr
-    formData.value.startTime = timeStr
+    formData.value.startTime = selectedDate
   } else {
-    formData.value.endDate = dateStr
-    formData.value.endTime = timeStr
+    formData.value.endTime = selectedDate
   }
   
   validateTimeRange()
@@ -542,8 +577,10 @@ const confirmDateTime = () => {
 
 // 验证时间范围
 const validateTimeRange = () => {
-  const startDateTime = new Date(`${formData.value.startDate} ${formData.value.startTime}`)
-  const endDateTime = new Date(`${formData.value.endDate} ${formData.value.endTime}`)
+  if (!formData.value.startTime || !formData.value.endTime) return
+  
+  const startDateTime = new Date(formData.value.startTime)
+  const endDateTime = new Date(formData.value.endTime)
   
   if (endDateTime < startDateTime) {
     uni.showToast({
@@ -553,8 +590,7 @@ const validateTimeRange = () => {
     // 重置为开始时间后一小时
     const newEndTime = new Date(startDateTime)
     newEndTime.setHours(newEndTime.getHours() + 1)
-    formData.value.endDate = formatDate(newEndTime)
-    formData.value.endTime = formatTime(newEndTime)
+    formData.value.endTime = newEndTime
   }
 }
 
@@ -562,6 +598,7 @@ const validateTimeRange = () => {
 const chooseLocation = () => {
   uni.chooseLocation({
     success: (res) => {
+      console.log('选择地点成功：', res)
       formData.value.location = res.name
       formData.value.latitude = res.latitude
       formData.value.longitude = res.longitude
@@ -572,7 +609,7 @@ const chooseLocation = () => {
 // 发布活动
 const handlePublish = () => {
   // 表单验证
-  if (!formData.value.activityType) {
+  if (formData.value.activityType === '') {
     uni.showToast({
       title: '请选择活动类型',
       icon: 'none'
@@ -586,28 +623,19 @@ const handlePublish = () => {
     })
     return
   }
-  if (!formData.value.peopleCount) {
+  if (!formData.value.totalNumber || formData.value.totalNumber < 2) {
     uni.showToast({
-      title: '请填写活动人数',
+      title: '活动人数至少需要2人',
       icon: 'none'
     })
     return
   }
-  if (formData.value.timeType === 'specific') {
-    if (!formData.value.startDate) {
-      uni.showToast({
-        title: '请选择开始日期',
-        icon: 'none'
-      })
-      return
-    }
-    if (!formData.value.startTime) {
-      uni.showToast({
-        title: '请选择开始时间',
-        icon: 'none'
-      })
-      return
-    }
+  if (!formData.value.startTime || !formData.value.endTime) {
+    uni.showToast({
+      title: '请选择活动时间',
+      icon: 'none'
+    })
+    return
   }
   if (!formData.value.location) {
     uni.showToast({
@@ -616,9 +644,9 @@ const handlePublish = () => {
     })
     return
   }
-  if (formData.value.costType === 'other' && !formData.value.deposit) {
+  if ((formData.value.costType === 1 || formData.value.costType === 2) && !formData.value.cost) {
     uni.showToast({
-      title: '请输入费用金额',
+      title: '请输入活动费用',
       icon: 'none'
     })
     return
@@ -631,18 +659,59 @@ const handlePublish = () => {
     return
   }
 
-  // 组合完整的开始和结束时间
-  const startDateTime = `${formData.value.startDate} ${formData.value.startTime}`
-  const endDateTime = `${formData.value.endDate} ${formData.value.endTime}`
-  
+  // 转换数据类型并格式化日期
   const submitData = {
-    ...formData.value,
-    startDateTime,
-    endDateTime
+    // 活动类型
+    activityType: formData.value.activityType,
+    // 活动名称
+    title: formData.value.title,
+    // 活动介绍
+    description: formData.value.description,
+    // 经纬度拼接
+    location: formData.value.longitude + "," + formData.value.latitude,
+    // 活动人数
+    totalNumber: parseInt(formData.value.totalNumber),
+    // 当前人数
+    currentNumber: 1,
+    // 开始时间
+    startTime: formatDateTimeString(formData.value.startTime), // 转换为指定格式字符串
+    // 结束时间
+    endTime: formatDateTimeString(formData.value.endTime), // 转换为指定格式字符串
+    // 活动费用
+    cost: formData.value.cost ? parseFloat(formData.value.cost) : 0,
+    // 费用类型
+    costType: formData.value.costType,
+    // 鸽子费
+    penaltyCost: formData.value.penaltyCost ? parseFloat(formData.value.penaltyCost) : 0
   }
   
-  console.log('发布活动：', submitData)
-  // TODO: 调用发布接口
+  // 显示加载提示
+  uni.showLoading({
+    title: '发布中...',
+    mask: true
+  })
+  console.log('submitData', submitData)
+  
+  // 调用发布接口
+  publishActivity(submitData).then(res => {
+    uni.hideLoading()
+      uni.showToast({
+        title: '发布成功',
+        icon: 'success'
+      })
+      // 延迟返回上一页
+      setTimeout(() => {
+        uni.navigateBack()
+      }, 1500)
+    
+  }).catch(err => {
+    uni.hideLoading()
+    console.error('发布失败：', err)
+    uni.showToast({
+      title: '发布失败，请重试',
+      icon: 'none'
+    })
+  })
 }
 
 // 返回上一页
@@ -654,6 +723,27 @@ const goBack = () => {
 onMounted(() => {
   initTimePickerData()
 })
+
+// 处理费用类型变化
+const handleCostTypeChange = (type) => {
+  switch(type) {
+    case 'free':
+      formData.value.costType = 0
+      formData.value.cost = 0
+      formData.value.penaltyCost = 0
+      break
+    case 'aa':
+      formData.value.costType = 1
+      formData.value.cost = ''
+      formData.value.penaltyCost = 0
+      break
+    case 'other':
+      formData.value.costType = 2
+      formData.value.cost = ''
+      formData.value.penaltyCost = 0
+      break
+  }
+}
 </script>
 
 <style lang="less" scoped>
@@ -758,25 +848,6 @@ onMounted(() => {
       
       .time-section {
         padding: 20rpx 0;
-        
-        .time-type {
-          display: flex;
-          gap: 20rpx;
-          margin-bottom: 20rpx;
-          
-          .type-btn {
-            padding: 10rpx 30rpx;
-            font-size: 26rpx;
-            color: #666;
-            background: #f5f5f5;
-            border-radius: 30rpx;
-            
-            &.active {
-              color: #fff;
-              background: #007AFF;
-            }
-          }
-        }
         
         .time-picker {
           display: flex;
@@ -1021,6 +1092,36 @@ onMounted(() => {
       &.confirm-btn {
         background: #007AFF;
         color: #fff;
+      }
+    }
+  }
+}
+
+.cost-tip {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: #666;
+  padding-left: 10rpx;
+}
+
+.penalty-section {
+  margin-top: 30rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #f5f5f5;
+
+  .penalty-title {
+    margin-bottom: 20rpx;
+    display: flex;
+    align-items: center;
+    gap: 10rpx;
+
+    text {
+      font-size: 28rpx;
+      color: #333;
+
+      &.penalty-tip {
+        font-size: 24rpx;
+        color: #999;
       }
     }
   }
