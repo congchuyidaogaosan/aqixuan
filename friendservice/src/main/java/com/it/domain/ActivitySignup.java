@@ -21,22 +21,22 @@ public class ActivitySignup implements Serializable {
      * 
      */
     @TableId(type = IdType.AUTO)
-    private Long id;
+    private Integer id;
 
     /**
      * 活动ID
      */
-    private Long activityId;
+    private Integer activityId;
 
     /**
      * 报名用户ID
      */
-    private Long userId;
+    private Integer userId;
 
     /**
      * 状态：1待确认 2已确认 3已拒绝
      */
-    private Byte status;
+    private String status;
 
     /**
      * 

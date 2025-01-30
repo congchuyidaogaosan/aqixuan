@@ -4,6 +4,8 @@ import com.it.domain.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.it.domain.common.Result;
 
+import java.util.List;
+
 /**
  *
  */
@@ -11,5 +13,9 @@ public interface UserService extends IService<User> {
 
     Boolean isUserPhone(String phone);
 
-     Result infoUserPhone(String phone);
+    Result infoUserPhone(String phone);
+
+
+    List<User> joinUserAvatar(List<Integer> list);
+
 }

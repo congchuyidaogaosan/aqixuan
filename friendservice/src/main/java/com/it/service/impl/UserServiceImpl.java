@@ -2,7 +2,9 @@ package com.it.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.github.yulichang.wrapper.MPJLambdaWrapper;
 import com.it.domain.User;
+import com.it.domain.UserAvatar;
 import com.it.domain.common.Result;
 import com.it.service.UserService;
 import com.it.mapper.UserMapper;
@@ -24,6 +26,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Autowired
     private GenerateRandomNumber generateRandomNumber;
+
+    @Override
+    public List<User> joinUserAvatar(List<Integer> list) {
+        MPJLambdaWrapper<User> wrapper =new MPJLambdaWrapper<User>();
+        wrapper.selectAll(User.class).leftJoin(UserAvatar.class,UserAvatar::getUserId,User::getId);
+
+        for (Integer integer:list){
+            wrapper.in("t.id",integer);
+        }
+
+
+        List<User> objects = userMapper.selectJoinList(User.class,wrapper);
+
+        return objects;
+    }
 
     @Override
     public Boolean isUserPhone(String phone) {
