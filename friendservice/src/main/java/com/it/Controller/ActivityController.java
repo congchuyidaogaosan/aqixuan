@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.it.domain.*;
 import com.it.domain.DTO.ActivitySignupAndUser;
 import com.it.domain.common.Result;
+import com.it.domain.common.ResultCodeEnum;
 import com.it.service.ActivityService;
 import com.it.service.ActivitySignupService;
 import com.it.service.UserService;
@@ -68,6 +69,53 @@ public class ActivityController {
             }
         }
 
+        return Result.ok(activitySignupAndUsers);
+    }
+
+    /**
+     * 我发布过的活动（无参）
+     * @param request
+     * @return
+     */
+    @GetMapping("PublishTheEvent")
+    public Result PublishTheEvent(HttpServletRequest request) {
+
+        String token = request.getHeader("token");
+
+        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
+
+        String userId = stringStringMap.get("userId");
+        QueryWrapper<Activity> userAvatarQueryWrapper = new QueryWrapper<>();
+
+        if (userId != null && !userId.equals("")) {
+            userAvatarQueryWrapper.eq("user_id", userId);
+        }else {
+            return Result.fail(ResultCodeEnum.LOGIN_AUTH);
+        }
+
+
+
+        List<Activity> list = activityService.list(userAvatarQueryWrapper);
+        ArrayList<Integer> objects = new ArrayList<>();
+        for (Activity activitySignups : list) {
+            Integer id = activitySignups.getUserId();
+            objects.add(id);
+
+        }
+        List<User> users = userService.joinUserAvatar(objects);
+        HashMap<Integer, User> hashMap = new HashMap<>();
+
+        for (User user : users) {
+            hashMap.put(user.getId(), user);
+        }
+        ArrayList<ActivitySignupAndUser> activitySignupAndUsers = new ArrayList<>();
+
+        for (Activity activitySignup1 : list) {
+            if (hashMap.containsKey(activitySignup1.getUserId())) {
+                ActivitySignupAndUser activitySignupAndUser = new ActivitySignupAndUser(activitySignup1, hashMap.get(activitySignup1.getUserId()));
+                activitySignupAndUsers.add(activitySignupAndUser);
+            }
+        }
         return Result.ok(activitySignupAndUsers);
     }
 
