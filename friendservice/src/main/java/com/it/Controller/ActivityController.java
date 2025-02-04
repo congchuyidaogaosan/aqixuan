@@ -140,8 +140,15 @@ public class ActivityController {
     public Result find(@PathVariable("id") Integer id, HttpSession session) {
 
         Activity byId = activityService.getById(id);
+        List<ActivitySignup> activity_id=null;
+        try {
+            activity_id = activitySignupService.list(new QueryWrapper<ActivitySignup>().eq("activity_id", byId.getId()));
 
-        List<ActivitySignup> activity_id = activitySignupService.list(new QueryWrapper<ActivitySignup>().eq("activity_id", byId.getId()));
+        }catch (Exception e){
+            System.out.println(e);
+            return Result.ok("数据为null");
+        }
+
 
         ArrayList<Integer> objects = new ArrayList<>();
 
@@ -165,7 +172,7 @@ public class ActivityController {
             }
         }
 
-        return Result.ok(byId);
+        return Result.ok(activitySignupAndUsers);
 
     }
 
