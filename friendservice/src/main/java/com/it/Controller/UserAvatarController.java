@@ -70,8 +70,23 @@ public class UserAvatarController {
         UserAvatar byId = userAvatarService.getById(id);
 
         return Result.ok(byId);
-
     }
+
+    @GetMapping("tokenFind")
+    public Result tokenFind(HttpServletRequest request) {
+
+        String token = request.getHeader("token");
+
+        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
+
+        String userId = stringStringMap.get("userId");
+
+
+        UserAvatar byId = userAvatarService.getOne(new QueryWrapper<UserAvatar>().eq("user_id",userId).orderByDesc("created_at"));
+
+        return Result.ok(byId);
+    }
+
 
     @PostMapping("update")
     public Result update(@RequestBody UserAvatar user) {
