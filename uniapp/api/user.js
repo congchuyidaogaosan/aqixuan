@@ -193,9 +193,25 @@ const api = {
       method: 'POST',
       data: active
     })
+  },
+
+  // 获取活动详情
+  getActivityDetail: (id) => {
+    return request({
+      url: `/Activity/find/${id}`,
+      method: 'GET'
+    })
+  },
+
+  // 报名活动
+  joinActivity: (data) => {
+    return request({
+      url: '/ActivitySignup/signup',
+      method: 'POST',
+      data
+    })
   }
 }
-
 // 发送验证码
 export const sendSmsCode = async (phone) => {
   try {
@@ -522,5 +538,27 @@ export const getActivityList = async (current, size, active) => {
   } catch (e) {
     console.log('获取活动列表失败：', e)
     return []
+  }
+}
+
+// 获取活动详情
+export const getActivityDetail = async (id) => {
+  try {
+    const res = await api.getActivityDetail(id)
+    return res.code === 200 ? res.data : null
+  } catch (e) {
+    console.log('获取活动详情失败：', e)
+    return null
+  }
+}
+
+// 报名活动
+export const joinActivity = async (data) => {
+  try {
+    const res = await api.joinActivity(data)
+    return res.code === 200
+  } catch (e) {
+    console.log('报名活动失败：', e)
+    return false
   }
 }

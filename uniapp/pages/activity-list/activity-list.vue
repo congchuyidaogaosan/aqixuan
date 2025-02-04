@@ -121,9 +121,9 @@
           
           <!-- 报名按钮 -->
           <view class="join-btn" :class="{
-            'full': item.currentNumber >= item.totalNumber && item.userId !== uni.getStorageSync('userInfo').id,
-            'joined': item.signup && item.userId !== uni.getStorageSync('userInfo').id,
-            'check': item.userId === uni.getStorageSync('userInfo').id
+            'full': item.currentNumber >= item.totalNumber && item.userId !== getCurrentUserId(),
+            'joined': item.signup && item.userId !== getCurrentUserId(),
+            'check': item.userId === getCurrentUserId()
           }">
             {{getJoinButtonText(item)}}
           </view>
@@ -282,16 +282,35 @@ const loadMore = () => {
   loadActivityList()
 }
 
+// 获取当前用户ID
+const getCurrentUserId = () => {
+  const userInfo = uni.getStorageSync('userInfo')
+  return userInfo ? userInfo.id : null
+}
+
+// 获取报名按钮文本
+const getJoinButtonText = (item) => {
+  const currentUserId = getCurrentUserId()
+  // 如果是自己发布的活动
+  if (currentUserId && item.userId === currentUserId) {
+    return '查看报名'
+  }
+  if (item.signup) return '已报名'
+  if (item.currentNumber >= item.totalNumber) return '人数已满'
+  return '立即报名'
+}
+
 // 前往详情页
 const goToDetail = (id, userId) => {
-  // 如果是自己发布的活动，跳转到报名信息页面
-  if (userId === uni.getStorageSync('userInfo').id) {
+  const currentUserId = getCurrentUserId()
+  // 如果未登录，跳转到登录页
+  if (!currentUserId) {
     uni.navigateTo({
-      url: '/pages/activity-signup/activity-signup?id=' + id
+      url: '/pages/login/login'
     })
     return
   }
-  // 否则跳转到活动详情页
+  
   uni.navigateTo({
     url: '/pages/activity-detail/activity-detail?id=' + id
   })
@@ -431,17 +450,6 @@ const getCostTypeText = (costType, cost) => {
     default:
       return '免费'
   }
-}
-
-// 获取报名按钮文本
-const getJoinButtonText = (item) => {
-  // 如果是自己发布的活动
-  if (item.userId === uni.getStorageSync('userInfo').id) {
-    return '查看报名'
-  }
-  if (item.signup) return '已报名'
-  if (item.currentNumber >= item.totalNumber) return '人数已满'
-  return '立即报名'
 }
 
 // 获取筛选文本

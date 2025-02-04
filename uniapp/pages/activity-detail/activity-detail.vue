@@ -11,17 +11,22 @@
     
     <!-- 活动内容 -->
     <scroll-view class="content" scroll-y>
-      <!-- 活动基本信息 -->
-      <view class="activity-info">
-        <view class="activity-title">{{activityInfo.title}}</view>
-        <view class="activity-type">
+      <!-- 活动图片 -->
+      <view class="activity-image">
+        <image :src="activityInfo.handImg || '/static/images/default-activity.png'" mode="aspectFill"></image>
+      </view>
+
+      <view class="detail-section">
+        <!-- 活动标题和类型 -->
+        <view class="title-row">
+          <text class="title">{{activityInfo.title}}</text>
           <text class="type-tag">{{getActivityTypeName(activityInfo.activityType)}}</text>
         </view>
         
         <!-- 发起人信息 -->
         <view class="organizer-info">
-          <image :src="activityInfo.organizerAvatar" mode="aspectFill" class="avatar"></image>
-          <text class="nickname">{{activityInfo.organizerName}}</text>
+          <image :src="activityInfo.userInfo.handImg" mode="aspectFill" class="avatar"></image>
+          <text class="nickname">{{activityInfo.userInfo.nickname}}</text>
         </view>
         
         <!-- 活动状态信息 -->
@@ -94,7 +99,8 @@
         class="join-btn" 
         :class="{
           'disabled': isActivityFull || hasJoined || isExpired,
-          'joined': hasJoined
+          'joined': hasJoined,
+          'organizer': activityInfo.userId === getCurrentUserId()
         }"
         @click="handleJoin"
       >
@@ -105,8 +111,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { joinActivity } from '@/api/user'
+import { ref, computed, onMounted } from 'vue'
+import { getActivityDetail as getActivityDetailApi,getUserInfoById,joinActivity } from '@/api/user.js'
 
 // 活动信息
 const activityInfo = ref({
@@ -142,9 +148,20 @@ const isExpired = computed(() => {
 })
 
 const getButtonText = computed(() => {
-  if (hasJoined.value) return '已报名'
-  if (isActivityFull.value) return '人数已满'
-  if (isExpired.value) return '活动已结束'
+  const currentUserId = getCurrentUserId()
+  // 判断是否是活动发起人
+  if (activityInfo.value.userId === currentUserId) {
+    return '我是发起人'
+  }
+  if (hasJoined.value) {
+    return '已报名'
+  }
+  if (isExpired.value) {
+    return '活动已结束'
+  }
+  if (isActivityFull.value) {
+    return '人数已满'
+  }
   return '立即报名'
 })
 
@@ -183,13 +200,31 @@ const openLocation = () => {
 
 // 处理报名
 const handleJoin = () => {
-  if (isActivityFull.value || hasJoined.value || isExpired.value) return
+  const currentUserId = getCurrentUserId()
+  
+  // 是活动发起人时不处理点击
+  if (activityInfo.value.userId === currentUserId) {
+    return
+  }
+  
+  if (isActivityFull.value || hasJoined.value || isExpired.value) {
+    return
+  }
+  
+  // 检查是否登录
+  if (!currentUserId) {
+    uni.showToast({
+      title: '请先登录',
+      icon: 'none'
+    })
+    return
+  }
   
   // 显示确认弹窗
   uni.showModal({
     title: '确认报名',
     content: activityInfo.value.penaltyCost > 0 ? 
-      \`报名后不参加将扣除鸽子费\${activityInfo.value.penaltyCost}元，是否确认报名？\` :
+      `报名后不参加将扣除鸽子费${activityInfo.value.penaltyCost}元，是否确认报名？` :
       '是否确认报名该活动？',
     success: (res) => {
       if (res.confirm) {
@@ -207,8 +242,9 @@ const submitJoin = () => {
   })
   
   joinActivity({
-    activityId: activityInfo.value.id
-  }).then(res => {
+    activityId: activityInfo.value.id,
+  }
+  ).then(res => {
     uni.hideLoading()
     uni.showToast({
       title: '报名成功',
@@ -216,9 +252,7 @@ const submitJoin = () => {
     })
     hasJoined.value = true
     // 更新活动信息
-    activityInfo.value.currentNumber++
-    // 更新参与者列表
-    loadParticipants()
+    getActivityDetail(activityInfo.value.id)
   }).catch(err => {
     uni.hideLoading()
     uni.showToast({
@@ -228,9 +262,72 @@ const submitJoin = () => {
   })
 }
 
-// 加载参与者列表
-const loadParticipants = () => {
-  // TODO: 调用获取参与者列表接口
+// 获取活动详情
+const getActivityDetail = (activityId) => {
+    uni.showLoading({
+      title: '加载中...',
+      mask: true
+    })
+    
+    getActivityDetailApi(activityId)
+      .then(res => {
+        if (res) {
+         getUserInfoById(res.activity.userId).then(userInfo => {  
+          const activity = res.activity
+          activityInfo.value = {
+            id: activity.id,
+            userId: activity.userId,
+            userInfo: userInfo.data,
+            activityType: Number(activity.activityType),
+            title: activity.title,
+            description: activity.description,
+            location: activity.location,
+            totalNumber: activity.totalNumber,
+            currentNumber: activity.currentNumber,
+            startTime: activity.startTime,
+            endTime: activity.endTime,
+            cost: activity.cost,
+            costType: activity.costType,
+            penaltyCost: activity.penaltyCost,
+            status: activity.status,
+            handImg: activity.handImg
+          }
+          console.log(activityInfo.value);
+          
+          // 处理经纬度
+          if (activity.ip) {
+            const [longitude, latitude] = activity.ip.split(',')
+            activityInfo.value.latitude = Number(latitude)
+            activityInfo.value.longitude = Number(longitude)
+          }
+          
+          // 处理报名列表
+          participants.value = res.ActivitySignupAndUserList.map(item => ({
+            id: item.id,
+            avatar: item.user?.avatarUrl || '/static/images/default-avatar.png',
+            nickname: item.user?.nickname || '未知用户',
+            joinTime: item.createdAt
+          }))
+          
+          // 检查当前用户是否已报名
+          const currentUserId = getCurrentUserId()
+          hasJoined.value = res.ActivitySignupAndUserList.some(item => 
+            item.userId === currentUserId
+          )
+         })
+          // 处理活动信息
+         
+        }
+      })
+      .catch(err => {
+        uni.showToast({
+          title: err.message || '加载失败',
+          icon: 'none'
+        })
+      })
+      .finally(() => {
+        uni.hideLoading()
+      })
 }
 
 // 返回上一页
@@ -239,10 +336,19 @@ const goBack = () => {
 }
 
 // 页面加载时获取活动详情
-onLoad((options) => {
-  const activityId = options.id
-  // TODO: 调用获取活动详情接口
+onMounted(() => {
+  const pages = getCurrentPages()
+  const currentPage = pages[pages.length - 1]
+  const activityId = currentPage.options.id
+  getActivityDetail(activityId)
 })
+
+// 获取当前用户ID
+const getCurrentUserId = () => {
+  const userInfo = uni.getStorageSync('userInfo')
+  return userInfo ? userInfo.id : null
+}
+
 </script>
 
 <style lang="less" scoped>
@@ -287,23 +393,37 @@ onLoad((options) => {
   .content {
     height: calc(100vh - 88rpx - 120rpx);
     
-    .activity-info {
+    .activity-image {
+      width: 100%;
+      height: 400rpx;
+      
+      image {
+        width: 100%;
+        height: 100%;
+      }
+    }
+    
+    .detail-section {
       background: #fff;
       padding: 30rpx 20rpx;
+      margin-bottom: 20rpx;
       
-      .activity-title {
-        font-size: 36rpx;
-        font-weight: 600;
-        color: #333;
+      .title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         margin-bottom: 20rpx;
-      }
-      
-      .activity-type {
-        margin-bottom: 30rpx;
+        
+        .title {
+          font-size: 32rpx;
+          font-weight: 500;
+          color: #333;
+          flex: 1;
+          margin-right: 20rpx;
+        }
         
         .type-tag {
-          display: inline-block;
-          padding: 6rpx 20rpx;
+          padding: 4rpx 16rpx;
           font-size: 24rpx;
           color: #007AFF;
           background: rgba(0, 122, 255, 0.1);
@@ -419,19 +539,16 @@ onLoad((options) => {
         .section-title {
           display: flex;
           align-items: center;
-          gap: 12rpx;
           margin-bottom: 20rpx;
+          font-size: 32rpx;
+          font-weight: 500;
+          color: #333;
           
-          text {
-            font-size: 30rpx;
-            font-weight: 500;
-            color: #333;
-            
-            &.count {
-              font-size: 26rpx;
-              font-weight: normal;
-              color: #999;
-            }
+          .count {
+            margin-left: 12rpx;
+            font-size: 28rpx;
+            color: #666;
+            font-weight: normal;
           }
         }
         
@@ -439,9 +556,8 @@ onLoad((options) => {
           .participant-item {
             display: flex;
             align-items: center;
-            gap: 12rpx;
             padding: 20rpx 0;
-            border-bottom: 1rpx solid #f5f5f5;
+            border-bottom: 1px solid #f0f0f0;
             
             &:last-child {
               border-bottom: none;
@@ -451,6 +567,7 @@ onLoad((options) => {
               width: 80rpx;
               height: 80rpx;
               border-radius: 50%;
+              margin-right: 20rpx;
             }
             
             .nickname {
@@ -489,6 +606,9 @@ onLoad((options) => {
       
       &.disabled {
         background: #ccc;
+        &.organizer {
+          background: #FF9500;
+        }
       }
       
       &.joined {

@@ -11,13 +11,16 @@ import com.it.domain.common.Result;
 import com.it.service.ActivityService;
 import com.it.service.ActivitySignupService;
 import com.it.service.UserService;
+import com.it.utill.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("ActivitySignup")
@@ -26,6 +29,13 @@ public class ActivitySignupController {
 
     @Autowired
     private ActivitySignupService activitySignupService;
+
+    @Autowired
+    private TokenUtil tokenUtil;
+
+
+    @Autowired
+    private ActivityService activityService;
 
     @Autowired
     private UserService userService;
@@ -67,6 +77,25 @@ public class ActivitySignupController {
     @GetMapping("delete/{id}")
     public Result delete(@PathVariable("id") Integer id) {
         boolean byId = activitySignupService.removeById(id);
+        return Result.ok();
+    }
+
+    // 报名活动
+    @PostMapping("signup")
+    public Result signup(@RequestBody ActivitySignup activitySignup, HttpServletRequest request) {
+
+        String token = request.getHeader("token");
+        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
+        String userId = stringStringMap.get("userId");
+
+        activitySignup.setUserId(Integer.parseInt(userId));
+        activitySignup.setStatus("1");
+
+        boolean b = activitySignupService.save(activitySignup);
+
+        Activity activity = activityService.getById(activitySignup.getActivityId());
+        activity.setCurrentNumber(activity.getCurrentNumber() + 1);
+        activityService.updateById(activity);
         return Result.ok();
     }
 
