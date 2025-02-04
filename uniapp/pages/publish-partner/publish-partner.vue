@@ -22,12 +22,18 @@
         </view>
       </view>
       
-      <!-- 可见范围 -->
-      <view class="form-item" @click="showVisibilityPopup">
-        <view class="label">可见范围</view>
-        <view class="value">
-          <text :class="{'placeholder': !formData.visibility}">{{formData.visibility || '公开'}}</text>
-          <image src="/static/images/arrow-right.png" mode="aspectFit" class="arrow-icon"></image>
+      <!-- 添加图片上传 -->
+      <view class="form-item">
+        <view class="label">活动图片</view>
+        <view class="upload-box" @click="chooseImage" v-if="!formData.image">
+          <image src="/static/images/upload.png" mode="aspectFit" class="upload-icon"></image>
+          <text class="upload-text">上传图片</text>
+        </view>
+        <view class="image-preview" v-else>
+          <image :src="formData.image" mode="aspectFill" class="preview-image"></image>
+          <view class="delete-btn" @click.stop="deleteImage">
+            <image src="/static/images/close.png" mode="aspectFit" class="delete-icon"></image>
+          </view>
         </view>
       </view>
       
@@ -37,33 +43,33 @@
         
         <!-- 活动名称 -->
         <view class="input-item">
-          <input 
-            type="text" 
-            v-model="formData.title"
+        <input 
+          type="text" 
+          v-model="formData.title" 
             placeholder="请填写活动名称"
             placeholder-class="placeholder"
-          />
-        </view>
-        
+        />
+      </view>
+      
         <!-- 活动人数 -->
         <view class="input-item">
-          <input 
-            type="number" 
-            v-model="formData.totalNumber"
+        <input 
+          type="number" 
+          v-model="formData.totalNumber" 
             placeholder="请填写活动人数(含发起人)"
             placeholder-class="placeholder"
-          />
-        </view>
-        
+        />
+      </view>
+      
         <!-- 活动时间 -->
         <view class="time-section">
-          <view class="time-picker">
+        <view class="time-picker">
             <text class="label">开始时间</text>
             <view class="picker-wrapper" @click="showTimePicker('start')">
               <view class="picker-group">
                 <view :class="{'placeholder': !formData.startTime}">
                   {{formData.startTime ? formatDateTimeString(formData.startTime) : '选择时间'}}
-                </view>
+          </view>
               </view>
               <image src="/static/images/arrow-right.png" mode="aspectFit" class="arrow-icon"></image>
             </view>
@@ -77,10 +83,10 @@
                 </view>
               </view>
               <image src="/static/images/arrow-right.png" mode="aspectFit" class="arrow-icon"></image>
-            </view>
           </view>
         </view>
-        
+      </view>
+      
         <!-- 活动地点 -->
         <view class="location-section">
           <view class="location-picker" @click="chooseLocation">
@@ -108,19 +114,19 @@
           </view>
           
           <view class="deposit-input" v-if="formData.costType === 1 || formData.costType === 2">
-            <input 
-              type="digit" 
-              v-model="formData.cost"
+          <input 
+            type="digit" 
+            v-model="formData.cost" 
               :placeholder="formData.costType === 1 ? '请输入总费用（将平均分配）' : '请输入总费用金额'"
               placeholder-class="placeholder"
-            />
+          />
             <text class="unit">元</text>
-          </view>
+        </view>
           
           <view class="cost-tip" v-if="formData.costType === 1">
             <text>每人预计支付：{{calculateAACost}}元</text>
-          </view>
-
+      </view>
+      
           <!-- 添加鸽子费输入框 -->
           <view class="penalty-section" v-if="formData.costType !== 0">
             <view class="penalty-title">
@@ -128,12 +134,12 @@
               <text class="penalty-tip">（报名后不参加将扣除该费用）</text>
             </view>
             <view class="deposit-input">
-              <input 
-                type="digit" 
-                v-model="formData.penaltyCost"
+        <input 
+          type="digit" 
+          v-model="formData.penaltyCost" 
                 placeholder="请输入鸽子费金额"
                 placeholder-class="placeholder"
-              />
+        />
               <text class="unit">元</text>
             </view>
           </view>
@@ -178,25 +184,6 @@
       </view>
     </uni-popup>
     
-    <!-- 可见范围弹窗 -->
-    <uni-popup ref="visibilityPopup" type="bottom">
-      <view class="popup-content">
-        <view class="popup-header">
-          <text class="title">选择可见范围</text>
-          <text class="close" @click="hideVisibilityPopup">关闭</text>
-        </view>
-        <view class="popup-body">
-          <view 
-            class="popup-item"
-            v-for="item in visibilityOptions"
-            :key="item.value"
-            @click="selectVisibility(item)"
-          >
-            <text :class="{'active': formData.visibility === item.label}">{{item.label}}</text>
-          </view>
-        </view>
-      </view>
-    </uni-popup>
     
     <!-- 时间选择弹窗 -->
     <uni-popup ref="timePopup" type="bottom">
@@ -239,7 +226,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { publishActivity } from '@/api/user'
+import { publishActivity, uploadFile } from '@/api/user'
 // 获取当前时间作为默认值
 const now = new Date()
 const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
@@ -295,7 +282,8 @@ const formData = ref({
   costType: 0,
   cost: 0,
   penaltyCost: 0,
-  description: ''
+  description: '',
+  image: ''
 })
 
 // 活动类型选项
@@ -309,11 +297,6 @@ const activityTypes = [
   { label: '其他', value: 6 }
 ]
 
-// 可见范围选项
-const visibilityOptions = [
-  { label: '公开', value: 'public' },
-  { label: '仅关注者可见', value: 'followers' }
-]
 
 // 活动类型弹窗
 const activityTypePopup = ref(null)
@@ -328,18 +311,7 @@ const selectActivityType = (type) => {
   hideActivityTypePopup()
 }
 
-// 可见范围弹窗
-const visibilityPopup = ref(null)
-const showVisibilityPopup = () => {
-  visibilityPopup.value.open()
-}
-const hideVisibilityPopup = () => {
-  visibilityPopup.value.close()
-}
-const selectVisibility = (item) => {
-  formData.value.visibility = item.label
-  hideVisibilityPopup()
-}
+
 
 // 时间选择器数据
 const years = ref([])
@@ -606,6 +578,55 @@ const chooseLocation = () => {
   })
 }
 
+// 选择图片
+const chooseImage = async () => {
+  const res = await uni.chooseImage({
+    count: 1,
+    sizeType: ['compressed'],
+    sourceType: ['album', 'camera']
+  })
+  
+  uni.showLoading({ title: '上传中...' })
+  
+  try {
+    // 上传选中的文件
+    const file = res.tempFiles[0]
+    const blob = new Blob([file], { type: file.type || 'image/jpeg' })
+    const fileToUpload = new File([blob], file.name || 'image.jpg', {
+      type: file.type || 'image/jpeg'
+    })
+    
+    // 上传文件
+    const uploadRes = await uploadFile(fileToUpload)
+    if (uploadRes.code === 200) {
+      formData.value.image = uploadRes.data.url
+      uni.showToast({
+        title: '上传成功',
+        icon: 'success'
+      })
+    } else {
+      uni.showToast({
+        title: uploadRes.msg || '上传失败',
+        icon: 'none'
+      })
+    }
+  } catch (err) {
+    uni.showToast({
+      title: '上传失败',
+      icon: 'none'
+    })
+    console.error('上传失败：', err)
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+// 删除图片
+const deleteImage = (e) => {
+  e.stopPropagation()
+  formData.value.image = ''
+}
+
 // 发布活动
 const handlePublish = () => {
   // 表单验证
@@ -658,6 +679,13 @@ const handlePublish = () => {
     })
     return
   }
+  if (!formData.value.image) {
+    uni.showToast({
+      title: '请上传活动图片',
+      icon: 'none'
+    })
+    return
+  }
 
   // 转换数据类型并格式化日期
   const submitData = {
@@ -667,8 +695,10 @@ const handlePublish = () => {
     title: formData.value.title,
     // 活动介绍
     description: formData.value.description,
+    // 活动地点
+    location: formData.value.location,
     // 经纬度拼接
-    location: formData.value.longitude + "," + formData.value.latitude,
+    ip: formData.value.longitude + "," + formData.value.latitude,
     // 活动人数
     totalNumber: parseInt(formData.value.totalNumber),
     // 当前人数
@@ -682,7 +712,9 @@ const handlePublish = () => {
     // 费用类型
     costType: formData.value.costType,
     // 鸽子费
-    penaltyCost: formData.value.penaltyCost ? parseFloat(formData.value.penaltyCost) : 0
+    penaltyCost: formData.value.penaltyCost ? parseFloat(formData.value.penaltyCost) : 0,
+    // 活动图片
+    handImg: formData.value.image
   }
   
   // 显示加载提示
@@ -1123,6 +1155,58 @@ const handleCostTypeChange = (type) => {
         font-size: 24rpx;
         color: #999;
       }
+    }
+  }
+}
+
+.upload-box {
+  width: 200rpx;
+  height: 200rpx;
+  background: #f5f5f5;
+  border-radius: 12rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  
+  .upload-icon {
+    width: 48rpx;
+    height: 48rpx;
+    margin-bottom: 12rpx;
+  }
+  
+  .upload-text {
+    font-size: 24rpx;
+    color: #999;
+  }
+}
+
+.image-preview {
+  position: relative;
+  width: 200rpx;
+  height: 200rpx;
+  
+  .preview-image {
+    width: 100%;
+    height: 100%;
+    border-radius: 12rpx;
+  }
+  
+  .delete-btn {
+    position: absolute;
+    top: -20rpx;
+    right: -20rpx;
+    width: 40rpx;
+    height: 40rpx;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    .delete-icon {
+      width: 24rpx;
+      height: 24rpx;
     }
   }
 }

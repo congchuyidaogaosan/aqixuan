@@ -183,6 +183,16 @@ const api = {
       method: 'POST',
       data
     })
+  },
+
+  // 获取活动列表
+  getActivityList: (current, size, active) => {
+    return request({
+      // 页数，每页数量，筛选条件
+      url: `/Activity/list/${current}/${size}`,
+      method: 'POST',
+      data: active
+    })
   }
 }
 
@@ -501,5 +511,16 @@ export const publishActivity = async (data) => {
     return res.code === 200 ? res.data : null
   } catch (e) {
     throw new Error(e.message || '发布活动失败')
+  }
+}
+
+// 获取活动列表
+export const getActivityList = async (current, size, active) => {
+  try {
+    const res = await api.getActivityList(current, size, active)
+    return res.code === 200 ? res.data : []
+  } catch (e) {
+    console.log('获取活动列表失败：', e)
+    return []
   }
 }

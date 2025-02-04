@@ -7,9 +7,11 @@
         <text>{{currentLocation || '故宫博物院'}}</text>
         <image src="/static/images/arrow-down.png" mode="aspectFit" class="arrow-icon"></image>
       </view>
-      <view class="search-box" @click="goToSearch">
-        <image src="/static/images/search.png" mode="aspectFit" class="search-icon"></image>
-        <text class="placeholder">搜索活动</text>
+      <view class="filter-box">
+        <view class="filter-item" @click="showFilterPopup">
+          <text class="label">{{getFilterText()}}</text>
+          <image src="/static/images/arrow-down.png" mode="aspectFit" class="arrow-icon"></image>
+        </view>
       </view>
     </view>
     
@@ -18,52 +20,59 @@
       <view class="tab-list">
         <view 
           class="tab-item" 
-          :class="{'active': selectedType === 'all'}"
-          @click="selectType('all')"
+          :class="{'active': active.value.activityType === ''}"
+          @click="showFilterPopup"
         >
           <text>筛选</text>
         </view>
         <view 
           class="tab-item" 
-          :class="{'active': selectedType === 'date'}"
-          @click="selectType('date')"
+          :class="{'active': active.value.activityType === 0}"
+          @click="selectType(0)"
         >
-          <text>日期</text>
+          <text>运动</text>
         </view>
         <view 
           class="tab-item" 
-          :class="{'active': selectedType === 'sports'}"
-          @click="selectType('sports')"
+          :class="{'active': active.value.activityType === 1}"
+          @click="selectType(1)"
         >
-          <text>运动搭</text>
+          <text>游戏</text>
         </view>
         <view 
           class="tab-item" 
-          :class="{'active': selectedType === 'food'}"
-          @click="selectType('food')"
+          :class="{'active': active.value.activityType === 2}"
+          @click="selectType(2)"
         >
-          <text>饭搭子</text>
+          <text>旅行</text>
         </view>
         <view 
           class="tab-item" 
-          :class="{'active': selectedType === 'art'}"
-          @click="selectType('art')"
+          :class="{'active': active.value.activityType === 3}"
+          @click="selectType(3)"
         >
-          <text>文艺搭</text>
+          <text>学习</text>
         </view>
         <view 
           class="tab-item" 
-          :class="{'active': selectedType === 'travel'}"
-          @click="selectType('travel')"
+          :class="{'active': active.value.activityType === 4}"
+          @click="selectType(4)"
         >
-          <text>旅游搭</text>
+          <text>美食</text>
         </view>
         <view 
           class="tab-item" 
-          :class="{'active': selectedType === 'outdoor'}"
-          @click="selectType('outdoor')"
+          :class="{'active': active.value.activityType === 5}"
+          @click="selectType(5)"
         >
-          <text>户外搭</text>
+          <text>电影</text>
+        </view>
+        <view 
+          class="tab-item" 
+          :class="{'active': active.value.activityType === 6}"
+          @click="selectType(6)"
+        >
+          <text>其他</text>
         </view>
       </view>
     </scroll-view>
@@ -71,36 +80,51 @@
     <!-- 活动列表 -->
     <scroll-view class="activity-content" scroll-y @scrolltolower="loadMore">
       <view class="activity-item" v-for="(item, index) in activityList" :key="index" @click="goToDetail(item.id)">
-        <!-- 活动图片 -->
-        <image :src="item.image" mode="aspectFill" class="activity-image"></image>
-        
-        <!-- 活动信息 -->
-        <view class="activity-info">
-          <!-- 活动类型标签 -->
-          <text class="type-tag">{{getActivityTypeName(item.activityType)}}</text>
+        <view class="activity-main">
+          <!-- 活动图片 -->
+          <image :src="item.image || '/static/images/default-activity.png'" mode="aspectFill" class="activity-image"></image>
           
-          <!-- 活动标题 -->
-          <view class="title">{{item.title}}</view>
-          
-          <!-- 活动描述 -->
-          <view class="description">{{item.description}}</view>
-          
-          <!-- 活动状态 -->
-          <view class="status-row">
-            <view class="participants">
-              <text>共{{item.totalNumber}}人，差{{item.totalNumber - item.currentNumber}}人</text>
+          <!-- 活动基本信息 -->
+          <view class="activity-info">
+            <!-- 活动类型标签 -->
+            <text class="type-tag">{{getActivityTypeName(item.activityType)}}</text>
+            
+            <!-- 发起人信息 -->
+            <view class="organizer-info">
+              <image :src="item.organizer.avatarUrl || '/static/images/default-avatar.png'" mode="aspectFill" class="avatar"></image>
+              <text class="nickname">{{item.organizer.nickname}}</text>
             </view>
-            <view class="distance">{{item.distance}}km</view>
+            
+            <!-- 活动标题 -->
+            <view class="title">{{item.title}}</view>
+            
+            <!-- 活动描述 -->
+            <view class="description">{{item.description}}</view>
           </view>
-          
-          <!-- 评论数 -->
-          <view class="comment-count" v-if="item.commentCount > 0">
-            评论({{item.commentCount}})
+        </view>
+        
+        <!-- 底部信息 -->
+        <view class="activity-footer">
+          <view class="left-info">
+            <!-- 活动状态 -->
+            <view class="status-row">
+              <text class="participants">共{{item.totalNumber}}人，差{{item.totalNumber - item.currentNumber}}人</text>
+              <text class="time">{{item.startTime}}</text>
+            </view>
+            
+            <!-- 费用信息 -->
+            <view class="cost-info" v-if="item.costType !== 0">
+              <text class="cost">{{getCostTypeText(item.costType, item.cost)}}</text>
+              <text class="penalty" v-if="item.penaltyCost > 0">鸽子费{{item.penaltyCost}}元</text>
+            </view>
           </view>
           
           <!-- 报名按钮 -->
-          <view class="join-btn" :class="{'full': item.currentNumber >= item.totalNumber}">
-            {{item.currentNumber >= item.totalNumber ? '人数已满' : '立即报名'}}
+          <view class="join-btn" :class="{
+            'full': item.currentNumber >= item.totalNumber,
+            'joined': item.signup
+          }">
+            {{getJoinButtonText(item)}}
           </view>
         </view>
       </view>
@@ -116,19 +140,26 @@
     
     <!-- 发布按钮 -->
     <view class="publish-btn" @click="goToPublish">
-      <image src="/static/images/publish.png" mode="aspectFit"></image>
+      <image src="/static/images/xiangji.png" mode="aspectFit"></image>
     </view>
   </view>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { getActivityList } from '@/api/user'
 
 // 当前位置
 const currentLocation = ref('')
 
-// 选中的类型
-const selectedType = ref('all')
+// 筛选条件
+const active = ref({
+  activityType: '',  // 空字符串表示不筛选
+  minNumber: undefined,  // 最小人数
+  maxNumber: undefined,  // 最大人数
+  minCost: undefined,  // 最小费用
+  maxCost: undefined  // 最大费用
+})
 
 // 活动列表
 const activityList = ref([])
@@ -159,7 +190,12 @@ const goToSearch = () => {
 
 // 选择类型
 const selectType = (type) => {
-  selectedType.value = type
+  // 如果点击当前已选中的类型，则取消选择
+  if (active.value.activityType === type) {
+    active.value.activityType = ''
+  } else {
+    active.value.activityType = type
+  }
   refreshList()
 }
 
@@ -190,19 +226,36 @@ const loadActivityList = () => {
   if (isLoading.value || noMore.value) return
   
   isLoading.value = true
-  
-  uni.request({
-    url: '/Activity/findall',
-    method: 'GET',
-    data: {
-      page: page.value,
-      pageSize: pageSize,
-      type: selectedType.value === 'all' ? '' : selectedType.value
-    },
-    success: (res) => {
-      const { data } = res
-      if (data.code === 0 && data.data) {
-        const list = data.data.list || []
+  console.log(active.value)
+  getActivityList(page.value, pageSize, active.value)
+    .then(res => {
+      if (res && Array.isArray(res)) {
+        // 处理数据，将活动信息和用户信息组合
+        const list = res.map(item => ({
+          id: item.activity.id,
+          userId: item.activity.userId,
+          activityType: Number(item.activity.activityType),
+          title: item.activity.title,
+          description: item.activity.description,
+          location: item.activity.location,
+          totalNumber: item.activity.totalNumber,
+          currentNumber: item.activity.currentNumber,
+          startTime: item.activity.startTime,
+          endTime: item.activity.endTime,
+          cost: item.activity.cost,
+          costType: item.activity.costType,
+          penaltyCost: item.activity.penaltyCost,
+          status: item.activity.status,
+          // 用户信息
+          organizer: {
+            id: item.user.id,
+            nickname: item.user.nickname,
+            avatarUrl: item.user.avatarUrl
+          },
+          // 报名信息
+          signup: item.activitySignup
+        }))
+        
         activityList.value = page.value === 1 ? list : [...activityList.value, ...list]
         
         // 判断是否还有更多数据
@@ -212,21 +265,20 @@ const loadActivityList = () => {
         page.value++
       } else {
         uni.showToast({
-          title: data.msg || '加载失败',
+          title: '数据格式错误',
           icon: 'none'
         })
       }
-    },
-    fail: () => {
+    })
+    .catch(err => {
       uni.showToast({
-        title: '网络错误',
+        title: err.message || '网络错误',
         icon: 'none'
       })
-    },
-    complete: () => {
+    })
+    .finally(() => {
       isLoading.value = false
-    }
-  })
+    })
 }
 
 // 加载更多
@@ -246,6 +298,182 @@ const goToPublish = () => {
   uni.navigateTo({
     url: '/pages/publish-partner/publish-partner'
   })
+}
+
+// 人数筛选
+const showNumberFilter = () => {
+  uni.showActionSheet({
+    itemList: ['不限', '2人', '3-5人', '5-10人', '10人以上'],
+    success: (res) => {
+      switch(res.tapIndex) {
+        case 0: // 不限
+          active.value.minNumber = undefined
+          active.value.maxNumber = undefined
+          break
+        case 1: // 2人
+          active.value.minNumber = 2
+          active.value.maxNumber = 2
+          break
+        case 2: // 3-5人
+          active.value.minNumber = 3
+          active.value.maxNumber = 5
+          break
+        case 3: // 5-10人
+          active.value.minNumber = 5
+          active.value.maxNumber = 10
+          break
+        case 4: // 10人以上
+          active.value.minNumber = 10
+          active.value.maxNumber = 999
+          break
+      }
+      refreshList()
+    }
+  })
+}
+
+// 金额筛选
+const showCostFilter = () => {
+  uni.showActionSheet({
+    itemList: ['不限', '免费', '1-50元', '50-100元', '100元以上'],
+    success: (res) => {
+      switch(res.tapIndex) {
+        case 0: // 不限
+          active.value.minCost = undefined
+          active.value.maxCost = undefined
+          break
+        case 1: // 免费
+          active.value.minCost = 0
+          active.value.maxCost = 0
+          break
+        case 2: // 1-50元
+          active.value.minCost = 1
+          active.value.maxCost = 50
+          break
+        case 3: // 50-100元
+          active.value.minCost = 50
+          active.value.maxCost = 100
+          break
+        case 4: // 100元以上
+          active.value.minCost = 100
+          active.value.maxCost = 999999
+          break
+      }
+      refreshList()
+    }
+  })
+}
+
+// 重置筛选
+const resetActive = () => {
+  active.value = {
+    activityType: '',  // 重置为空字符串
+    minNumber: undefined,  // 重置为undefined
+    maxNumber: undefined,
+    minCost: undefined,  // 重置为undefined
+    maxCost: undefined
+  }
+  refreshList()
+}
+
+// 筛选弹窗
+const showFilterPopup = () => {
+  uni.showActionSheet({
+    itemList: ['按类型筛选', '按人数筛选', '按金额筛选', '重置筛选'],
+    success: (res) => {
+      switch(res.tapIndex) {
+        case 0:
+          setTimeout(() => {
+            showTypeFilter()
+          }, 100)
+          break
+        case 1:
+          setTimeout(() => {
+            showNumberFilter()
+          }, 100)
+          break
+        case 2:
+          setTimeout(() => {
+            showCostFilter()
+          }, 100)
+          break
+        case 3:
+          resetActive()
+          break
+      }
+    }
+  })
+}
+
+// 类型筛选
+const showTypeFilter = () => {
+  uni.showActionSheet({
+    itemList: ['不限', '运动', '游戏', '旅行', '学习', '美食', '电影', '其他'],
+    success: (res) => {
+      // 如果选择"不限"，则设置为空字符串
+      active.value.activityType = res.tapIndex === 0 ? '' : res.tapIndex - 1
+      refreshList()
+    }
+  })
+}
+
+// 获取费用类型文本
+const getCostTypeText = (costType, cost) => {
+  switch(costType) {
+    case 1:
+      return `AA制 每人${(cost / totalNumber).toFixed(2)}元`
+    case 2:
+      return `费用${cost}元`
+    default:
+      return '免费'
+  }
+}
+
+// 获取报名按钮文本
+const getJoinButtonText = (item) => {
+  if (item.signup) return '已报名'
+  if (item.currentNumber >= item.totalNumber) return '人数已满'
+  return '立即报名'
+}
+
+// 获取筛选文本
+const getFilterText = () => {
+  const texts = []
+  
+  // 活动类型
+  if (active.value.activityType !== '') {
+    texts.push(getActivityTypeName(active.value.activityType))
+  }
+  
+  // 人数
+  if (active.value.minNumber !== undefined) {
+    if (active.value.minNumber === active.value.maxNumber) {
+      if (active.value.minNumber === 2) {
+        texts.push('2人')
+      }
+    } else if (active.value.minNumber === 3 && active.value.maxNumber === 5) {
+      texts.push('3-5人')
+    } else if (active.value.minNumber === 5 && active.value.maxNumber === 10) {
+      texts.push('5-10人')
+    } else if (active.value.minNumber === 10) {
+      texts.push('10人以上')
+    }
+  }
+  
+  // 费用
+  if (active.value.minCost !== undefined) {
+    if (active.value.minCost === 0 && active.value.maxCost === 0) {
+      texts.push('免费')
+    } else if (active.value.minCost === 1 && active.value.maxCost === 50) {
+      texts.push('1-50元')
+    } else if (active.value.minCost === 50 && active.value.maxCost === 100) {
+      texts.push('50-100元')
+    } else if (active.value.minCost === 100) {
+      texts.push('100元以上')
+    }
+  }
+  
+  return texts.length > 0 ? texts.join('·') : '筛选'
 }
 
 onMounted(() => {
@@ -290,24 +518,28 @@ onMounted(() => {
       }
     }
     
-    .search-box {
+    .filter-box {
       flex: 1;
-      display: flex;
-      align-items: center;
-      gap: 8rpx;
-      height: 64rpx;
-      padding: 0 20rpx;
-      background: #f5f5f5;
-      border-radius: 32rpx;
       
-      .search-icon {
-        width: 32rpx;
-        height: 32rpx;
-      }
-      
-      .placeholder {
-        font-size: 28rpx;
-        color: #999;
+      .filter-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 64rpx;
+        padding: 0 20rpx;
+        background: #f5f5f5;
+        border-radius: 32rpx;
+        
+        .label {
+          font-size: 28rpx;
+          color: #333;
+        }
+        
+        .arrow-icon {
+          width: 24rpx;
+          height: 24rpx;
+          margin-left: 8rpx;
+        }
       }
     }
   }
@@ -354,6 +586,7 @@ onMounted(() => {
   }
   
   .activity-content {
+    width: auto;
     height: calc(100vh - 88rpx - 88rpx);
     padding: 20rpx;
     
@@ -363,70 +596,136 @@ onMounted(() => {
       border-radius: 12rpx;
       overflow: hidden;
       
-      .activity-image {
-        width: 100%;
+      .activity-main {
+        display: flex;
         height: 300rpx;
-      }
-      
-      .activity-info {
-        padding: 20rpx;
         
-        .type-tag {
-          display: inline-block;
-          padding: 4rpx 16rpx;
-          font-size: 24rpx;
-          color: #007AFF;
-          background: rgba(0, 122, 255, 0.1);
-          border-radius: 20rpx;
-          margin-bottom: 16rpx;
+        .activity-image {
+          width: 50%;
+          height: 100%;
         }
         
-        .title {
-          font-size: 32rpx;
-          font-weight: 500;
-          color: #333;
-          margin-bottom: 12rpx;
-        }
-        
-        .description {
-          font-size: 28rpx;
-          color: #666;
-          margin-bottom: 16rpx;
-        }
-        
-        .status-row {
+        .activity-info {
+          flex: 1;
+          padding: 20rpx;
           display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 16rpx;
+          flex-direction: column;
           
-          .participants {
+          .type-tag {
+            display: inline-block;
+            padding: 4rpx 16rpx;
+            font-size: 24rpx;
+            color: #007AFF;
+            background: rgba(0, 122, 255, 0.1);
+            border-radius: 20rpx;
+            margin-bottom: 12rpx;
+          }
+          
+          .title {
+            font-size: 32rpx;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 12rpx;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            overflow: hidden;
+          }
+          
+          .description {
             font-size: 26rpx;
             color: #666;
+            margin-bottom: 12rpx;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            overflow: hidden;
           }
           
-          .distance {
-            font-size: 26rpx;
-            color: #999;
+          .organizer-info {
+            display: flex;
+            align-items: center;
+            gap: 12rpx;
+            margin-bottom: 12rpx;
+            
+            .avatar {
+              width: 40rpx;
+              height: 40rpx;
+              border-radius: 50%;
+            }
+            
+            .nickname {
+              font-size: 24rpx;
+              color: #666;
+            }
           }
         }
+      }
+      
+      .activity-footer {
+        padding: 16rpx 20rpx;
+        border-top: 1rpx solid #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         
-        .comment-count {
-          font-size: 26rpx;
-          color: #999;
-          margin-bottom: 16rpx;
+        .left-info {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 8rpx;
+          
+          .status-row {
+            display: flex;
+            align-items: center;
+            gap: 16rpx;
+            
+            .participants {
+              font-size: 24rpx;
+              color: #666;
+            }
+            
+            .time {
+              font-size: 24rpx;
+              color: #999;
+            }
+          }
+          
+          .cost-info {
+            display: flex;
+            align-items: center;
+            gap: 12rpx;
+            
+            .cost {
+              font-size: 24rpx;
+              color: #ff6b6b;
+              font-weight: 500;
+            }
+            
+            .penalty {
+              font-size: 22rpx;
+              color: #999;
+              background: #f5f5f5;
+              padding: 4rpx 12rpx;
+              border-radius: 20rpx;
+            }
+          }
         }
         
         .join-btn {
-          display: inline-block;
-          padding: 12rpx 40rpx;
-          font-size: 28rpx;
+          padding: 8rpx 24rpx;
+          font-size: 24rpx;
           color: #fff;
           background: #007AFF;
-          border-radius: 30rpx;
+          border-radius: 24rpx;
+          margin-left: 20rpx;
           
           &.full {
             background: #ccc;
+          }
+          
+          &.joined {
+            background: #67C23A;
           }
         }
       }
@@ -445,20 +744,33 @@ onMounted(() => {
   
   .publish-btn {
     position: fixed;
-    right: 40rpx;
-    bottom: 40rpx;
-    width: 100rpx;
-    height: 100rpx;
-    background: #007AFF;
+    right: 30rpx;
+    bottom: 120rpx;
+    width: 88rpx;
+    height: 88rpx;
+    background: linear-gradient(135deg, #007AFF, #0056b3);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4rpx 16rpx rgba(0, 122, 255, 0.3);
+    box-shadow: 0 6rpx 20rpx rgba(0, 122, 255, 0.3);
+    z-index: 100;
     
     image {
-      width: 48rpx;
-      height: 48rpx;
+      width: 40rpx;
+      height: 40rpx;
+    }
+    
+    &::after {
+      content: '';
+      position: absolute;
+      left: -6rpx;
+      top: -6rpx;
+      right: -6rpx;
+      bottom: -6rpx;
+      background: rgba(0, 122, 255, 0.1);
+      border-radius: 50%;
+      z-index: -1;
     }
   }
 }

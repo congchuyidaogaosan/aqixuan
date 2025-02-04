@@ -131,6 +131,12 @@
 				"selectedIconPath": "static/tabbar/home-active.png"
 			},
 			{
+				"pagePath": "pages/activity-list/activity-list",
+				"text": "活动",
+				"iconPath": "static/tabbar/huodong.png",
+				"selectedIconPath": "static/tabbar/huodong-active.png"
+			},
+			{
 				"pagePath": "pages/message/message",
 				"text": "私信",
 				"iconPath": "static/tabbar/message.png",
@@ -141,12 +147,6 @@
 				"text": "我的",
 				"iconPath": "static/tabbar/mine.png",
 				"selectedIconPath": "static/tabbar/mine-active.png"
-			},
-			{
-				"pagePath": "pages/activity-list/activity-list",
-				"text": "活动",
-				"iconPath": "static/images/tab/activity.png",
-				"selectedIconPath": "static/images/tab/activity-active.png"
 			}
 		]
 	}
