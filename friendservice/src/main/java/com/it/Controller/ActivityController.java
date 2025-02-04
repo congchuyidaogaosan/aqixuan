@@ -138,9 +138,10 @@ public class ActivityController {
 
     @GetMapping("find/{id}")
     public Result find(@PathVariable("id") Integer id, HttpSession session) {
-
+        HashMap<String, Object> hashMap1 = new HashMap<>();
         Activity byId = activityService.getById(id);
         List<ActivitySignup> activity_id=null;
+        hashMap1.put("activity",byId);
         try {
             activity_id = activitySignupService.list(new QueryWrapper<ActivitySignup>().eq("activity_id", byId.getId()));
 
@@ -171,8 +172,8 @@ public class ActivityController {
                 activitySignupAndUsers.add(activitySignupAndUser);
             }
         }
-
-        return Result.ok(activitySignupAndUsers);
+        hashMap1.put("ActivitySignupAndUserList",activitySignupAndUsers);
+        return Result.ok(hashMap1);
 
     }
 
