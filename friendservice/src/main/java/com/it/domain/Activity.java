@@ -59,6 +59,8 @@ public class Activity implements Serializable {
      */
     private Integer currentNumber;
 
+    private String handImg;
+
     /**
      * 活动截止时间
      */
