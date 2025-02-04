@@ -60,7 +60,7 @@ public class Activity implements Serializable {
     private Integer currentNumber;
 
     private String handImg;
-
+    private String ip;
     /**
      * 活动截止时间
      */
@@ -107,6 +107,20 @@ public class Activity implements Serializable {
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
+
+
+    @TableField(exist = false)
+    private Integer maxCost;
+
+    @TableField(exist = false)
+    private Integer maxNumber;
+
+    @TableField(exist = false)
+    private Integer minCost;
+
+    @TableField(exist = false)
+    private Integer minNumber;
+
 
     @Override
     public boolean equals(Object that) {

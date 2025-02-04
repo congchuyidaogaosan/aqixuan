@@ -48,6 +48,17 @@ public class ActivityController {
             userAvatarQueryWrapper.eq("total_number", activity.getTotalNumber());
         }
 
+        if (activity.getMaxNumber()!=0 || activity.getMinCost()!=0){
+            userAvatarQueryWrapper.gt("total_number",activity.getMinNumber());
+            userAvatarQueryWrapper.lt("total_number",activity.getMaxNumber());
+        }
+
+
+        if (activity.getMaxCost()!=0 || activity.getMinCost()!=0){
+            userAvatarQueryWrapper.gt("cost",activity.getMinCost());
+            userAvatarQueryWrapper.lt("cost",activity.getMaxCost());
+        }
+
         Page<Activity> page = activityService.page(objectPage, userAvatarQueryWrapper);
         ArrayList<Integer> objects = new ArrayList<>();
         for (Activity activitySignups : page.getRecords()) {
