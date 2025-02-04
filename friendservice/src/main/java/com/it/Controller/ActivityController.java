@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.it.domain.*;
 import com.it.domain.DTO.ActivitySignupAndUser;
+import com.it.domain.DTO.UserDTO;
 import com.it.domain.common.Result;
 import com.it.domain.common.ResultCodeEnum;
 import com.it.service.ActivityService;
@@ -54,10 +55,10 @@ public class ActivityController {
             objects.add(id);
 
         }
-        List<User> users = userService.joinUserAvatar(objects);
-        HashMap<Integer, User> hashMap = new HashMap<>();
+        List<UserDTO> users = userService.joinUserAvatar(objects);
+        HashMap<Integer, UserDTO> hashMap = new HashMap<>();
 
-        for (User user : users) {
+        for (UserDTO user : users) {
             hashMap.put(user.getId(), user);
         }
         ArrayList<ActivitySignupAndUser> activitySignupAndUsers = new ArrayList<>();
@@ -102,10 +103,10 @@ public class ActivityController {
             objects.add(id);
 
         }
-        List<User> users = userService.joinUserAvatar(objects);
-        HashMap<Integer, User> hashMap = new HashMap<>();
+        List<UserDTO> users = userService.joinUserAvatar(objects);
+        HashMap<Integer, UserDTO> hashMap = new HashMap<>();
 
-        for (User user : users) {
+        for (UserDTO user : users) {
             hashMap.put(user.getId(), user);
         }
         ArrayList<ActivitySignupAndUser> activitySignupAndUsers = new ArrayList<>();
@@ -133,10 +134,10 @@ public class ActivityController {
             objects.add(activitySignupUserId);
 
         }
-        List<User> users = userService.joinUserAvatar(objects);
-        HashMap<Integer, User> hashMap = new HashMap<>();
+        List<UserDTO> users = userService.joinUserAvatar(objects);
+        HashMap<Integer, UserDTO> hashMap = new HashMap<>();
 
-        for (User user : users) {
+        for (UserDTO user : users) {
             hashMap.put(user.getId(), user);
         }
         ArrayList<ActivitySignupAndUser> activitySignupAndUsers = new ArrayList<>();

@@ -3,6 +3,7 @@ package com.it.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.yulichang.wrapper.MPJLambdaWrapper;
+import com.it.domain.DTO.UserDTO;
 import com.it.domain.User;
 import com.it.domain.UserAvatar;
 import com.it.domain.common.Result;
@@ -28,16 +29,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     private GenerateRandomNumber generateRandomNumber;
 
     @Override
-    public List<User> joinUserAvatar(List<Integer> list) {
+    public List<UserDTO> joinUserAvatar(List<Integer> list) {
         MPJLambdaWrapper<User> wrapper =new MPJLambdaWrapper<User>();
-        wrapper.selectAll(User.class).leftJoin(UserAvatar.class,UserAvatar::getUserId,User::getId);
+        wrapper.selectAll(User.class).select("avatar_url").leftJoin(UserAvatar.class,UserAvatar::getUserId,User::getId);
 
         for (Integer integer:list){
             wrapper.in("t.id",integer);
         }
 
 
-        List<User> objects = userMapper.selectJoinList(User.class,wrapper);
+        List<UserDTO> objects = userMapper.selectJoinList(UserDTO.class,wrapper);
 
         return objects;
     }

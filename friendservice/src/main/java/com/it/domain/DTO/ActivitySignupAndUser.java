@@ -15,19 +15,19 @@ public class ActivitySignupAndUser {
 
     private Activity activity;
 
-    private User user;
+    private UserDTO user;
 
-    public ActivitySignupAndUser(Activity activity, User user) {
+    public ActivitySignupAndUser(Activity activity, UserDTO user) {
         this.activity = activity;
         this.user = user;
     }
 
-    public ActivitySignupAndUser(ActivitySignup activitySignup, User user) {
+    public ActivitySignupAndUser(ActivitySignup activitySignup, UserDTO user) {
         this.activitySignup = activitySignup;
         this.user = user;
     }
 
-    public ActivitySignupAndUser(ActivitySignup activitySignup, Activity activity, User user) {
+    public ActivitySignupAndUser(ActivitySignup activitySignup, Activity activity, UserDTO user) {
         this.activitySignup = activitySignup;
         this.activity = activity;
         this.user = user;
