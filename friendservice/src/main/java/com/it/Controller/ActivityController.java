@@ -37,7 +37,7 @@ public class ActivityController {
     private UserService userService;
 
     @RequestMapping("list/{current}/{size}")
-    public Result list(@PathVariable("size") Integer size, @PathVariable("current") Integer current, Activity activity) {
+    public Result list(@PathVariable("size") Integer size, @PathVariable("current") Integer current, @RequestBody Activity activity) {
         Page<Activity> objectPage = new Page<>(current, size);
         QueryWrapper<Activity> userAvatarQueryWrapper = new QueryWrapper<>();
         if (activity.getActivityType() != null && !activity.getActivityType().equals("")) {
