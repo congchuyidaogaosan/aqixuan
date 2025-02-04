@@ -48,15 +48,17 @@ public class ActivityController {
             userAvatarQueryWrapper.eq("total_number", activity.getTotalNumber());
         }
 
-        if ((activity.getMaxNumber()!= null && activity.getMaxNumber()!=0) || (activity.getMinNumber()!= null && activity.getMinNumber()!=0)){
-            userAvatarQueryWrapper.gt("total_number",activity.getMinNumber());
-            userAvatarQueryWrapper.lt("total_number",activity.getMaxNumber());
+
+        if (activity.getMaxNumber() != null && activity.getMaxNumber() != 0 && activity.getMinCost() != null && activity.getMinCost() != 0) {
+            userAvatarQueryWrapper.gt("total_number", activity.getMinNumber());
+            userAvatarQueryWrapper.lt("total_number", activity.getMaxNumber());
         }
 
 
-        if ((activity.getMaxCost()!= null &&activity.getMaxCost()!=0) || (activity.getMinCost()!= null && activity.getMinCost()!=0)){
-            userAvatarQueryWrapper.gt("cost",activity.getMinCost());
-            userAvatarQueryWrapper.lt("cost",activity.getMaxCost());
+
+        if (activity.getCost() != null && activity.getMaxCost() != 0 && activity.getMinCost() != 0 && activity.getMinCost() != null) {
+            userAvatarQueryWrapper.gt("cost", activity.getMinCost());
+            userAvatarQueryWrapper.lt("cost", activity.getMaxCost());
         }
 
         Page<Activity> page = activityService.page(objectPage, userAvatarQueryWrapper);
@@ -78,6 +80,9 @@ public class ActivityController {
             if (hashMap.containsKey(activitySignup1.getUserId())) {
                 ActivitySignupAndUser activitySignupAndUser = new ActivitySignupAndUser(activitySignup1, hashMap.get(activitySignup1.getUserId()));
                 activitySignupAndUsers.add(activitySignupAndUser);
+            } else {
+                ActivitySignupAndUser activitySignupAndUser = new ActivitySignupAndUser(activitySignup1, null);
+                activitySignupAndUsers.add(activitySignupAndUser);
             }
         }
 
@@ -86,6 +91,7 @@ public class ActivityController {
 
     /**
      * 我发布过的活动（无参）
+     *
      * @param request
      * @return
      */
@@ -101,10 +107,9 @@ public class ActivityController {
 
         if (userId != null && !userId.equals("")) {
             userAvatarQueryWrapper.eq("user_id", userId);
-        }else {
+        } else {
             return Result.fail(ResultCodeEnum.LOGIN_AUTH);
         }
-
 
 
         List<Activity> list = activityService.list(userAvatarQueryWrapper);

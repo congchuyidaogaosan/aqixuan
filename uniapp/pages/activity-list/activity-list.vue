@@ -16,73 +16,73 @@
     </view>
     
     <!-- 活动类型筛选 -->
-    <scroll-view class="filter-tabs" scroll-x>
+    <!-- <scroll-view class="filter-tabs" scroll-x>
       <view class="tab-list">
         <view 
           class="tab-item" 
-          :class="{'active': active.value.activityType === ''}"
+          :class="{'active': active.activityType === ''}"
           @click="showFilterPopup"
         >
           <text>筛选</text>
         </view>
         <view 
           class="tab-item" 
-          :class="{'active': active.value.activityType === 0}"
+          :class="{'active': active.activityType === 0}"
           @click="selectType(0)"
         >
           <text>运动</text>
         </view>
         <view 
           class="tab-item" 
-          :class="{'active': active.value.activityType === 1}"
+          :class="{'active': active.activityType === 1}"
           @click="selectType(1)"
         >
           <text>游戏</text>
         </view>
         <view 
           class="tab-item" 
-          :class="{'active': active.value.activityType === 2}"
+          :class="{'active': active.activityType === 2}"
           @click="selectType(2)"
         >
           <text>旅行</text>
         </view>
         <view 
           class="tab-item" 
-          :class="{'active': active.value.activityType === 3}"
+          :class="{'active': active.activityType === 3}"
           @click="selectType(3)"
         >
           <text>学习</text>
         </view>
         <view 
           class="tab-item" 
-          :class="{'active': active.value.activityType === 4}"
+          :class="{'active': active.activityType === 4}"
           @click="selectType(4)"
         >
           <text>美食</text>
         </view>
         <view 
           class="tab-item" 
-          :class="{'active': active.value.activityType === 5}"
+          :class="{'active': active.activityType === 5}"
           @click="selectType(5)"
         >
           <text>电影</text>
         </view>
         <view 
           class="tab-item" 
-          :class="{'active': active.value.activityType === 6}"
+          :class="{'active': active.activityType === 6}"
           @click="selectType(6)"
         >
           <text>其他</text>
         </view>
       </view>
-    </scroll-view>
+    </scroll-view> -->
     
     <!-- 活动列表 -->
     <scroll-view class="activity-content" scroll-y @scrolltolower="loadMore">
-      <view class="activity-item" v-for="(item, index) in activityList" :key="index" @click="goToDetail(item.id)">
+      <view class="activity-item" v-for="(item, index) in activityList" :key="index" @click="goToDetail(item.id, item.userId)">
         <view class="activity-main">
           <!-- 活动图片 -->
-          <image :src="item.image || '/static/images/default-activity.png'" mode="aspectFill" class="activity-image"></image>
+          <image :src="item.handImg || '/static/images/default-activity.png'" mode="aspectFill" class="activity-image"></image>
           
           <!-- 活动基本信息 -->
           <view class="activity-info">
@@ -121,8 +121,9 @@
           
           <!-- 报名按钮 -->
           <view class="join-btn" :class="{
-            'full': item.currentNumber >= item.totalNumber,
-            'joined': item.signup
+            'full': item.currentNumber >= item.totalNumber && item.userId !== uni.getStorageSync('userInfo').id,
+            'joined': item.signup && item.userId !== uni.getStorageSync('userInfo').id,
+            'check': item.userId === uni.getStorageSync('userInfo').id
           }">
             {{getJoinButtonText(item)}}
           </view>
@@ -181,12 +182,6 @@ const chooseLocation = () => {
   })
 }
 
-// 前往搜索页
-const goToSearch = () => {
-  uni.navigateTo({
-    url: '/pages/activity-search/activity-search'
-  })
-}
 
 // 选择类型
 const selectType = (type) => {
@@ -246,6 +241,7 @@ const loadActivityList = () => {
           costType: item.activity.costType,
           penaltyCost: item.activity.penaltyCost,
           status: item.activity.status,
+          handImg: item.activity.handImg,
           // 用户信息
           organizer: {
             id: item.user.id,
@@ -287,7 +283,15 @@ const loadMore = () => {
 }
 
 // 前往详情页
-const goToDetail = (id) => {
+const goToDetail = (id, userId) => {
+  // 如果是自己发布的活动，跳转到报名信息页面
+  if (userId === uni.getStorageSync('userInfo').id) {
+    uni.navigateTo({
+      url: '/pages/activity-signup/activity-signup?id=' + id
+    })
+    return
+  }
+  // 否则跳转到活动详情页
   uni.navigateTo({
     url: '/pages/activity-detail/activity-detail?id=' + id
   })
@@ -431,6 +435,10 @@ const getCostTypeText = (costType, cost) => {
 
 // 获取报名按钮文本
 const getJoinButtonText = (item) => {
+  // 如果是自己发布的活动
+  if (item.userId === uni.getStorageSync('userInfo').id) {
+    return '查看报名'
+  }
   if (item.signup) return '已报名'
   if (item.currentNumber >= item.totalNumber) return '人数已满'
   return '立即报名'
@@ -725,6 +733,10 @@ onMounted(() => {
           }
           
           &.joined {
+            background: #67C23A;
+          }
+          
+          &.check {
             background: #67C23A;
           }
         }
