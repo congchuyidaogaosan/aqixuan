@@ -1,6 +1,7 @@
 package com.it.Controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.it.domain.DTO.UserInfoDTO;
 import com.it.domain.User;
 import com.it.domain.UserAvatar;
 import com.it.domain.common.Result;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -72,19 +74,15 @@ public class UserAvatarController {
         return Result.ok(byId);
     }
 
-    @GetMapping("tokenFind")
-    public Result tokenFind(HttpServletRequest request) {
+    @GetMapping("UserFind/{id}")
+    public Result UserFind(@PathVariable("id") Integer id, HttpSession session) {
 
-        String token = request.getHeader("token");
-
-        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
-
-        String userId = stringStringMap.get("userId");
-
-
-        UserAvatar byId = userAvatarService.getOne(new QueryWrapper<UserAvatar>().eq("user_id",userId).orderByDesc("created_at"));
-
-        return Result.ok(byId);
+        User byId1 = userService.getById(id);
+        UserAvatar byId = userAvatarService.getOne(new QueryWrapper<UserAvatar>().eq("user_id",id).orderByDesc("created_at").last("LIMIT 1"));
+        UserInfoDTO userInfoDTO=new UserInfoDTO();
+        userInfoDTO.setAvatar(byId);
+        userInfoDTO.setUser(byId1);
+        return Result.ok(userInfoDTO);
     }
 
 
