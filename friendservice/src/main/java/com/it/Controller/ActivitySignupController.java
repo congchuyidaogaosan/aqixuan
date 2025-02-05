@@ -99,4 +99,10 @@ public class ActivitySignupController {
         return Result.ok();
     }
 
+    // 同意或拒绝
+    @PostMapping("updateStatus")
+    public Result updateStatus(@RequestBody ActivitySignup activitySignup) {
+        boolean b = activitySignupService.updateById(activitySignup);
+        return Result.ok();
+    }
 }

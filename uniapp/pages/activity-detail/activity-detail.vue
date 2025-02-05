@@ -87,6 +87,33 @@
               <image :src="participant.avatar" mode="aspectFill" class="avatar"></image>
               <text class="nickname">{{participant.nickname}}</text>
               <text class="join-time">{{participant.joinTime}}</text>
+              <!-- 活动发起人显示操作按钮 -->
+              <template v-if="activityInfo.userId === getCurrentUserId()">
+                <!-- 待确认状态显示操作按钮 -->
+                <view class="action-btns" v-if="participant.status === 1">
+                  <button class="action-btn agree" @click.stop="handleAgree(participant)">同意</button>
+                  <button class="action-btn refuse" @click.stop="handleRefuse(participant)">拒绝</button>
+                </view>
+                <!-- 其他状态显示状态文本 -->
+                <text v-else class="status-text" 
+                  :class="{
+                    'agreed': participant.status === 2,
+                    'refused': participant.status === 3
+                  }"
+                >
+                  {{participant.status === 2 ? '已确认' : '已拒绝'}}
+                </text>
+              </template>
+              <!-- 非发起人显示状态文本 -->
+              <text v-else class="status-text" 
+                :class="{
+                  'pending': participant.status === 1,
+                  'agreed': participant.status === 2,
+                  'refused': participant.status === 3
+                }"
+              >
+                {{participant.status === 1 ? '待处理' : participant.status === 2 ? '已同意' : '已拒绝'}}
+              </text>
             </view>
           </view>
         </view>
@@ -112,7 +139,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getActivityDetail as getActivityDetailApi,getUserInfoById,joinActivity } from '@/api/user.js'
+import { getActivityDetail as getActivityDetailApi,getUserInfoById,joinActivity,agreeOrRefuse } from '@/api/user.js'
 
 // 活动信息
 const activityInfo = ref({
@@ -303,16 +330,18 @@ const getActivityDetail = (activityId) => {
           
           // 处理报名列表
           participants.value = res.ActivitySignupAndUserList.map(item => ({
-            id: item.id,
+            id: item.activitySignup.id,
             avatar: item.user?.avatarUrl || '/static/images/default-avatar.png',
             nickname: item.user?.nickname || '未知用户',
-            joinTime: item.createdAt
+            joinTime: item.activitySignup.createdAt,
+            status: Number(item.activitySignup.status),
+            userId: item.user.id
           }))
           
           // 检查当前用户是否已报名
           const currentUserId = getCurrentUserId()
           hasJoined.value = res.ActivitySignupAndUserList.some(item => 
-            item.userId === currentUserId
+            item.user.id === currentUserId
           )
          })
           // 处理活动信息
@@ -347,6 +376,64 @@ onMounted(() => {
 const getCurrentUserId = () => {
   const userInfo = uni.getStorageSync('userInfo')
   return userInfo ? userInfo.id : null
+}
+
+// 处理同意报名
+const handleAgree = (participant) => {
+  uni.showModal({
+    title: '确认同意',
+    content: `确定同意 ${participant.nickname} 的报名请求吗？`,
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await agreeOrRefuse({
+            id: participant.id,
+            status: 2 // 2表示已确认
+          })
+          uni.showToast({
+            title: '已同意',
+            icon: 'success'
+          })
+          // 刷新活动详情
+          getActivityDetail(activityInfo.value.id)
+        } catch (err) {
+          uni.showToast({
+            title: err.message || '操作失败',
+            icon: 'none'
+          })
+        }
+      }
+    }
+  })
+}
+
+// 处理拒绝报名
+const handleRefuse = (participant) => {
+  uni.showModal({
+    title: '确认拒绝',
+    content: `确定拒绝 ${participant.nickname} 的报名请求吗？`,
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await agreeOrRefuse({
+            id: participant.id,
+            status: 3 // 3表示已拒绝
+          })
+          uni.showToast({
+            title: '已拒绝',
+            icon: 'success'
+          })
+          // 刷新活动详情
+          getActivityDetail(activityInfo.value.id)
+        } catch (err) {
+          uni.showToast({
+            title: err.message || '操作失败',
+            icon: 'none'
+          })
+        }
+      }
+    }
+  })
 }
 
 </script>
@@ -579,6 +666,52 @@ const getCurrentUserId = () => {
             .join-time {
               font-size: 24rpx;
               color: #999;
+              margin-right: 20rpx;
+            }
+
+            .action-btns {
+              display: flex;
+              gap: 10rpx;
+              
+              .action-btn {
+                margin: 0;
+                padding: 0 20rpx;
+                height: 48rpx;
+                line-height: 48rpx;
+                font-size: 24rpx;
+                border-radius: 24rpx;
+                
+                &.agree {
+                  background: #67C23A;
+                  color: #fff;
+                }
+                
+                &.refuse {
+                  background: #F56C6C;
+                  color: #fff;
+                }
+              }
+            }
+
+            .status-text {
+              font-size: 24rpx;
+              padding: 4rpx 12rpx;
+              border-radius: 20rpx;
+              
+              &.pending {
+                background: #E6A23C;
+                color: #fff;
+              }
+              
+              &.agreed {
+                background: #67C23A;
+                color: #fff;
+              }
+              
+              &.refused {
+                background: #F56C6C;
+                color: #fff;
+              }
             }
           }
         }

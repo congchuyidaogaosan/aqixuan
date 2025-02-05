@@ -210,6 +210,15 @@ const api = {
       method: 'POST',
       data
     })
+  },
+
+  // 同意或拒绝
+  agreeOrRefuse: (data) => {
+    return request({
+      url: '/ActivitySignup/updateStatus',
+      method: 'POST',
+      data
+    })
   }
 }
 // 发送验证码
@@ -559,6 +568,17 @@ export const joinActivity = async (data) => {
     return res.code === 200
   } catch (e) {
     console.log('报名活动失败：', e)
+    return false
+  }
+}
+
+// 同意或拒绝
+export const agreeOrRefuse = async (data) => {
+  try {
+    const res = await api.agreeOrRefuse(data)
+    return res.code === 200
+  } catch (e) {
+    console.log('同意或拒绝失败：', e)
     return false
   }
 }
