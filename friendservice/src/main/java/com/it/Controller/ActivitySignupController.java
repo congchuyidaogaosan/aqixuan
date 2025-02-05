@@ -93,9 +93,7 @@ public class ActivitySignupController {
 
         boolean b = activitySignupService.save(activitySignup);
 
-        Activity activity = activityService.getById(activitySignup.getActivityId());
-        activity.setCurrentNumber(activity.getCurrentNumber() + 1);
-        activityService.updateById(activity);
+
         return Result.ok();
     }
 
@@ -103,6 +101,12 @@ public class ActivitySignupController {
     @PostMapping("updateStatus")
     public Result updateStatus(@RequestBody ActivitySignup activitySignup) {
         boolean b = activitySignupService.updateById(activitySignup);
+        if (activitySignup.getStatus().equals("2")) {
+            Activity activity = activityService.getById(activitySignup.getActivityId());
+            activity.setCurrentNumber(activity.getCurrentNumber() + 1);
+            activityService.updateById(activity);
+        }
+
         return Result.ok();
     }
 }
