@@ -1,11 +1,12 @@
 package com.it.service;
 
+import com.it.domain.DTO.NewRecommendDTO;
 import com.it.domain.common.Result;
 
 public interface RecommendService {
 
 
-    Result list(Integer userId);
+    Result<NewRecommendDTO> list(Integer userId);
 
 
 }

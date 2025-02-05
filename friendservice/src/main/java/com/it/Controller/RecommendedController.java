@@ -1,5 +1,7 @@
 package com.it.Controller;
 
+import com.it.domain.DTO.NewRecommendDTO;
+import com.it.domain.User;
 import com.it.domain.common.Result;
 import com.it.service.BlacklistService;
 import com.it.service.FollowService;
@@ -11,6 +13,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 
@@ -28,14 +33,24 @@ public class RecommendedController {
     @GetMapping("/{page}/{size}")
     public Result recommend(@PathVariable("page") Integer page, @PathVariable("size") Integer size) {
 
-        Result<int[][]> list = recommendService.list(1);
+        Result<NewRecommendDTO> list = recommendService.list(1);
         int targetUser = 0;
 
         int numRecommendations = 10;
 
-        List<Integer> recommendedFriends = friendRecommendation.recommendFriends(list.getData(), targetUser, numRecommendations);
-        System.out.println("为用户 " + targetUser + " 推荐的朋友：" + recommendedFriends);
-        return Result.ok(recommendedFriends);
+        int[][] data = list.getData().getArray();
+
+        List<Integer> recommendedFriends = friendRecommendation.recommendFriends(data, targetUser, numRecommendations);
+
+        HashMap<Integer, User> hashMap = list.getData().getHashMap();
+        List<User> users = new ArrayList<>();
+        for (Integer thisint:recommendedFriends){
+            User list1 = hashMap.get(thisint);
+            users.add(list1);
+        }
+
+
+        return Result.ok(users);
 
     }
 

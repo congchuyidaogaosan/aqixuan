@@ -2,6 +2,7 @@ package com.it.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.it.domain.Blacklist;
+import com.it.domain.DTO.NewRecommendDTO;
 import com.it.domain.Follow;
 import com.it.domain.User;
 import com.it.domain.common.Result;
@@ -27,7 +28,7 @@ public class RecommendServiceImpl implements RecommendService {
     @Autowired
     private UserService userService;
 
-    public Result<int[][]> list(Integer userId) {
+    public Result<NewRecommendDTO> list(Integer userId) {
 
 
         List<Follow> follows = followService.list(new QueryWrapper<Follow>().eq("user_id", userId));
@@ -41,11 +42,13 @@ public class RecommendServiceImpl implements RecommendService {
         System.out.println(Arrays.toString(follows.toArray()));
         System.out.println(Arrays.toString(blacklists.toArray()));
 
-        HashMap<Integer,List<Integer>> hashMap = new HashMap<>();
+        HashMap<Integer,User> hashMap = new HashMap<>();
+        int a=0;
         for (User user : list) {
+
             List<Follow> followList = followService.list(new QueryWrapper<Follow>().eq("user_id", user.getId()));
             List<Integer> number = number(list, followList);
-            hashMap.put(user.getId(), number);
+            hashMap.put(a++, user);
 
 //            int size=number.size();
 //            Integer[] arrs=number.toArray(new Integer[size]);
@@ -56,12 +59,13 @@ public class RecommendServiceImpl implements RecommendService {
             integers.add(number);
         }
 
-
+        NewRecommendDTO newRecommendDTO = new NewRecommendDTO();
 
         int[][] array = convertListTo2DArray(integers);
 
-
-        return Result.ok(array);
+        newRecommendDTO.setArray(array);
+        newRecommendDTO.setHashMap(hashMap);
+        return Result.ok(newRecommendDTO);
     }
 
 
