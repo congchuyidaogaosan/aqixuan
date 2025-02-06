@@ -1,6 +1,7 @@
 package com.it.Controller;
 
 import com.it.domain.DTO.NewRecommendDTO;
+import com.it.domain.DTO.UserDTO;
 import com.it.domain.User;
 import com.it.domain.common.Result;
 import com.it.service.BlacklistService;
@@ -42,10 +43,11 @@ public class RecommendedController {
 
         List<Integer> recommendedFriends = friendRecommendation.recommendFriends(data, targetUser, numRecommendations);
 
-        HashMap<Integer, User> hashMap = list.getData().getHashMap();
-        List<User> users = new ArrayList<>();
+        HashMap<Integer, UserDTO> hashMap = list.getData().getHashMap();
+
+        List<UserDTO> users = new ArrayList<>();
         for (Integer thisint:recommendedFriends){
-            User list1 = hashMap.get(thisint);
+            UserDTO list1 = hashMap.get(thisint);
             users.add(list1);
         }
 

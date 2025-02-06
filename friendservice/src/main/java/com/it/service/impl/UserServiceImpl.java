@@ -44,6 +44,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     @Override
+    public List<UserDTO> joinUserAvatar() {
+        MPJLambdaWrapper<User> wrapper =new MPJLambdaWrapper<User>();
+        wrapper.selectAll(User.class).select("avatar_url").leftJoin(UserAvatar.class,UserAvatar::getUserId,User::getId);
+
+        wrapper.orderByAsc("updated_at");
+
+        List<UserDTO> objects = userMapper.selectJoinList(UserDTO.class,wrapper);
+
+        return objects;
+    }
+
+    @Override
     public Boolean isUserPhone(String phone) {
         QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
         userQueryWrapper.eq("phone", phone);

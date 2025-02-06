@@ -3,6 +3,7 @@ package com.it.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.it.domain.Blacklist;
 import com.it.domain.DTO.NewRecommendDTO;
+import com.it.domain.DTO.UserDTO;
 import com.it.domain.Follow;
 import com.it.domain.User;
 import com.it.domain.common.Result;
@@ -34,7 +35,7 @@ public class RecommendServiceImpl implements RecommendService {
         List<Follow> follows = followService.list(new QueryWrapper<Follow>().eq("user_id", userId));
         List<Blacklist> blacklists = blacklistService.list(new QueryWrapper<Blacklist>().eq("user_id", userId));
 
-        List<User> list = userService.list();
+        List<UserDTO> list = userService.joinUserAvatar();
 
 
         ArrayList<List<Integer>> integers = new ArrayList<>();
@@ -42,9 +43,9 @@ public class RecommendServiceImpl implements RecommendService {
         System.out.println(Arrays.toString(follows.toArray()));
         System.out.println(Arrays.toString(blacklists.toArray()));
 
-        HashMap<Integer,User> hashMap = new HashMap<>();
+        HashMap<Integer,UserDTO> hashMap = new HashMap<>();
         int a=0;
-        for (User user : list) {
+        for (UserDTO user : list) {
 
             List<Follow> followList = followService.list(new QueryWrapper<Follow>().eq("user_id", user.getId()));
             List<Integer> number = number(list, followList);
@@ -85,10 +86,10 @@ public class RecommendServiceImpl implements RecommendService {
     }
 
 
-    private LinkedList<Integer> number(List<User> users, List<Follow> follows) {
+    private LinkedList<Integer> number(List<UserDTO> users, List<Follow> follows) {
         LinkedList<Integer> integers = new LinkedList<>();
 
-        for (User user : users) {
+        for (UserDTO user : users) {
 
             integers.addLast(0);
             for (Follow follow : follows) {

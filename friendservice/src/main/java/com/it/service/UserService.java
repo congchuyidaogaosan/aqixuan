@@ -19,4 +19,5 @@ public interface UserService extends IService<User> {
 
     List<UserDTO> joinUserAvatar(List<Integer> list);
 
+     List<UserDTO> joinUserAvatar();
 }
