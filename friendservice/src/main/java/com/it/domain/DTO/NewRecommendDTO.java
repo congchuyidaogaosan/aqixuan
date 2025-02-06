@@ -10,7 +10,7 @@ import java.util.List;
 public class NewRecommendDTO {
 
 
-    private HashMap<Integer, UserDTO> hashMap;
+    private HashMap<Integer, User> hashMap;
 
     private int[][] array;
 

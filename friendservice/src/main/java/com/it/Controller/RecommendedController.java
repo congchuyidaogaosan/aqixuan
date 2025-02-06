@@ -2,11 +2,11 @@ package com.it.Controller;
 
 import com.it.domain.DTO.NewRecommendDTO;
 import com.it.domain.DTO.UserDTO;
+import com.it.domain.DTO.UserInfoDTO;
 import com.it.domain.User;
+import com.it.domain.UserAvatar;
 import com.it.domain.common.Result;
-import com.it.service.BlacklistService;
-import com.it.service.FollowService;
-import com.it.service.RecommendService;
+import com.it.service.*;
 import com.it.utill.FriendRecommendation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,6 +31,9 @@ public class RecommendedController {
     @Autowired
     private FriendRecommendation friendRecommendation;
 
+    @Autowired
+    private UserAvatarService userAvatarService;
+
     @GetMapping("/{page}/{size}")
     public Result recommend(@PathVariable("page") Integer page, @PathVariable("size") Integer size) {
 
@@ -43,12 +46,18 @@ public class RecommendedController {
 
         List<Integer> recommendedFriends = friendRecommendation.recommendFriends(data, targetUser, numRecommendations);
 
-        HashMap<Integer, UserDTO> hashMap = list.getData().getHashMap();
+        HashMap<Integer, User> hashMap = list.getData().getHashMap();
 
-        List<UserDTO> users = new ArrayList<>();
-        for (Integer thisint:recommendedFriends){
-            UserDTO list1 = hashMap.get(thisint);
-            users.add(list1);
+        List<UserInfoDTO> users = new ArrayList<>();
+        for (Integer thisint : recommendedFriends) {
+            User user = hashMap.get(thisint);
+            UserInfoDTO userInfoDTO = new UserInfoDTO();
+            userInfoDTO.setUser(user);
+
+            List<String> avatarList = userAvatarService.getAvatarList(user.getId(), 3);
+            userInfoDTO.setUrl(avatarList);
+            users.add(userInfoDTO);
+
         }
 
 

@@ -35,7 +35,7 @@ public class RecommendServiceImpl implements RecommendService {
         List<Follow> follows = followService.list(new QueryWrapper<Follow>().eq("user_id", userId));
         List<Blacklist> blacklists = blacklistService.list(new QueryWrapper<Blacklist>().eq("user_id", userId));
 
-        List<UserDTO> list = userService.joinUserAvatar();
+        List<User> list = userService.list();
 
 
         ArrayList<List<Integer>> integers = new ArrayList<>();
@@ -43,9 +43,9 @@ public class RecommendServiceImpl implements RecommendService {
         System.out.println(Arrays.toString(follows.toArray()));
         System.out.println(Arrays.toString(blacklists.toArray()));
 
-        HashMap<Integer,UserDTO> hashMap = new HashMap<>();
+        HashMap<Integer,User> hashMap = new HashMap<>();
         int a=0;
-        for (UserDTO user : list) {
+        for (User user : list) {
 
             List<Follow> followList = followService.list(new QueryWrapper<Follow>().eq("user_id", user.getId()));
             List<Integer> number = number(list, followList);
@@ -86,10 +86,10 @@ public class RecommendServiceImpl implements RecommendService {
     }
 
 
-    private LinkedList<Integer> number(List<UserDTO> users, List<Follow> follows) {
+    private LinkedList<Integer> number(List<User> users, List<Follow> follows) {
         LinkedList<Integer> integers = new LinkedList<>();
 
-        for (UserDTO user : users) {
+        for (User user : users) {
 
             integers.addLast(0);
             for (Follow follow : follows) {

@@ -10,6 +10,7 @@ import com.it.mapper.UserAvatarMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -40,8 +41,19 @@ public class UserAvatarServiceImpl extends ServiceImpl<UserAvatarMapper, UserAva
             return user;
         }
 
-
         return null;
+    }
+
+    @Override
+    public List<String> getAvatarList(Integer id, int i) {
+        List<String> strings = new ArrayList<>();
+        List<UserAvatar> avatarList = userAvatarMapper.selectList(new QueryWrapper<UserAvatar>().eq("user_id", id).orderByAsc("created_at"));
+        for (UserAvatar userAvatar:avatarList){
+            strings.add(userAvatar.getAvatarUrl());
+        }
+
+
+        return strings;
     }
 }
 
