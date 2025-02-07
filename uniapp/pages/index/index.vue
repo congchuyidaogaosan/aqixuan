@@ -7,12 +7,9 @@
 			</view>
 		</view>
 		
-		<!-- 原有内容 -->
-		<view class="content">
-			<image class="logo" src="/static/logo.png"></image>
-			<view class="text-area">
-				<text class="title">{{title}}</text>
-			</view>
+		<!-- tantan组件容器 -->
+		<view class="tantan-container">
+			<tantan></tantan>
 		</view>
 	</view>
 </template>
@@ -21,6 +18,7 @@
 import { ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { updateUser } from '@/api/user.js'
+import tantan from '../tantan/index.vue'
 
 const title = ref('Hello')
 // 获取地理位置
@@ -94,7 +92,7 @@ const goToSearch = () => {
 <style lang="less" scoped>
 .container {
 	width: 100%;
-	min-height: 100vh;
+	// min-height: 100vh;
 	background: #f5f5f5;
 	
 	// 页面头部
