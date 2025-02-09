@@ -1,7 +1,8 @@
+import { getRecommendUserList } from '@/api/user'
 export default { 
 	data(){
 		return{
-			number:2, //展示卡片数量，同时设置animationData对象
+			number:5, //展示卡片数量，同时设置animationData对象
 			moveRotate:{ x:0,y:0 }, //设置位移图片旋转角度距离  card中心点 - 指向坐标
 			delMoveD: uni.getSystemInfoSync().screenHeight,//设置删除移动距离
 			touchMoveD: 100,//设置card移动距离,   card移动距离/touchMoveD = 其他card变化比率
@@ -11,7 +12,9 @@ export default {
 			translate:{ x:0,y:0 }, //位移px
 			opacity:1,  //透明度，参数范围 0~1
 			type:false, //是否拥有两套代码
-			
+			currentPage: 1, // 当前页码
+			pageSize: 10, // 每页数量
+			isLoading: false, // 是否正在加载数据
 			
 			moveX:0, //记录移动值
 			moveY:0, //
@@ -44,64 +47,123 @@ export default {
 			
 		},
 		//获取数据
-		getData(){
-			this.dataList = [{
-			  src:'../../static/1.jpg',
-			  sex:1,
-			  address:'杭州(100km)',
-			  name:'可爱的小姐姐',
-			  constellation:'双鱼座',
-			  img: ['../../static/1.jpg','../../static/10.jpg','../../static/9.jpg','../../static/8.jpg'],
-			  old:18
-			},{
-			  src:'../../static/2.jpg',
-			  sex:0,
-			  address:'杭州(100km)',
-			  name:'甜美的小姐姐',
-			  constellation:'双鱼座',
-			  img: ['../../static/2.jpg'],
-			  old:24
-			},{
-			  src:'../../static/3.jpg',
-			  sex:1,
-			  address:'杭州(100km)',
-			  name:'小姐姐',
-			  constellation:'双鱼座',
-			  img: ['../../static/3.jpg','../../static/8.jpg'],
-			  old:23
-			},{
-			  src:'../../static/4.jpg',
-			  sex:1,
-			  address:'杭州(100km)',
-			  name:'杭州小姐姐',
-			  constellation:'双鱼座',
-			  img: ['../../static/4.jpg','../../static/9.jpg','../../static/8.jpg'],
-			  old:24
-			},{
-			  src:'../../static/5.jpg',
-			  sex:1,
-			  address:'杭州(100km)',
-			  name:'双鱼小姐姐',
-			  constellation:'双鱼座',
-			  img: ['../../static/5.jpg','../../static/10.jpg','../../static/9.jpg','../../static/8.jpg','../../static/1.jpg','../../static/8.jpg'],
-			  old:26
-			},{
-			  src:'../../static/6.jpg',
-			  sex:1,
-			  address:'杭州(100km)',
-			  name:'可爱姐',
-			  constellation:'双鱼座',
-			  img: ['../../static/6.jpg'],
-			  old:25
-			},{
-			  src:'../../static/7.jpg',
-			  sex:1,
-			  address:'杭州(100km)',
-			  name:'爱姐姐',
-			  constellation:'双鱼座',
-			  img: ['../../static/7.jpg','../../static/1.jpg','../../static/5.jpg','../../static/3.jpg'],
-			  old:17
-			},]
+		async getData(isAppend = false){
+			// 如果正在加载中，直接返回
+			if(this.isLoading) return;
+			
+			// 如果不是追加模式且已有数据，不重新加载
+			if(!isAppend && this.dataList && this.dataList.length > 0) {
+				return;
+			}
+			
+			try {
+				this.isLoading = true;
+				const res = await getRecommendUserList(this.currentPage, this.pageSize)
+				
+				if(res && res.length > 0) {
+					const formattedData = res.map(item => {
+						const user = item.user;
+						const interests = user.interests ? JSON.parse(user.interests) : [];
+						const sports = user.sports ? JSON.parse(user.sports) : [];
+						
+						// 计算年龄
+						const birthday = new Date(user.birthday);
+						const today = new Date();
+						const age = today.getFullYear() - birthday.getFullYear();
+						
+						return {
+							_id: this.cardId++,
+							src: item.url?.[0] || '../../static/default-avatar.png',
+							sex: user.gender || 0,
+							address: user.location || '未知',
+							name: user.nickname || '未知用户',
+							constellation: this.getConstellation(birthday),
+							img: item.url || ['../../static/default-avatar.png'],
+							old: age,
+							moveX: 0,
+							moveY: 0,
+							animation: false,
+							introduction: user.introduction,
+							height: user.height,
+							weight: user.weight,
+							roleType: user.roleType,
+							industry: user.industry,
+							emotionStatus: user.emotionStatus,
+							mbti: user.mbti,
+							datingPurpose: user.datingPurpose,
+							interests: interests,
+							sports: sports
+						}
+					})
+					
+					if(isAppend) {
+						// 将新数据追加到数组末尾，并确保_id是连续的
+						this.dataList = [...this.dataList, ...formattedData].map((item, index) => ({
+							...item,
+							_id: index // 重新设置_id确保顺序正确
+						}));
+					} else {
+						this.dataList = formattedData;
+					}
+					
+					// 更新页码
+					this.currentPage++;
+					
+				} else if(!isAppend) {
+					// 只有在非追加模式下才使用默认数据
+					this.dataList = [{
+						_id: this.cardId++,
+						src:'../../static/default-avatar.png',
+						sex:1,
+						address:'未知',
+						name:'暂无推荐',
+						constellation:'未知',
+						img: ['../../static/default-avatar.png'],
+						old:18,
+						moveX: 0,
+						moveY: 0,
+						animation: false
+					}]
+				}
+			} catch(e) {
+				console.error('获取推荐用户列表失败:', e)
+				if(!isAppend) {
+					// 只有在非追加模式下才使用默认数据
+					this.dataList = [{
+						_id: this.cardId++,
+						src:'../../static/default-avatar.png',
+						sex:1,
+						address:'未知',
+						name:'暂无推荐',
+						constellation:'未知',
+						img: ['../../static/default-avatar.png'],
+						old:18,
+						moveX: 0,
+						moveY: 0,
+						animation: false
+					}]
+				}
+			} finally {
+				this.isLoading = false;
+			}
+		},
+		// 根据生日计算星座
+		getConstellation(birthday) {
+			const month = birthday.getMonth() + 1;
+			const day = birthday.getDate();
+			
+			if ((month == 1 && day >= 20) || (month == 2 && day <= 18)) return "水瓶座";
+			if ((month == 2 && day >= 19) || (month == 3 && day <= 20)) return "双鱼座";
+			if ((month == 3 && day >= 21) || (month == 4 && day <= 19)) return "白羊座";
+			if ((month == 4 && day >= 20) || (month == 5 && day <= 20)) return "金牛座";
+			if ((month == 5 && day >= 21) || (month == 6 && day <= 21)) return "双子座";
+			if ((month == 6 && day >= 22) || (month == 7 && day <= 22)) return "巨蟹座";
+			if ((month == 7 && day >= 23) || (month == 8 && day <= 22)) return "狮子座";
+			if ((month == 8 && day >= 23) || (month == 9 && day <= 22)) return "处女座";
+			if ((month == 9 && day >= 23) || (month == 10 && day <= 23)) return "天秤座";
+			if ((month == 10 && day >= 24) || (month == 11 && day <= 22)) return "天蝎座";
+			if ((month == 11 && day >= 23) || (month == 12 && day <= 21)) return "射手座";
+			return "摩羯座";
 		},
 		createAnimation(){
 			//touch移动动画
@@ -283,7 +345,12 @@ export default {
 				this.dataList[0].moveX = 0
 				this.dataList[0].moveY = 0
 				this.dataList.splice(0,1)
-				if(this.dataList.length<=this.number) this.getData()
+				
+				// 当数据剩余2条时，提前加载下一页
+				if(this.dataList.length <= 2) {
+					this.getData(true)
+				}
+				
 				if(this.type) {
 					//#ifdef APP-PLUS
 					this.delFlag = false

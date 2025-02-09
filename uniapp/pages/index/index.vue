@@ -92,7 +92,7 @@ const goToSearch = () => {
 <style lang="less" scoped>
 .container {
 	width: 100%;
-	// min-height: 100vh;
+	height: 95vh;
 	background: #f5f5f5;
 	
 	// 页面头部
@@ -100,7 +100,7 @@ const goToSearch = () => {
 		width: 100%;
 		padding: 20rpx;
 		display: flex;
-		justify-content: flex-start;  // 改为左对齐
+		justify-content: flex-start;
 		position: fixed;
 		top: 0;
 		left: 0;
@@ -108,13 +108,13 @@ const goToSearch = () => {
 		z-index: 100;
 		box-sizing: border-box;
 		padding-top: calc(var(--status-bar-height) + 20rpx);
-		background: transparent;  // 背景改为透明
+		background: transparent;
 		
 		.search-btn {
 			width: 37rpx;
 			height: 37rpx;
 			padding: 10rpx;
-			margin-left: 10rpx;  // 添加左边距
+			margin-left: 10rpx;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -125,33 +125,14 @@ const goToSearch = () => {
 			}
 		}
 	}
-	
-	// 原有样式
-	.content {
-		padding-top: calc(var(--status-bar-height) + 88rpx);  // 为固定头部留出空间
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		
-		.logo {
-			height: 200rpx;
-			width: 200rpx;
-			margin-top: 200rpx;
-			margin-left: auto;
-			margin-right: auto;
-			margin-bottom: 50rpx;
-		}
-		
-		.text-area {
-			display: flex;
-			justify-content: center;
-			
-			.title {
-				font-size: 36rpx;
-				color: #8f8f94;
-			}
-		}
+	.tantan-container {
+		width: calc(100% - 40rpx);
+		height: 98%;
+		background-color: #f5f5f5;
+		position: relative;
+		padding-top: calc(var(--status-bar-height) + 88rpx);
+		box-sizing: border-box;
+		margin: 0 20rpx;
 	}
 }
 </style>

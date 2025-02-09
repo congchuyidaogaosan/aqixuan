@@ -1,13 +1,13 @@
 <template>
-	<view class="page" :style="{height:`${sysHeight}px`,width:`${sysWidth}px`}">
+	<view class="page">
 		<!-- #ifndef APP-PLUS -->
-		<movable-area class="move-area" :style="{height:`${3*sysHeight}px`,width:`${3*sysWidth}px`,top:`${-sysHeight}px`,left:`${-sysWidth}px` }">
+		<movable-area class="move-area">
 				<movable-view
 					id="move"
 					class="move-view"
 					v-for="(item,index) in dataList"
 					:key="item._id"
-					:style="{zIndex:`${99999-item._id}`}"
+					:style="{zIndex:`${index === 0 ? 999 : 998-index}`}"
 					direction="all"
 					:x="item.moveX"
 					:y="item.moveY"
@@ -31,7 +31,7 @@
 					</view>
 				</movable-view>
 		</movable-area>
-        <view class="" style="position: absolute;bottom: 25rpx;z-index: 999999;left: 0;display: flex;align-items: center;justify-content: space-between;width: 80%;margin: 0 10%;">
+        <view class="" style="position: absolute;z-index: 999999;left: 0;bottom: 0;display: flex;align-items: center;justify-content: space-between;width: 100%;height: 10%;padding: 0 40rpx;box-sizing: border-box;">
           <view class="loathe1">
           	<image src="../../static/back.png" style="width: 54upx;height: 54upx;"></image>
           </view>
@@ -98,13 +98,13 @@
 			//设置初始参数
 			init(){
 				this.number = 3 //card 3
-				this.translate = { x:0,y:8 } //y下移10px
-				this.scale = { x:0.95,y:1 } //x 缩小0.9
+				this.translate = { x:0,y:0 } // 移除y轴位移
+				this.scale = { x:0.92,y:0.92 } // 设置缩放比例
 				this.type = true
 				
 				this.moveRotate = { //设置位移图片旋转角度距离  card中心点 - 指向坐标
 					x:0,
-					y:uni.getSystemInfoSync().screenHeight ,
+					y:uni.getSystemInfoSync().screenHeight,
 				}
 			},
 			//触摸中判断
@@ -169,30 +169,39 @@
 	}
 	.page{
 		width: 100%;
+		height: 94%;
 		position: absolute;
+		bottom: 0;
 		overflow: hidden;
 		display: flex;
 		align-items: center;
 		justify-content: center;
     background: #FDFDFD;
+		border-radius: 20rpx;
+		padding: 0 20rpx;
+		box-sizing: border-box;
 	}
 	.move-area{
 		position: absolute;
+		width: 100%;
+		height: 100%;
 	}
 	.move-view{
-		width: 600rpx;
+		width: 100%;
 		position: absolute;
-		height: 900rpx;
+		height: 100%;
 		left: 50%;
 		top: 50%;
-		margin-left: -300rpx;
-		margin-top: -540rpx;
-		// margin-top: -500rpx;
+		transform: translate(-50%, -50%);
+		margin-left: 0;
+		margin-top: 0;
 	}
 	.cardBox{
 		position:relative;
-		width: 600rpx;
-		height: 900rpx;
+		// width: 600rpx;
+		// height: 900rpx;
+		width: 100%;
+		height: 100%;
 	}
   .loathe1{
   	width: 80rpx;

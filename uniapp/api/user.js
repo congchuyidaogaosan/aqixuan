@@ -219,6 +219,14 @@ const api = {
       method: 'POST',
       data
     })
+  },
+
+  // 获取用户列表 apping("/{page}/{size}")
+  getRecommendUserList: (page, size) => {
+    return request({
+      url: `/Recommend/${page}/${size}`,
+      method: 'GET',
+    })
   }
 }
 // 发送验证码
@@ -580,5 +588,16 @@ export const agreeOrRefuse = async (data) => {
   } catch (e) {
     console.log('同意或拒绝失败：', e)
     return false
+  }
+}
+
+// 获取用户列表
+export const getRecommendUserList = async (page, size) => {
+  try {
+    const res = await api.getRecommendUserList(page, size)
+    return res.code === 200 ? res.data : []
+  } catch (e) {
+    console.log('获取用户列表失败：', e)
+    return []
   }
 }
