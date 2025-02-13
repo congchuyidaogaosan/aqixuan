@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpSession;
 import java.util.HashMap;
 
 @RestController
@@ -51,7 +52,7 @@ public class PhoneController {
 
     //
     @GetMapping("isPhone")
-    public Result<?> isPhone(@RequestParam("phone") String phone, @RequestParam("code") String code, @RequestParam("key") String key) {
+    public Result<?> isPhone(HttpSession httpSession, @RequestParam("phone") String phone, @RequestParam("code") String code, @RequestParam("key") String key) {
 
         Boolean flag = userService.isUserPhone(phone);
         if (!flag) {
@@ -66,7 +67,7 @@ public class PhoneController {
 
          stringObjectHashMap.put("token", token);
          stringObjectHashMap.put("userInfo", data);
-
+         httpSession.setAttribute("userInfo",data);
 
          return Result.ok(stringObjectHashMap);
      }catch (Exception e){
