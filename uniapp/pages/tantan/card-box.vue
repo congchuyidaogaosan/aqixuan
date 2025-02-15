@@ -1,77 +1,70 @@
 <template>
 	<view class="cardBox">
 		<view class="top">
-			<view class="" v-if="img.length > 1"
-				style="width: 94%;height: 20upx;position: absolute;top: 10upx;left: 3%;display: flex;align-items: center;justify-content: space-between;">
-				<view class="" style="height: 8upx;background: #FFF;border-radius: 20upx;"
-					:style="{ width: 94 / img.length + '%', background: current == index ? '#f45b43' : '' }"
-					v-for="(item, index) in img" :key="index"></view>
+			<swiper 
+				class="avatar-swiper" 
+				circular 
+				:current="current"
+				:indicator-dots="false"
+				:autoplay="false"
+				:duration="300"
+			>
+				<swiper-item v-for="(url, index) in item.img" :key="index">
+					<image :src="url" mode="aspectFill" class="swiper-image"></image>
+				</swiper-item>
+			</swiper>
+			
+			<!-- 自定义指示器 -->
+			<view class="custom-indicators">
+				<view 
+					v-for="(url, index) in item.img" 
+					:key="index"
+					class="indicator-line"
+					:class="{active: current === index }"
+				></view>
 			</view>
+
+			<!-- 左右切换按钮区域 -->
+			<view class="image-nav">
+				<view class="nav-area left" @click.stop="previous"></view>
+				<view class="nav-area right" @click.stop="next"></view>
+			</view>
+
 			<view class="love" :animation="loveAnimation[0]">
 				<view class="iconfont icon-xinaixin" :style="{ fontSize: '60rpx' }"></view>
 			</view>
 			<view class="loathe" :animation="loatheAnimation[0]">
 				<view class="iconfont icon-chacha1" :style="{ fontSize: '60rpx' }"></view>
 			</view>
-			<image class="img" :src="img[current]"></image>
-
-			<view class="right_next" @click="next">next</view>
-			<view class="left_previous" @click="previous">previous</view>
 		</view>
 
 		<view class="bottom"
-			style="position: absolute;bottom: 10%;left: 0;width: 94%;">
+			style="position: absolute;bottom: 10%;left: 0;width: 94%;"
+			@click="goToUserProfile">
 			<view class="username">
-				<view class="">{{ name }}</view>
-				<view class="img-right">
+				<view class="">{{ item.name }}</view>
+				<!-- <view class="img-right">
 					<view class="iconfont icon-v"></view>
-				</view>
+				</view> -->
 			</view>
 			<view class="labelBox">
-				<view class="label" :style="{ backgroundColor: sex == 0 ? '#7BD8FF' : '#F3C9F5' }">
-					<view class="iconfont sex" :class="sex == 0 ? 'icon-male' : 'icon-xingbie-nv'"
-						:style="{ fontSize: '16px' }"></view> {{ old }}
-				</view>
-				<view class="label" :style="{ backgroundColor: '#A4C742' }">{{ constellation }}</view>
+					{{ item.old }}岁 · {{ item.height }}cm/{{ item.weight }}kg · {{ item.constellation }}
+				
 			</view>
-			<view class="address">{{ address }}</view>
+			<view class="address">{{ item.introduction }}</view>
 		</view>
 		<view class="bottom-shadow"></view>
 	</view>
 </template>
 
 <script>
+import { getRecommendUserList, followUser } from '@/api/user'
 export default {
 	props: {
-		src: {
-			type: String,
-			default: ''
-		},
-		number: {
-			type: Number,
-			default: 0
-		},
-		name: {
-			type: String,
-			default: ''
-		},
-		sex: {
-			type: Number,
-			default: 0
-		},
-		constellation: {
-			type: String,
-			default: ''
-		},
-		address: {
-			type: String,
-			default: ''
-		},
-		old: {
-			type: Number,
-			default: 18
-		},
-		img: {}
+		item: {
+			type: Object,
+			default: () => {}
+		}
 	},
 	data() {
 		return {
@@ -91,20 +84,27 @@ export default {
 		this.loatheAni = uni.createAnimation({
 			duration: 0
 		});
+		console.log(this.item)
 	},
 	methods: {
 		previous() {
-			console.log('next')
 			if (this.current == 0) {
+				uni.showToast({
+					title: '已经是第一张照片了',
+					icon: 'none'
+				})
 				return
 			} else {
 				this.current = this.current - 1;
 			}
 		},
 		next() {
-			console.log('next')
-			if (this.current == this.img.length - 1) {
-				this.current = 0;
+			if (this.current == this.item.img.length - 1) {
+				uni.showToast({
+					title: '已经是最后一张照片了',
+					icon: 'none'
+				})
+				return
 			} else {
 				this.current = this.current + 1;
 			}
@@ -132,6 +132,7 @@ export default {
 			this.loveAnimation[0] = this.loveAni.export()
 			this.loatheAni.opacity(0).step()
 			this.loatheAnimation[0] = this.loatheAni.export()
+			
 		},
 		moveLeft(ratio) {
 			this.loveAni.opacity(0).step()
@@ -144,6 +145,11 @@ export default {
 			this.loveAnimation[0] = this.loveAni.export()
 			this.loatheAni.opacity(0.3).step()
 			this.loatheAnimation[0] = this.loatheAni.export()
+		},
+		goToUserProfile() {
+			uni.navigateTo({
+				url: `/pages/profile/profile?userId=${this.item.userId}&nickname=${encodeURIComponent(this.item.name)}&avatarUrl=${encodeURIComponent(this.item.img[0])}`
+			})
 		}
 	}
 }
@@ -245,10 +251,10 @@ export default {
 	.top {
 		// width: 600rpx;
 		// height: 900rpx;
+		// height: 700rpx;
 		width: 100%;
 		height: 100%;
 
-		// height: 700rpx;
 		.img-top {
 			position: absolute;
 			font-size: 12px;
@@ -393,6 +399,54 @@ export default {
 		height: 11%;
 		background-color: black;
 		pointer-events: none;
+	}
+
+	.avatar-swiper {
+		width: 100%;
+		height: 90%;
+		
+		.swiper-image {
+			width: 100%;
+			height: 100%;
+		}
+	}
+
+	.custom-indicators {
+		position: absolute;
+		top: 20rpx;
+		left: 20rpx;
+		right: 20rpx;
+		display: flex;
+		justify-content: space-between;
+		z-index: 10;
+		
+		.indicator-line {
+			flex: 1;
+			height: 6rpx;
+			background: rgba(255, 255, 255, 0.4);
+			margin: 0 4rpx;
+			border-radius: 3rpx;
+			
+			&.active {
+				background: #ffffff;
+			}
+		}
+	}
+
+	.image-nav {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 70%;
+		display: flex;
+		justify-content: space-between;
+		z-index: 10;
+
+		.nav-area {
+			width: 50%;
+			height: 100%;
+		}
 	}
 }
 </style>

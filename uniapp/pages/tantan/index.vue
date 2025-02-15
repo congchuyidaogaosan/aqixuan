@@ -8,8 +8,7 @@
 				@touchend="touchend" @touchmove="touchMove" @touchstart="touchStart">
 				<view class="cardBox" :animation="animationData[index]"
 					:style="{ transform: index < number ? `scale(${1 - (1 - scale.x) * index},${1 - (1 - scale.y) * index}) translate(${translate.x * index}px, ${translate.y * index}px)` : `scale(${1 - (1 - scale.x) * (number - 1)},${1 - (1 - scale.y) * (number - 1)}) translate(${translate.x * (number - 1)}px, ${translate.y * (number - 1)}px)`, opacity: index < number ? `${1 - (1 - opacity) * index}` : `${1 - (1 - opacity) * (number - 1)}` }">
-					<card-box :src="item.src" :number="item.number" :name="item.name" :sex="item.sex"
-						:constellation="item.constellation" :img="item.img" :address="item.address" :old="item.old"
+					<card-box :item="item"
 						ref="cardBox">
 					</card-box>
 				</view>
@@ -26,9 +25,9 @@
 			<view class="love" @click="tapLove">
 				<view class="iconfont icon-xinaixin" :style="{ fontSize: '34rpx' }"></view>
 			</view>
-			<view class="star">
+			<!-- <view class="star">
 				<view class="iconfont icon-wujiaoxing1" :style="{ fontSize: '40rpx' }"></view>
-			</view>
+			</view> -->
 		</view>
 		<!-- #endif -->
 		<!-- #ifdef APP-PLUS -->
@@ -37,8 +36,7 @@
 			:animation="animationData[index]"
 			:style="{ transform: index < number ? `rotate(${rotate * index}deg) scale(${1 - (1 - scale.x) * index},${1 - (1 - scale.y) * index}) skew(${skew.x * index}deg, ${skew.y * index}deg) translate(${translate.x * index}px, ${translate.y * index}px)` : `rotate(${rotate * (number - 1)}deg) scale(${1 - (1 - scale.x) * (number - 1)},${1 - (1 - scale.y) * (number - 1)}) skew(${skew.x * (number - 1)}deg, ${skew.y * (number - 1)}deg) translate(${translate.x * (number - 1)}px, ${translate.y * (number - 1)}px)`, zIndex: `${99999 - item._id}`, opacity: index < number ? `${1 - (1 - opacity) * index}` : `${1 - (1 - opacity) * (number - 1)}` }">
 			<view class="cardBox">
-				<card-box :src="item.src" :number="item.number" :name="item.name" :sex="item.sex"
-					:constellation="item.constellation" :img="item.img" :address="item.address" :old="item.old"
+				<card-box :item="item"
 					ref="cardBox">
 				</card-box>
 			</view>
@@ -52,6 +50,8 @@
 <script>
 import clCardDel from "@/components/cl-cardDel/cl-cardDel";
 import cardBox from "./card-box";
+import { getRecommendUserList, followUser } from '@/api/user'
+
 export default {
 	mixins: [clCardDel],
 	components: { cardBox },
@@ -239,11 +239,29 @@ export default {
 			this.dataList[0].moveY = 0
 			this.dataList[0].animation = true
 		},
-		delCard(x, y) {
+		async delCard(x, y) {
+			const currentUser = this.dataList[0]
+			console.log('当前用户数据：', JSON.stringify(currentUser))
 			if (x > 0) {
-				console.log(this.dataList[0], '喜欢')
+				console.log(currentUser, '喜欢')
+				try {
+					const res = await followUser(currentUser.userId)
+					if (res) {
+						// console.log(res)
+					} else {
+					    uni.showToast({
+						title: '关注失败',
+						icon: 'none'
+					})
+					}
+				} catch (error) {
+					uni.showToast({
+						title: '关注失败',
+						icon: 'none'
+					})
+				}
 			} else {
-				console.log(this.dataList[0], '不喜欢')
+				console.log(currentUser, '不喜欢')
 			}
 		},
 		tapCard(item) {
@@ -288,7 +306,7 @@ export default {
 	justify-content: center;
 	background: #FDFDFD;
 	border-radius: 20rpx;
-	padding: 0 20rpx;
+	// padding: 0 20rpx;
 	box-sizing: border-box;
 }
 

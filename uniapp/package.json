@@ -18,6 +18,7 @@
   "homepage": "https://github.com/congchuyidaogaosan/aqixuan#readme",
   "dependencies": {
     "@dcloudio/uni-ui": "^1.5.7",
+    "@gowiny/uni-router": "^1.0.15",
     "axios": "^1.7.9",
     "mockjs": "^1.1.0",
     "vue": "^3.2.45"

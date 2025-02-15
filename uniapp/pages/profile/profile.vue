@@ -505,7 +505,7 @@ const sendMessage = () => {
 
 // 返回上一页
 const goBack = () => {
-  uni.navigateBack()
+  history.back();
 }
 
 // 检查关注状态

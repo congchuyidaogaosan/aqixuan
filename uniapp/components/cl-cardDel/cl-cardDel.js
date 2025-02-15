@@ -73,6 +73,7 @@ export default {
 						
 						return {
 							_id: this.cardId++,
+							userId: user.id,
 							src: item.url?.[0] || '../../static/default-avatar.png',
 							sex: user.gender || 0,
 							address: user.location || '未知',
@@ -113,6 +114,7 @@ export default {
 					// 只有在非追加模式下才使用默认数据
 					this.dataList = [{
 						_id: this.cardId++,
+						userId: 0,
 						src:'../../static/default-avatar.png',
 						sex:1,
 						address:'未知',

@@ -74,7 +74,7 @@ const goToProfile = (userId) => {
 
 // 返回上一页
 const goBack = () => {
-  uni.navigateBack()
+  history.back();
 }
 
 </script>
