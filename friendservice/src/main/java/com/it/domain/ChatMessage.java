@@ -26,12 +26,12 @@ public class ChatMessage implements Serializable {
     /**
      * 发送者ID
      */
-    private Long senderId;
+    private String senderId;
 
     /**
      * 接收者ID
      */
-    private Long receiverId;
+    private String receiverId;
 
     /**
      * 消息类型：1文字 2表情 3图片
@@ -47,6 +47,8 @@ public class ChatMessage implements Serializable {
      * 是否已读
      */
     private Boolean isRead;
+
+
 
     /**
      * 

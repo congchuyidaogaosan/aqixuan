@@ -75,7 +75,7 @@ public class UserAvatarController {
     }
 
     @GetMapping("UserFind/{id}")
-    public Result UserFind(@PathVariable("id") Integer id, HttpSession session) {
+    public Result<UserInfoDTO> UserFind(@PathVariable("id") Integer id, HttpSession session) {
 
         User byId1 = userService.getById(id);
         UserAvatar byId = userAvatarService.getOne(new QueryWrapper<UserAvatar>().eq("user_id",id).orderByDesc("created_at").last("LIMIT 1"));
