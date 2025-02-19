@@ -601,3 +601,132 @@ export const getRecommendUserList = async (page, size) => {
     return []
   }
 }
+
+// 获取消息列表
+export const getMessageList = (params) => {
+  // 示例返回格式
+  return request({
+    url: '/message/list',
+    method: 'GET',
+    params
+  })
+  /* 请求数据格式示例：
+  {
+    "page": 1, // 当前页码
+    "pageSize": 20 // 每页数量
+  }
+  /* 返回数据格式示例：
+  {
+    "code": 200,
+    "msg": "success",
+    "data": [
+      {
+        "id": "1",
+        "userId": "2",  // 对方用户ID
+        "nickname": "张三",  // 对方用户昵称
+        "avatar": "http://example.com/avatar.jpg",  // 对方用户头像
+        "lastMessage": "你好，在吗？",  // 最后一条消息内容
+        "lastTime": "2024-03-20 12:30:00",  // 最后消息时间
+        "unread": 2,  // 未读消息数
+        "messageType": "text"  // 消息类型：text-文本, image-图片, voice-语音
+      }
+    ],
+    "total": 100,  // 总消息数
+    "pageSize": 10,  // 每页数量
+    "currentPage": 1  // 当前页码
+  }
+  */
+}
+
+
+
+// 标记消息为已读
+export const markMessageRead = (messageId) => {
+  return request({
+    url: '/message/read',
+    method: 'POST',
+    data: { messageId }
+  })
+  /* 返回数据格式示例：
+  {
+    "code": 200,
+    "msg": "success",
+    "data": null
+  }
+  */
+}
+
+// 获取聊天消息列表
+export const getChatMessages = (params) => {
+  return request({
+    url: '/chat/messages',
+    method: 'GET',
+    data: params
+  })
+  /*
+  请求数据格式示例：
+  {
+    "id": "2", // 消息ID
+    "page": 1, // 当前页码
+    "pageSize": 20 // 每页数量
+  }
+  */
+  /* 返回数据格式示例：
+  {
+    "code": 200,
+    "msg": "success",
+    "data": {
+      "messages": [
+        {
+          "id": "1", // 消息ID
+          "senderId": "1", // 发送者ID
+          "receiverId": "2", // 接收者ID
+          "content": "你好", // 消息内容
+          "messageType": "text", // text-文本, image-图片, voice-语音
+          "duration": 0, // 语音消息时长（秒）
+          "createdAt": "2024-03-20 12:30:00",
+          "status": "read", // unread-未读, read-已读
+          "avatar": "http://example.com/avatar.jpg",
+          "nickname": "张三"
+        }
+      ],
+      "total": 100,
+      "pageSize": 20,
+      "currentPage": 1
+    }
+  }
+  */
+}
+
+// 发送消息
+export const sendMessage = (data) => {
+  return request({
+    url: '/chat/send',
+    method: 'POST',
+    data
+  })
+  /* 请求数据格式示例：
+  {
+    "receiverId": "2",  // 接收者ID
+    "content": "你好",  // 消息内容
+    "messageType": "text"  // 消息类型：text-文本, image-图片, voice-语音
+  }
+  返回数据格式示例：
+  {
+    "code": 200,
+    "msg": "success",
+    "data": {
+      "id": "1",  // 消息ID
+      "senderId": "1",  // 发送者ID
+      "receiverId": "2",  // 接收者ID
+      "content": "你好",  // 消息内容
+      "messageType": "text",  // 消息类型
+      "createdAt": "2024-03-20 12:30:00",  // 发送时间
+      "status": "sent"  // 消息状态：sent-已发送
+    }
+  }
+  */
+}
+
+
+

@@ -42,61 +42,113 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { getMessageList, getUnreadCount, markMessageRead } from '@/api/user'
+import { formatTime } from '@/utils/date'
 
 // 搜索文本
 const searchText = ref('')
 
 // 消息列表
-const messageList = ref([
-  {
-    id: 1,
-    avatar: '',
-    nickname: '张三',
-    lastMessage: '你好，在吗？',
-    lastTime: '12:30',
-    unread: 2
-  },
-  {
-    id: 2,
-    avatar: '',
-    nickname: '李四',
-    lastMessage: '好的，明天见',
-    lastTime: '昨天',
-    unread: 0
-  }
-])
+const messageList = ref([])
 
 // 加载状态
 const loadingStatus = ref('more')
 
+// 分页参数
+const page = ref(1)
+const pageSize = ref(10)
+
+// 获取消息列表
+const loadMessages = async (isRefresh = false) => {
+  try {
+    if (isRefresh) {
+      page.value = 1
+      messageList.value = []
+    }
+    
+    loadingStatus.value = 'loading'
+    const params = {
+      page: page.value,
+      pageSize: pageSize.value,
+      keyword: searchText.value
+    }
+    
+    const res = await getMessageList(params)
+    if (res && res.data) {
+      if (isRefresh) {
+        messageList.value = res.data
+      } else {
+        messageList.value = [...messageList.value, ...res.data]
+      }
+      
+      // 更新加载状态
+      if (res.data.length < pageSize.value) {
+        loadingStatus.value = 'noMore'
+      } else {
+        loadingStatus.value = 'more'
+        page.value++
+      }
+    }
+  } catch (error) {
+    console.error('获取消息列表失败：', error)
+    uni.showToast({
+      title: '加载失败',
+      icon: 'none'
+    })
+    loadingStatus.value = 'more'
+  }
+}
+
 // 搜索处理
-const handleSearch = (e) => {
-  console.log('搜索:', searchText.value)
+const handleSearch = () => {
+  loadMessages(true)
 }
 
 // 清除搜索
 const handleClear = () => {
   searchText.value = ''
+  loadMessages(true)
 }
 
 // 加载更多
 const loadMore = () => {
-  if (loadingStatus.value === 'loading') return
-  loadingStatus.value = 'loading'
-  
-  // 模拟加载数据
-  setTimeout(() => {
-    loadingStatus.value = 'noMore'
-  }, 1000)
+  if (loadingStatus.value === 'loading' || loadingStatus.value === 'noMore') return
+  loadMessages()
 }
 
 // 跳转到聊天页面
-const goToChat = (item) => {
-  uni.navigateTo({
-    url: `/pages/chat/chat?id=${item.id}&nickname=${item.nickname}`
-  })
+const goToChat = async (item) => {
+  try {
+    // 标记消息为已读
+    if (item.unread) {
+      await markMessageRead(item.id)
+    }
+    
+    uni.navigateTo({
+      url: `/pages/chat/chat?id=${item.id}&nickname=${encodeURIComponent(item.nickname)}&avatar=${encodeURIComponent(item.avatar)}`
+    })
+  } catch (error) {
+    console.error('标记已读失败：', error)
+  }
 }
+
+// 下拉刷新
+const onPullDownRefresh = async () => {
+  await loadMessages(true)
+  uni.stopPullDownRefresh()
+}
+
+// 页面加载
+onMounted(() => {
+  loadMessages()
+})
+
+// 监听页面显示
+uni.onShow(() => {
+  // 刷新消息列表
+  loadMessages(true)
+})
 </script>
 
 <style lang="less" scoped>
