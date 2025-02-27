@@ -1,5 +1,6 @@
 import App from './App'
 import router from './router'
+import webSocketManager from './utils/websocket'
 // #ifndef VUE3
 import Vue from 'vue'
 import './uni.promisify.adaptor'
@@ -9,6 +10,12 @@ const app = new Vue({
   ...App,
   router
 })
+
+// 初始化WebSocket连接
+const token = uni.getStorageSync('token')
+if (token) {
+  webSocketManager.connect(token)
+}
 
 app.$mount()
 // #endif
@@ -24,6 +31,13 @@ import { createSSRApp } from 'vue'
 export function createApp() {
   const app = createSSRApp(App)
   app.use(router)
+  
+  // 初始化WebSocket连接
+  const token = uni.getStorageSync('token')
+  if (token) {
+    webSocketManager.connect(token)
+  }
+  
   return {
     app
   }
