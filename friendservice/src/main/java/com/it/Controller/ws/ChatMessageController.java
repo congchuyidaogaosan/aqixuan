@@ -74,6 +74,10 @@ public class ChatMessageController {
 
         List<Object > list = chatMessageService.listObjs(queryWrapper);
 
+        if (list.isEmpty()){
+            return Result.ok();
+        }
+
         List<String> list1 = new ArrayList<>();
 
         for (Object strint:list){

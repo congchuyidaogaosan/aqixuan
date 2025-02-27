@@ -227,6 +227,37 @@ const api = {
       url: `/Recommend/${page}/${size}`,
       method: 'GET',
     })
+  },
+  // 获取聊天消息列表
+  getMessageList: (data) => {
+    return request({
+      url: `/ChatMessage/userID`,
+      method: 'GET',
+      params: data
+    })
+  },
+  // 标记消息为已读
+  markMessageRead: (messageId) => {
+    return request({
+      url: '/message/read',
+      method: 'POST',
+      data: { messageId }
+    })
+  },
+  // 获取聊天消息详情
+  getChatMessageDetail: (userId) => {
+    return request({
+      url: `/ChatMessage/detail/${userId}`,
+      method: 'GET',
+    })
+  },
+  // 发送消息
+  sendMessage: (data) => {
+    return request({
+      url: '/chat/send',
+      method: 'POST',
+      data
+    })
   }
 }
 // 发送验证码
@@ -603,68 +634,41 @@ export const getRecommendUserList = async (page, size) => {
 }
 
 // 获取消息列表
-export const getMessageList = (params) => {
-  // 示例返回格式
-  return request({
-    url: '/message/list',
-    method: 'GET',
-    params
-  })
-  /* 请求数据格式示例：
-  {
-    "page": 1, // 当前页码
-    "pageSize": 20 // 每页数量
+export const getMessageList = async (data) => {
+  try {
+    const res = await api.getMessageList(data)
+    // res.data=null时为空【】
+    if (res.data === null) {
+      res.data = []
+    }
+    return res.code === 200 ? res.data : []
+  } catch (e) {
+    console.log('获取消息列表失败：', e)
+    return []
   }
-  /* 返回数据格式示例：
-  {
-    "code": 200,
-    "msg": "success",
-    "data": [
-      {
-        "id": "1",
-        "userId": "2",  // 对方用户ID
-        "nickname": "张三",  // 对方用户昵称
-        "avatar": "http://example.com/avatar.jpg",  // 对方用户头像
-        "lastMessage": "你好，在吗？",  // 最后一条消息内容
-        "lastTime": "2024-03-20 12:30:00",  // 最后消息时间
-        "unread": 2,  // 未读消息数
-        "messageType": "text"  // 消息类型：text-文本, image-图片, voice-语音
-      }
-    ],
-    "total": 100,  // 总消息数
-    "pageSize": 10,  // 每页数量
-    "currentPage": 1  // 当前页码
-  }
-  */
 }
-
-
 
 // 标记消息为已读
-export const markMessageRead = (messageId) => {
-  return request({
-    url: '/message/read',
-    method: 'POST',
-    data: { messageId }
-  })
-  /* 返回数据格式示例：
-  {
-    "code": 200,
-    "msg": "success",
-    "data": null
+export const markMessageRead = async (messageId) => {
+  try {
+    const res = await api.markMessageRead(messageId)
+    return res.code === 200
+  } catch (e) {
+    console.log('标记消息为已读失败：', e)
+    return false
   }
-  */
 }
-
-// 获取聊天消息列表
-export const getChatMessages = (params) => {
-  return request({
-    url: '/chat/messages',
-    method: 'GET',
-    data: params
-  })
-  /*
-  请求数据格式示例：
+// 获取与他人聊天消息详情
+export const getChatMessageDetail = async (userId) => {
+  try {
+    const res = await api.getChatMessageDetail(userId)
+    return res.code === 200 ? res.data : null
+  } catch (e) {
+    console.log('获取聊天消息详情失败：', e)
+    return null
+  }
+}
+  /* 请求数据格式示例：
   {
     "id": "2", // 消息ID
     "page": 1, // 当前页码
@@ -696,15 +700,18 @@ export const getChatMessages = (params) => {
     }
   }
   */
-}
+
 
 // 发送消息
-export const sendMessage = (data) => {
-  return request({
-    url: '/chat/send',
-    method: 'POST',
-    data
-  })
+export const sendMessage = async (data) => {
+  try {
+    const res = await api.sendMessage(data)
+    return res.code === 200 ? res.data : null
+  } catch (e) {
+    console.log('发送消息失败：', e)
+    return null
+  }
+}
   /* 请求数据格式示例：
   {
     "receiverId": "2",  // 接收者ID
@@ -726,7 +733,7 @@ export const sendMessage = (data) => {
     }
   }
   */
-}
+
 
 
 

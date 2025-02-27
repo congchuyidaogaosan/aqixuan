@@ -43,7 +43,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getMessageList, getUnreadCount, markMessageRead } from '@/api/user'
+import { onLoad, onShow } from '@dcloudio/uni-app'
+
+import { getMessageList,  markMessageRead } from '@/api/user'
 import { formatTime } from '@/utils/date'
 
 // 搜索文本
@@ -71,19 +73,20 @@ const loadMessages = async (isRefresh = false) => {
     const params = {
       page: page.value,
       pageSize: pageSize.value,
-      keyword: searchText.value
+      // keyword: searchText.value
     }
     
     const res = await getMessageList(params)
-    if (res && res.data) {
+    console.log('res', res)
+    if (res) {
       if (isRefresh) {
-        messageList.value = res.data
+        messageList.value = res
       } else {
-        messageList.value = [...messageList.value, ...res.data]
+        messageList.value = [...messageList.value, ...res]
       }
       
       // 更新加载状态
-      if (res.data.length < pageSize.value) {
+      if (res.length < pageSize.value) {
         loadingStatus.value = 'noMore'
       } else {
         loadingStatus.value = 'more'
@@ -145,10 +148,11 @@ onMounted(() => {
 })
 
 // 监听页面显示
-uni.onShow(() => {
-  // 刷新消息列表
+onShow(() => {
+	console.log('页面显示')
   loadMessages(true)
 })
+
 </script>
 
 <style lang="less" scoped>
