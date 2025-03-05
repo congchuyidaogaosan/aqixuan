@@ -4,9 +4,12 @@ package com.it.Controller.Socket;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.it.domain.ChatMessage;
 import com.it.domain.ws.ThisMessage;
+import com.it.service.ChatMessageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.websocket.*;
@@ -27,6 +30,10 @@ public class WebSocketServer {
      * 记录当前在线连接数
      */
     public static final Map<String, Session> sessionMap = new ConcurrentHashMap<>();
+
+
+    @Autowired
+    private ChatMessageService chatMessageService;
 
     /**
      * 连接建立成功调用的方法
@@ -72,10 +79,8 @@ public class WebSocketServer {
 //        JSONObject obj = JSONUtil.parseObj(message);
 
         JSONObject data = JSONObject.parseObject(message).getJSONObject("data");
-        String  to = data.getString("content");
-        String  receiverId = data.getString("receiverId");
-
-
+        String to = data.getString("content");
+        String receiverId = data.getString("receiverId");
 //        String toUsername = obj.getString("to"); // to表示发送给哪个用户，比如 admin
 //        String text = obj.getString("text"); // 发送的消息文本  hello
         // {"to": "admin", "text": "聊天文本"}
@@ -89,9 +94,16 @@ public class WebSocketServer {
             thisMessage.setSenderId(Integer.valueOf(receiverId));
             thisMessage.setType("1");
 
-            String  json = new JSONObject().toJSONString(thisMessage);
-            this.sendMessage(json, toSession);
-//            log.info("发送给用户username={}，消息：{}", to, jsonObject.toString());
+            String json = new JSONObject().toJSONString(thisMessage);
+
+
+            boolean b = chatMessageService.addOne(thisMessage, username);
+            if (b) {
+                this.sendMessage(json, toSession);
+            } else {
+                log.info("发送失败，数据库保存失败", to);
+            }
+
         } else {
             log.info("发送失败，未找到用户username={}的session", to);
         }

@@ -36,7 +36,7 @@ public class ChatMessage implements Serializable {
     /**
      * 消息类型：1文字 2表情 3图片
      */
-    private Byte messageType;
+    private String  messageType;
 
     /**
      * 消息内容
