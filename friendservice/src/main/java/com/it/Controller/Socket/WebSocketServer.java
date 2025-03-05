@@ -1,8 +1,10 @@
 package com.it.Controller.Socket;
 
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.it.domain.ws.ThisMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -69,19 +71,27 @@ public class WebSocketServer {
         log.info("服务端收到用户username={}的消息:{}", username, message);
 //        JSONObject obj = JSONUtil.parseObj(message);
 
-        Object to = JSONObject.parseObject(message).get("to");
+        JSONObject data = JSONObject.parseObject(message).getJSONObject("data");
+        String  to = data.getString("content");
+        String  receiverId = data.getString("receiverId");
+
+
 //        String toUsername = obj.getString("to"); // to表示发送给哪个用户，比如 admin
 //        String text = obj.getString("text"); // 发送的消息文本  hello
         // {"to": "admin", "text": "聊天文本"}
-        Session toSession = sessionMap.get(to); // 根据 to用户名来获取 session，再通过session发送消息文本
+        Session toSession = sessionMap.get(receiverId); // 根据 to用户名来获取 session，再通过session发送消息文本
         if (toSession != null) {
             // 服务器端 再把消息组装一下，组装后的消息包含发送人和发送的文本内容
             // {"from": "zhang", "text": "hello"}
-            JSONObject jsonObject = new JSONObject();
-//            jsonObject.set("from", username);  // from 是 zhang
-//            jsonObject.set("text", text);  // text 同上面的text
-            this.sendMessage(jsonObject.toString(), toSession);
-            log.info("发送给用户username={}，消息：{}", to, jsonObject.toString());
+            ThisMessage thisMessage = new ThisMessage();
+
+            thisMessage.setMessage(to);
+            thisMessage.setSenderId(Integer.valueOf(receiverId));
+            thisMessage.setType("1");
+
+            String  json = new JSONObject().toJSONString(thisMessage);
+            this.sendMessage(json, toSession);
+//            log.info("发送给用户username={}，消息：{}", to, jsonObject.toString());
         } else {
             log.info("发送失败，未找到用户username={}的session", to);
         }

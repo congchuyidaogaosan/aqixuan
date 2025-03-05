@@ -258,6 +258,14 @@ const api = {
       method: 'POST',
       data
     })
+  },
+  // 获取聊天消息
+  getChatMessages: (params) => {
+    return request({
+      url: '/chat/messages',
+      method: 'GET',
+      params
+    })
   }
 }
 // 发送验证码
@@ -648,6 +656,7 @@ export const getMessageList = async (data) => {
   }
 }
 
+
 // 标记消息为已读
 export const markMessageRead = async (messageId) => {
   try {
@@ -733,6 +742,17 @@ export const sendMessage = async (data) => {
     }
   }
   */
+
+// 获取聊天消息
+export const getChatMessages = async (params) => {
+  try {
+    const res = await api.getChatMessages(params)
+    return res.code === 200 ? res.data : { messages: [], total: 0 }
+  } catch (e) {
+    console.log('获取聊天消息失败：', e)
+    return { messages: [], total: 0 }
+  }
+}
 
 
 

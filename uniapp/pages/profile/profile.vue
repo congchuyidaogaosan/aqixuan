@@ -499,7 +499,7 @@ const publishMoment = () => {
 // 发送私信
 const sendMessage = () => {
   uni.navigateTo({
-    url: `/pages/chat/chat?userId=${userInfo.value.id}`
+    url: `/pages/chat/chat?userId=${userInfo.value.id}&nickname=${encodeURIComponent(userInfo.value.nickname)}&avatar=${encodeURIComponent(userInfo.value.avatarUrl)}`
   })
 }
 

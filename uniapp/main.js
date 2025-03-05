@@ -12,10 +12,19 @@ const app = new Vue({
 })
 
 // 初始化WebSocket连接
-const token = uni.getStorageSync('token')
-if (token) {
-  webSocketManager.connect(token)
+const userInfo = uni.getStorageSync('userInfo')
+const userId = userInfo.id
+if (userId) {
+  webSocketManager.connect(userId)
 }
+
+// 创建定时器，每2秒打印一次连接状态和最新消息
+setInterval(() => {
+  if (userId && webSocketManager.isConnected) {
+    console.log('WebSocket连接状态：', webSocketManager.isConnected)
+    console.log('当前时间：', new Date().toLocaleTimeString())
+  }
+}, 2000)
 
 app.$mount()
 // #endif
@@ -33,9 +42,10 @@ export function createApp() {
   app.use(router)
   
   // 初始化WebSocket连接
-  const token = uni.getStorageSync('token')
-  if (token) {
-    webSocketManager.connect(token)
+  const userInfo = uni.getStorageSync('userInfo')
+  const userId = userInfo.id
+  if (userId) {
+    webSocketManager.connect(userId)
   }
   
   return {

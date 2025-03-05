@@ -1,20 +1,61 @@
 class WebSocketManager {
   constructor() {
     // 根据环境设置WebSocket地址
-    this.url = 'ws://localhost:8081/ws' 
+    this.url = `ws://localhost:8081/imserver` 
     this.socket = null
     this.isConnected = false
     this.reconnectAttempts = 0
     this.maxReconnectAttempts = 5
     this.reconnectInterval = 3000 // 重连间隔时间，单位：毫秒
     this.messageCallbacks = new Map()
-    
-    // 开发环境下打印更多日志
     this.debug = process.env.NODE_ENV === 'development'
+    this.lastMessage = null // 存储最新消息
+    
+    // 注册默认的消息处理器
+    this.registerDefaultHandlers()
+  }
+
+  // 注册默认的消息处理器
+  registerDefaultHandlers() {
+    // 处理聊天消息
+    this.onMessage('chat', (data) => {
+      this.debug && console.log('收到聊天消息：', data)
+      this.lastMessage = {
+        type: 'chat',
+        data,
+        time: new Date()
+      }
+      // 触发全局事件
+      uni.$emit('onChatMessage', data)
+    })
+
+    // 处理系统通知
+    this.onMessage('notification', (data) => {
+      this.debug && console.log('收到系统通知：', data)
+      this.lastMessage = {
+        type: 'notification',
+        data,
+        time: new Date()
+      }
+      // 触发全局事件
+      uni.$emit('onNotification', data)
+    })
+
+    // 处理在线状态变更
+    this.onMessage('status', (data) => {
+      this.debug && console.log('收到状态变更：', data)
+      this.lastMessage = {
+        type: 'status',
+        data,
+        time: new Date()
+      }
+      // 触发全局事件
+      uni.$emit('onStatusChange', data)
+    })
   }
 
   // 初始化WebSocket连接
-  connect(token) {
+  connect(userId) {
     if (this.socket && this.isConnected) {
       this.debug && console.log('WebSocket已连接')
       return
@@ -23,7 +64,7 @@ class WebSocketManager {
     try {
       this.debug && console.log('正在连接WebSocket:', this.url)
       this.socket = uni.connectSocket({
-        url: `${this.url}?token=${token}`,
+        url: `${this.url}/${userId}`,
         complete: () => {}
       })
 
@@ -32,27 +73,40 @@ class WebSocketManager {
         this.debug && console.log('WebSocket连接已打开')
         this.isConnected = true
         this.reconnectAttempts = 0
+        
+        // 触发连接成功事件
+        uni.$emit('wsConnected')
       })
 
       // 监听WebSocket错误
       this.socket.onError((error) => {
         console.error('WebSocket错误：', error)
         this.isConnected = false
-        this.reconnect()
+        this.reconnect(userId)
+        
+        // 触发连接错误事件
+        uni.$emit('wsError', error)
       })
 
       // 监听WebSocket关闭
       this.socket.onClose(() => {
         this.debug && console.log('WebSocket连接已关闭')
         this.isConnected = false
-        this.reconnect()
+        this.reconnect(userId)
+        
+        // 触发连接关闭事件
+        uni.$emit('wsClosed')
       })
 
       // 监听WebSocket消息
       this.socket.onMessage((res) => {
         try {
           const message = JSON.parse(res.data)
-          this.debug && console.log('收到消息：', message)
+          this.lastMessage = {
+            ...message,
+            time: new Date()
+          }
+          console.log('收到消息：', this.lastMessage)
           
           // 处理心跳消息
           if (message.type === 'heartbeat') {
@@ -69,12 +123,12 @@ class WebSocketManager {
 
     } catch (error) {
       console.error('创建WebSocket连接失败：', error)
-      this.reconnect()
+      this.reconnect(userId)
     }
   }
 
   // 重新连接
-  reconnect() {
+  reconnect(userId) {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.log('达到最大重连次数')
       return
@@ -84,7 +138,7 @@ class WebSocketManager {
     console.log(`尝试第 ${this.reconnectAttempts} 次重连...`)
 
     setTimeout(() => {
-      this.connect(uni.getStorageSync('token'))
+      this.connect(userId)
     }, this.reconnectInterval)
   }
 
@@ -95,6 +149,7 @@ class WebSocketManager {
 
   // 处理接收到的消息
   handleMessage(message) {
+    console.log('收到消息：', message)
     const { type, data } = message
     const callback = this.messageCallbacks.get(type)
     
@@ -117,6 +172,34 @@ class WebSocketManager {
         }
       })
     }
+  }
+
+  // 发送消息到WebSocket服务器
+  send(message) {
+    if (this.socket && this.isConnected) {
+      try {
+        const jsonMessage = JSON.stringify(message);
+        this.socket.send({
+          data: jsonMessage,
+          success: () => {
+            this.debug && console.log('消息发送成功：', message);
+          },
+          fail: (error) => {
+            console.error('消息发送失败：', error);
+          }
+        });
+      } catch (error) {
+        console.error('消息序列化失败：', error);
+      }
+    } else {
+      console.log('WebSocket未连接，无法发送消息');
+    }
+  }
+
+
+  // 获取最新消息
+  getLastMessage() {
+    return this.lastMessage
   }
 }
 

@@ -5,126 +5,76 @@
       <view class="left" @click="goBack">
         <image src="/static/images/back.png" mode="aspectFit" class="back-icon"></image>
       </view>
-      <view class="title">{{nickname}}</view>
+      <view class="title">{{ nickname }}</view>
       <view class="right"></view>
     </view>
-    
+
     <!-- 聊天内容区域 -->
-    <scroll-view 
-      class="chat-content"
-      scroll-y
-      :scroll-into-view="scrollToId"
-      :scroll-with-animation="true"
-      @scrolltolower="loadMore"
-      :refresher-enabled="true"
-      :refresher-triggered="refreshing"
-      @refresherrefresh="refresh"
-    >
+    <scroll-view class="chat-content" scroll-y :scroll-into-view="scrollToId" :scroll-with-animation="true"
+      @scrolltolower="loadMore" :refresher-enabled="true" :refresher-triggered="refreshing" @refresherrefresh="refresh">
       <!-- 加载更多 -->
       <uni-load-more v-if="hasMore" :status="loadingStatus"></uni-load-more>
-      
+
       <!-- 消息列表 -->
       <view class="message-list">
-        <view 
-          v-for="(message, index) in messageList" 
-          :key="message.id"
-          :id="`msg-${message.id}`"
-          class="message-item"
-          :class="{ 'self': message.senderId === userInfo.id }"
-        >
+        <view v-for="(message, index) in messageList" :key="message.id" :id="`msg-${message.id}`" class="message-item"
+          :class="{ 'self': message.senderId === userInfo.id }">
           <!-- 时间 -->
           <view class="time" v-if="showTime(index)">
-            {{formatTime(message.createdAt)}}
+            {{ formatTime(message.createdAt) }}
           </view>
-          
+
           <!-- 消息内容 -->
           <view class="message-content">
-            <image 
-              v-if="message.senderId !== userInfo.id"
-              :src="message.avatar || '/static/default-avatar.png'" 
-              mode="aspectFill" 
-              class="avatar"
-              @click="goToProfile(message.senderId)"
-            ></image>
-            
+            <image v-if="message.senderId !== userInfo.id" :src="message.avatar || '/static/default-avatar.png'"
+              mode="aspectFill" class="avatar" @click="goToProfile(message.senderId)"></image>
+
             <view class="content" :class="message.messageType">
               <!-- 文本消息 -->
-              <text v-if="message.messageType === 'text'">{{message.content}}</text>
-              
+              <text v-if="message.messageType === 'text'">{{ message.content }}</text>
+
               <!-- 图片消息 -->
-              <image 
-                v-else-if="message.messageType === 'image'"
-                :src="message.content"
-                mode="widthFix"
-                class="image-content"
-                @click="previewImage(message.content)"
-              ></image>
-              
+              <image v-else-if="message.messageType === 'image'" :src="message.content" mode="widthFix"
+                class="image-content" @click="previewImage(message.content)"></image>
+
               <!-- 语音消息 -->
-              <view 
-                v-else-if="message.messageType === 'voice'"
-                class="voice-content"
-                @click="playVoice(message)"
-              >
-                <image 
-                  src="/static/images/voice.png" 
-                  mode="aspectFit" 
-                  class="voice-icon"
-                ></image>
-                <text class="duration">{{message.duration}}''</text>
+              <view v-else-if="message.messageType === 'voice'" class="voice-content" @click="playVoice(message)">
+                <image src="/static/images/voice.png" mode="aspectFit" class="voice-icon"></image>
+                <text class="duration">{{ message.duration }}''</text>
               </view>
             </view>
-            
-            <image 
-              v-if="message.senderId === userInfo.id"
-              :src="userInfo.avatarUrl || '/static/default-avatar.png'" 
-              mode="aspectFill" 
-              class="avatar"
-            ></image>
+
+            <image v-if="message.senderId === userInfo.id" :src="userInfo.avatarUrl || '/static/default-avatar.png'"
+              mode="aspectFill" class="avatar"></image>
           </view>
         </view>
       </view>
     </scroll-view>
-    
+
     <!-- 底部输入区域 -->
     <view class="input-area">
       <!-- 语音按钮 -->
       <view class="voice-btn" @click="toggleVoiceInput">
-        <image 
-          :src="isVoiceInput ? '/static/images/keyboard.png' : '/static/images/voice.png'" 
-          mode="aspectFit"
-          class="icon"
-        ></image>
+        <image :src="isVoiceInput ? '/static/images/keyboard.png' : '/static/images/voice.png'" mode="aspectFit"
+          class="icon"></image>
       </view>
-      
+
       <!-- 文本输入框 -->
-      <input 
-        v-if="!isVoiceInput"
-        type="text"
-        v-model="inputContent"
-        class="input"
-        placeholder="说点什么..."
-        :focus="inputFocus"
-        @confirm="sendTextMessage"
-      />
-      
+      <input v-if="!isVoiceInput" type="text" v-model="inputContent" class="input" placeholder="说点什么..."
+        :focus="inputFocus" @confirm="sendTextMessage" />
+
       <!-- 语音输入按钮 -->
-      <view 
-        v-else
-        class="voice-input-btn"
-        @touchstart="startRecording"
-        @touchend="stopRecording"
-        @touchcancel="cancelRecording"
-      >
+      <view v-else class="voice-input-btn" @touchstart="startRecording" @touchend="stopRecording"
+        @touchcancel="cancelRecording">
         按住说话
       </view>
-      
+
       <!-- 更多功能按钮 -->
       <view class="more-btn" @click="showMore">
         <image src="/static/images/more.png" mode="aspectFit" class="icon"></image>
       </view>
     </view>
-    
+
     <!-- 更多功能面板 -->
     <view class="more-panel" v-if="showMorePanel">
       <view class="panel-item" @click="chooseImage">
@@ -136,9 +86,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { getChatMessages, sendMessage, uploadChatImage } from '@/api/user'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
+import { getChatMessages, sendMessage, uploadFile } from '@/api/user'
 import { formatTime } from '@/utils/date'
+import webSocketManager from '@/utils/websocket'
 
 // 用户信息
 const userInfo = ref(uni.getStorageSync('userInfo') || {})
@@ -146,7 +97,7 @@ const userInfo = ref(uni.getStorageSync('userInfo') || {})
 // 页面参数
 const pages = getCurrentPages()
 const currentPage = pages[pages.length - 1]
-const { id: chatId, nickname, avatar } = currentPage.options
+const { userId, nickname, avatar } = currentPage.options
 
 // 消息列表
 const messageList = ref([])
@@ -170,32 +121,32 @@ const loadMessages = async (isRefresh = false) => {
       page.value = 1
       messageList.value = []
     }
-    
+
     loadingStatus.value = 'loading'
     const params = {
-      chatId,
+      chatId: userId,
       page: page.value,
       pageSize: pageSize.value
     }
-    
+
     const res = await getChatMessages(params)
     if (res && res.data) {
       const { messages, total } = res.data
-      
+
       if (isRefresh) {
         messageList.value = messages
       } else {
         messageList.value = [...messages, ...messageList.value]
       }
-      
+
       // 更新加载状态
       hasMore.value = messageList.value.length < total
       loadingStatus.value = hasMore.value ? 'more' : 'noMore'
-      
+
       if (hasMore.value) {
         page.value++
       }
-      
+
       // 滚动到最新消息
       if (isRefresh) {
         scrollToBottom()
@@ -216,29 +167,52 @@ const loadMessages = async (isRefresh = false) => {
 // 发送文本消息
 const sendTextMessage = async () => {
   if (!inputContent.value.trim()) return
-  
+
   try {
-    const data = {
-      receiverId: chatId,
-      content: inputContent.value,
-      messageType: 'text'
-    }
-    
-    const res = await sendMessage(data)
-    if (res.code === 200) {
-      // 添加到消息列表
-      messageList.value.push({
-        id: res.data.id,
-        senderId: userInfo.value.id,
+    const message = {
+      type: 'chat',
+      data: {
+        receiverId: userId,
         content: inputContent.value,
-        messageType: 'text',
-        createdAt: new Date().toISOString(),
-        status: 'sent'
+        messageType: 'text'
+      }
+    }
+
+    // 添加到消息列表
+    messageList.value.push({
+      id: Date.now().toString(), // 临时ID
+      senderId: userInfo.value.id,
+      content: inputContent.value,
+      messageType: 'text',
+      createdAt: new Date().toISOString(),
+      status: 'sending'
+    })
+
+    // 清空输入框并滚动到底部
+    inputContent.value = ''
+    scrollToBottom()
+
+    console.log(message)
+    // 通过WebSocket发送消息
+    if (webSocketManager.isConnected) {
+      webSocketManager.socket.send({
+        data: JSON.stringify(message),
+        success() {
+          console.log('消息发送成功')
+        },
+        fail(err) {
+          console.error('消息发送失败：', err)
+          uni.showToast({
+            title: '发送失败',
+            icon: 'none'
+          })
+        }
       })
-      
-      // 清空输入框并滚动到底部
-      inputContent.value = ''
-      scrollToBottom()
+    } else {
+      uni.showToast({
+        title: '网络连接已断开',
+        icon: 'none'
+      })
     }
   } catch (error) {
     console.error('发送消息失败：', error)
@@ -257,19 +231,19 @@ const chooseImage = async () => {
       sizeType: ['compressed'],
       sourceType: ['album', 'camera']
     })
-    
+
     const tempFilePath = res.tempFilePaths[0]
-    
+
     // 上传图片
-    const uploadRes = await uploadChatImage(tempFilePath)
+    const uploadRes = await uploadFile(tempFilePath)
     if (uploadRes.code === 200) {
       // 发送图片消息
       const data = {
-        receiverId: chatId,
+        receiverId: userId,
         content: uploadRes.data.url,
         messageType: 'image'
       }
-      
+
       const sendRes = await sendMessage(data)
       if (sendRes.code === 200) {
         // 添加到消息列表
@@ -281,7 +255,7 @@ const chooseImage = async () => {
           createdAt: new Date().toISOString(),
           status: 'sent'
         })
-        
+
         scrollToBottom()
       }
     }
@@ -310,18 +284,18 @@ const stopRecording = () => {
   uni.stopRecord({
     success: async (res) => {
       const tempFilePath = res.tempFilePath
-      
+
       // 上传语音文件
       const uploadRes = await uploadChatImage(tempFilePath)
       if (uploadRes.code === 200) {
         // 发送语音消息
         const data = {
-          receiverId: chatId,
+          receiverId: userId,
           content: uploadRes.data.url,
           messageType: 'voice',
           duration: res.duration
         }
-        
+
         const sendRes = await sendMessage(data)
         if (sendRes.code === 200) {
           // 添加到消息列表
@@ -334,7 +308,7 @@ const stopRecording = () => {
             createdAt: new Date().toISOString(),
             status: 'sent'
           })
-          
+
           scrollToBottom()
         }
       }
@@ -382,10 +356,10 @@ const scrollToBottom = () => {
 // 判断是否显示时间
 const showTime = (index) => {
   if (index === 0) return true
-  
+
   const currentMessage = messageList.value[index]
   const prevMessage = messageList.value[index - 1]
-  
+
   // 如果两条消息间隔超过5分钟，显示时间
   return new Date(currentMessage.createdAt) - new Date(prevMessage.createdAt) > 5 * 60 * 1000
 }
@@ -417,7 +391,36 @@ const refresh = async () => {
 // 页面加载
 onMounted(() => {
   loadMessages(true)
+  
+  // 注册消息接收处理器
+  uni.$on('onChatMessage', handleChatMessage)
 })
+
+// 页面卸载时清理
+onUnmounted(() => {
+  // 移除消息接收处理器
+  uni.$off('onChatMessage', handleChatMessage)
+})
+
+// 处理接收到的聊天消息
+const handleChatMessage = (data) => {
+  // 只处理当前聊天对象的消息
+  if (data.senderId === userId || data.receiverId === userId) {
+    messageList.value.push({
+      id: data.id || Date.now().toString(),
+      senderId: data.senderId,
+      content: data.content,
+      messageType: data.messageType,
+      createdAt: data.createdAt || new Date().toISOString(),
+      status: 'received',
+      avatar: data.avatar,
+      nickname: data.nickname
+    })
+    
+    // 滚动到底部
+    scrollToBottom()
+  }
+}
 </script>
 
 <style lang="less" scoped>
@@ -426,7 +429,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   background: #f8f8f8;
-  
+
   .nav-header {
     display: flex;
     align-items: center;
@@ -437,89 +440,89 @@ onMounted(() => {
     position: sticky;
     top: 0;
     z-index: 100;
-    
+
     .left {
       width: 60rpx;
       height: 60rpx;
       display: flex;
       align-items: center;
-      
+
       .back-icon {
         width: 40rpx;
         height: 40rpx;
       }
     }
-    
+
     .title {
       font-size: 32rpx;
       font-weight: 500;
       color: #333;
     }
-    
+
     .right {
       width: 60rpx;
     }
   }
-  
+
   .chat-content {
     flex: 1;
     padding: 20rpx;
-    
+
     .message-list {
       .message-item {
         margin-bottom: 30rpx;
-        
+
         .time {
           text-align: center;
           font-size: 24rpx;
           color: #999;
           margin-bottom: 20rpx;
         }
-        
+
         .message-content {
           display: flex;
           align-items: flex-start;
-          
+
           .avatar {
             width: 80rpx;
             height: 80rpx;
             border-radius: 50%;
             margin: 0 20rpx;
           }
-          
+
           .content {
             max-width: 60%;
             padding: 20rpx;
             border-radius: 10rpx;
             font-size: 28rpx;
             word-break: break-all;
-            
+
             &.text {
               background: #fff;
             }
-            
+
             &.image {
               padding: 0;
               background: none;
-              
+
               .image-content {
                 max-width: 100%;
                 border-radius: 10rpx;
               }
             }
-            
+
             &.voice {
               background: #fff;
               display: flex;
               align-items: center;
               min-width: 100rpx;
-              
+
               .voice-icon {
                 width: 40rpx;
                 height: 40rpx;
                 margin-right: 10rpx;
               }
-              
+
               .duration {
                 color: #999;
                 font-size: 24rpx;
@@ -527,11 +530,11 @@ onMounted(() => {
             }
           }
         }
-        
+
         &.self {
           .message-content {
             flex-direction: row-reverse;
-            
+
             .content {
               &.text {
                 background: #007AFF;
@@ -543,27 +546,28 @@ onMounted(() => {
       }
     }
   }
-  
+
   .input-area {
     padding: 20rpx;
     background: #fff;
     border-top: 1rpx solid #eee;
     display: flex;
     align-items: center;
-    
-    .voice-btn, .more-btn {
+
+    .voice-btn,
+    .more-btn {
       width: 60rpx;
       height: 60rpx;
       display: flex;
       align-items: center;
       justify-content: center;
-      
+
       .icon {
         width: 40rpx;
         height: 40rpx;
       }
     }
-    
+
     .input {
       flex: 1;
       height: 72rpx;
@@ -573,7 +577,7 @@ onMounted(() => {
       font-size: 28rpx;
       margin: 0 20rpx;
     }
-    
+
     .voice-input-btn {
       flex: 1;
       height: 72rpx;
@@ -586,13 +590,13 @@ onMounted(() => {
       color: #666;
     }
   }
-  
+
   .more-panel {
     padding: 30rpx;
     background: #fff;
     display: flex;
     flex-wrap: wrap;
-    
+
     .panel-item {
       width: 160rpx;
       height: 160rpx;
@@ -600,13 +604,13 @@ onMounted(() => {
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      
+
       .icon {
         width: 80rpx;
         height: 80rpx;
         margin-bottom: 10rpx;
       }
-      
+
       text {
         font-size: 24rpx;
         color: #666;
@@ -614,4 +618,4 @@ onMounted(() => {
     }
   }
 }
-</style> 
+</style>
