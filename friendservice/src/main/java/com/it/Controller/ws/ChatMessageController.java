@@ -62,10 +62,10 @@ public class ChatMessageController {
             @RequestParam(value = "page",defaultValue = "1")Integer page) {
 
         String token = request.getHeader("token");
-        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
+//        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
         //我的ID
-        String userId = stringStringMap.get("userId");
-//        String userId= "1";
+//        String userId = stringStringMap.get("userId");
+        String userId= "1";
         QueryWrapper<ChatMessage> queryWrapper = new QueryWrapper<>();
 
         queryWrapper.eq("sender_id",userId)
@@ -90,11 +90,11 @@ public class ChatMessageController {
 
         for (ChatMessage chatMessage:chatMessages){
             if (chatMessage.getSenderId().equals(userId)){
-                Result<UserInfoDTO> userInfoDTOResult = userAvatarService.UserFind(Integer.valueOf(chatMessage.getSenderId()), null);
+                Result<UserInfoDTO> userInfoDTOResult = userAvatarService.UserFind(Integer.valueOf(chatMessage.getReceiverId()), null);
                 ChatMessageDTO chatMessageDTO = new ChatMessageDTO(userInfoDTOResult.getData(),chatMessage);
                 hashMap.put(chatMessage.getSenderId()+":"+chatMessage.getReceiverId(),chatMessageDTO);
             }else if (chatMessage.getReceiverId().equals(userId)){
-                Result<UserInfoDTO> userInfoDTOResult = userAvatarService.UserFind(Integer.valueOf(chatMessage.getReceiverId()),null);
+                Result<UserInfoDTO> userInfoDTOResult = userAvatarService.UserFind(Integer.valueOf(chatMessage.getSenderId()),null);
                 ChatMessageDTO chatMessageDTO = new ChatMessageDTO(userInfoDTOResult.getData(),chatMessage);
                 hashMap.put(chatMessage.getReceiverId()+":"+chatMessage.getSenderId(),chatMessageDTO);
             }
