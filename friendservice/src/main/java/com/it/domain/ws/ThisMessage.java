@@ -8,6 +8,9 @@ import java.util.Date;
 public class ThisMessage {
 
     private Integer senderId;
+
+    private Integer sendingId;
+
     private String handImg;
 
     private Date thisTime;

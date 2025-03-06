@@ -91,6 +91,7 @@ public class WebSocketServer {
             ThisMessage thisMessage = new ThisMessage();
 
             thisMessage.setMessage(to);
+            thisMessage.setSendingId(Integer.valueOf(username));
             thisMessage.setSenderId(Integer.valueOf(receiverId));
             thisMessage.setType("1");
 
