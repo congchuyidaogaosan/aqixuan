@@ -19,18 +19,18 @@
       <view 
         class="message-item"
         v-for="item in messageList" 
-        :key="item.id"
+        :key="item.chatMessage.id"
         @click="goToChat(item)"
       >
-        <image class="avatar" :src="item.avatar || '/static/default-avatar.png'" mode="aspectFill"></image>
+        <image class="avatar" :src="item.userAvatar?.avatarUrl || '/static/default-avatar.png'" mode="aspectFill"></image>
         <view class="content">
           <view class="header">
-            <text class="nickname">{{item.nickname}}</text>
-            <text class="time">{{item.lastTime}}</text>
+            <text class="nickname">{{item.user?.nickname}}</text>
+            <text class="time">{{formatTime(item.chatMessage.createdAt)}}</text>
           </view>
           <view class="message">
-            <text class="text">{{item.lastMessage}}</text>
-            <view v-if="item.unread" class="badge">{{item.unread}}</view>
+            <text class="text">{{item.chatMessage.content}}</text>
+            <view v-if="!item.chatMessage.isRead" class="badge">1</view>
           </view>
         </view>
       </view>
@@ -123,13 +123,14 @@ const loadMore = () => {
 // 跳转到聊天页面
 const goToChat = async (item) => {
   try {
+    console.log('item', item)
     // 标记消息为已读
-    if (item.unread) {
-      await markMessageRead(item.id)
+    if (!item.chatMessage.isRead) {
+      await markMessageRead(item.chatMessage.id)
     }
     
     uni.navigateTo({
-      url: `/pages/chat/chat?id=${item.id}&nickname=${encodeURIComponent(item.nickname)}&avatar=${encodeURIComponent(item.avatar)}`
+      url: `/pages/chat/chat?userId=${item.user.id}&nickname=${encodeURIComponent(item.user.nickname)}&avatar=${encodeURIComponent(item.userAvatar?.avatarUrl || '')}`
     })
   } catch (error) {
     console.error('标记已读失败：', error)

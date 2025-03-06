@@ -9,7 +9,7 @@ public class ThisMessage {
 
     private Integer senderId;
 
-    private Integer sendingId;
+    private Integer receiverId;
 
     private String handImg;
 

@@ -62,10 +62,10 @@ public class ChatMessageController {
             @RequestParam(value = "page",defaultValue = "1")Integer page) {
 
         String token = request.getHeader("token");
-//        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
+        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
         //我的ID
-//        String userId = stringStringMap.get("userId");
-        String userId= "1";
+        String userId = stringStringMap.get("userId");
+//        String userId= "1";
         QueryWrapper<ChatMessage> queryWrapper = new QueryWrapper<>();
 
         queryWrapper.eq("sender_id",userId)

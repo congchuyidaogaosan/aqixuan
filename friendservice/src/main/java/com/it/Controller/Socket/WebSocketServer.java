@@ -91,19 +91,20 @@ public class WebSocketServer {
             ThisMessage thisMessage = new ThisMessage();
 
             thisMessage.setMessage(to);
-            thisMessage.setSendingId(Integer.valueOf(username));
-            thisMessage.setSenderId(Integer.valueOf(receiverId));
+            thisMessage.setReceiverId(Integer.valueOf(receiverId));
+            thisMessage.setSenderId(Integer.valueOf(username));
             thisMessage.setType("1");
 
             String json = new JSONObject().toJSONString(thisMessage);
 
-
-            boolean b = chatMessageService.addOne(thisMessage, username);
-            if (b) {
+//
+//            boolean b = chatMessageService.addOne(thisMessage, username);
+//            System.out.println(b);
+//            if (b) {
                 this.sendMessage(json, toSession);
-            } else {
-                log.info("发送失败，数据库保存失败", to);
-            }
+//            } else {
+//                log.info("发送失败，数据库保存失败", to);
+//            }
 
         } else {
             log.info("发送失败，未找到用户username={}的session", to);

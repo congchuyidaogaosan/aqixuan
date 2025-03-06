@@ -148,15 +148,37 @@ class WebSocketManager {
   }
 
   // 处理接收到的消息
-  handleMessage(message) {
-    console.log('收到消息：', message)
-    const { type, data } = message
-    const callback = this.messageCallbacks.get(type)
+  handleMessage(mes) {
+    if (this.debug) {
+      console.log('处理消息：', mes)
+      console.log('消息类型：', mes.type)
+      console.log('消息内容：', mes.message || mes)
+    }
+
+    // 获取当前用户ID
+    const userInfo = uni.getStorageSync('userInfo')
+    const currentUserId = userInfo?.id
+
+    // 如果是聊天消息，判断方向后触发事件
+    const chatMessage =  mes
     
+    console.log('chatMessage', chatMessage.senderId, chatMessage.receiverId, currentUserId)
+    // 添加消息方向标记
+    if(chatMessage.senderId === currentUserId) {
+      chatMessage.direction = 'send' // 发送的消息
+    } else if(chatMessage.receiverId === currentUserId) {
+      chatMessage.direction = 'receive' // 接收的消息
+    }
+
+    this.debug && console.log('触发聊天消息事件：', chatMessage)
+    uni.$emit('onChatMessage', chatMessage)
+
+    // 处理其他类型的消息
+    const callback = this.messageCallbacks.get(mes.type)
     if (callback) {
-      callback(data)
+      callback(mes.message || mes)
     } else {
-      this.debug && console.log('未处理的消息类型：', type, data)
+      this.debug && console.log('未处理的消息类型：', mes.type, mes)
     }
   }
 

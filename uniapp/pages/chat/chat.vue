@@ -170,7 +170,6 @@ const sendTextMessage = async () => {
 
   try {
     const message = {
-      type: 'chat',
       data: {
         receiverId: userId,
         content: inputContent.value,
@@ -238,13 +237,15 @@ const chooseImage = async () => {
     const uploadRes = await uploadFile(tempFilePath)
     if (uploadRes.code === 200) {
       // 发送图片消息
-      const data = {
-        receiverId: userId,
-        content: uploadRes.data.url,
-        messageType: 'image'
+      const message = {
+        data: {
+          receiverId: userId,
+          content: uploadRes.data.url,
+          messageType: 'image'
+        }
       }
 
-      const sendRes = await sendMessage(data)
+      const sendRes = await sendMessage(message)
       if (sendRes.code === 200) {
         // 添加到消息列表
         messageList.value.push({
@@ -289,14 +290,16 @@ const stopRecording = () => {
       const uploadRes = await uploadChatImage(tempFilePath)
       if (uploadRes.code === 200) {
         // 发送语音消息
-        const data = {
-          receiverId: userId,
-          content: uploadRes.data.url,
-          messageType: 'voice',
-          duration: res.duration
+        const message = {
+          data: {
+            receiverId: userId,
+            content: uploadRes.data.url,
+            messageType: 'voice',
+            duration: res.duration
+          }
         }
 
-        const sendRes = await sendMessage(data)
+        const sendRes = await sendMessage(message)
         if (sendRes.code === 200) {
           // 添加到消息列表
           messageList.value.push({
@@ -391,7 +394,7 @@ const refresh = async () => {
 // 页面加载
 onMounted(() => {
   loadMessages(true)
-  
+
   // 注册消息接收处理器
   uni.$on('onChatMessage', handleChatMessage)
 })
@@ -404,19 +407,41 @@ onUnmounted(() => {
 
 // 处理接收到的聊天消息
 const handleChatMessage = (data) => {
-  // 只处理当前聊天对象的消息
-  if (data.senderId === userId || data.receiverId === userId) {
-    messageList.value.push({
-      id: data.id || Date.now().toString(),
-      senderId: data.senderId,
-      content: data.content,
-      messageType: data.messageType,
-      createdAt: data.createdAt || new Date().toISOString(),
-      status: 'received',
-      avatar: data.avatar,
-      nickname: data.nickname
-    })
+  console.log('handleChatMessage', data)
+  
+  const currentUserId = Number(userInfo.value.id)
+  const otherUserId = Number(userId)
+  const messageSenderId = Number(data.senderId)
+  const messageReceiverId = Number(data.receiverId)
+
+  // 判断消息是否属于当前聊天
+  const isCurrentChat = (messageSenderId === currentUserId && messageReceiverId === otherUserId) || 
+                       (messageSenderId === otherUserId && messageReceiverId === currentUserId)
+
+  console.log('消息判断：', {
+    currentUserId,
+    otherUserId,
+    messageSenderId,
+    messageReceiverId,
+    isCurrentChat,
+    direction: data.direction
+  })
+
+  if (isCurrentChat) {
+    // 根据direction判断是发送还是接收
+    const isSender = data.direction === 'send'
     
+    messageList.value.push({
+      id: Date.now().toString(),
+      senderId: isSender ? currentUserId : otherUserId,
+      content: data.message,
+      messageType: 'text',
+      createdAt: new Date().toISOString(),
+      status: 'received',
+      avatar: isSender ? userInfo.value.avatarUrl : avatar,
+      nickname: isSender ? userInfo.value.nickname : nickname
+    })
+
     // 滚动到底部
     scrollToBottom()
   }
