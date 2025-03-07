@@ -25,7 +25,7 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
 
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.setContent(thisMessage.getMessage());
-        chatMessage.setReceiverId(username);
+        chatMessage.setReceiverId(String.valueOf(thisMessage.getReceiverId()));
         chatMessage.setSenderId(thisMessage.getSenderId()+"");
         chatMessage.setMessageType(thisMessage.getType());
         chatMessage.setCreatedAt(new Date());

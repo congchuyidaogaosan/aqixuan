@@ -7,10 +7,13 @@ import com.alibaba.fastjson.JSONObject;
 import com.it.domain.ChatMessage;
 import com.it.domain.ws.ThisMessage;
 import com.it.service.ChatMessageService;
+import com.it.service.impl.ChatMessageServiceImpl;
+import org.apache.catalina.core.ApplicationContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import javax.websocket.*;
 import javax.websocket.server.PathParam;
@@ -23,17 +26,29 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author websocket服务
  */
 @ServerEndpoint(value = "/imserver/{username}")
-@Component
+//@Component
+@Service
 public class WebSocketServer {
     private static final Logger log = LoggerFactory.getLogger(WebSocketServer.class);
     /**
      * 记录当前在线连接数
      */
     public static final Map<String, Session> sessionMap = new ConcurrentHashMap<>();
-
-
+//
+//    private static ApplicationContext applicationContext;
+//
+//
+//    public static void setApplicationContext(ApplicationContext applicationContext) {
+//        WebSocketServer.applicationContext = applicationContext;
+//    }
     @Autowired
-    private ChatMessageService chatMessageService;
+    public  void  setChatMessageService(ChatMessageService chatMessageService){
+        this.chatMessageService = chatMessageService;
+    }
+
+
+
+    private static   ChatMessageService chatMessageService;
 
     /**
      * 连接建立成功调用的方法
@@ -98,13 +113,13 @@ public class WebSocketServer {
             String json = new JSONObject().toJSONString(thisMessage);
 
 //
-//            boolean b = chatMessageService.addOne(thisMessage, username);
-//            System.out.println(b);
-//            if (b) {
+            boolean b = chatMessageService.addOne(thisMessage, username);
+            System.out.println(b);
+            if (b) {
                 this.sendMessage(json, toSession);
-//            } else {
-//                log.info("发送失败，数据库保存失败", to);
-//            }
+            } else {
+                log.info("发送失败，数据库保存失败", to);
+            }
 
         } else {
             log.info("发送失败，未找到用户username={}的session", to);

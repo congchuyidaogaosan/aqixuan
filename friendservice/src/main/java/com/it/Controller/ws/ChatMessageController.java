@@ -41,7 +41,7 @@ public class ChatMessageController {
     private UserAvatarController userAvatarService;
 
     @RequestMapping("list")
-    public Result list(@RequestBody ChatMessage chatMessage) {
+    public Result list() {
 
         List<ChatMessage> list = chatMessageService.list();
         return Result.ok(list);
