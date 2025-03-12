@@ -43,7 +43,7 @@ public class WebSocketServer {
 //    }
     @Autowired
     public  void  setChatMessageService(ChatMessageService chatMessageService){
-        this.chatMessageService = chatMessageService;
+        WebSocketServer.chatMessageService = chatMessageService;
     }
 
 

@@ -2,14 +2,18 @@ package com.it.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.it.domain.DTO.UserInfoDTO;
 import com.it.domain.User;
 import com.it.domain.UserAvatar;
+import com.it.domain.common.Result;
 import com.it.mapper.UserMapper;
 import com.it.service.UserAvatarService;
 import com.it.mapper.UserAvatarMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PathVariable;
 
+import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,9 +56,19 @@ public class UserAvatarServiceImpl extends ServiceImpl<UserAvatarMapper, UserAva
             strings.add(userAvatar.getAvatarUrl());
         }
 
-
         return strings;
     }
+
+    public Result<UserInfoDTO> UserFind(@PathVariable("id") Integer id, HttpSession session) {
+
+        User byId1 = userMapper.selectById(id);
+        UserAvatar byId = userAvatarMapper.selectOne(new QueryWrapper<UserAvatar>().eq("user_id",id).orderByDesc("created_at").last("LIMIT 1"));
+        UserInfoDTO userInfoDTO=new UserInfoDTO();
+        userInfoDTO.setAvatar(byId);
+        userInfoDTO.setUser(byId1);
+        return Result.ok(userInfoDTO);
+    }
+
 }
 
 
