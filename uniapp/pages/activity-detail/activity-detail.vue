@@ -361,7 +361,7 @@ const getActivityDetail = (activityId) => {
 
 // 返回上一页
 const goBack = () => {
-  uni.navigateBack()
+  history.back();
 }
 
 // 页面加载时获取活动详情

@@ -748,7 +748,7 @@ const handlePublish = () => {
 
 // 返回上一页
 const goBack = () => {
-  uni.navigateBack()
+  history.back();
 }
 
 // 在 onMounted 中初始化

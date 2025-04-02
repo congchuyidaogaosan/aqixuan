@@ -806,7 +806,6 @@ onMounted(() => {
   }
   
   .moment-list {
-    padding: 20rpx;
     
     .empty-state {
       display: flex;

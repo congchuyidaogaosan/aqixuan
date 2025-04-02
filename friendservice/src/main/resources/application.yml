@@ -11,7 +11,7 @@ spring:
   datasource:
     username: root
     password: Tabangjiuyuan@#$321
-    url: jdbc:mysql://121.40.178.23:3306/servie0118?useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useSSL=false
+    url: jdbc:mysql://8.134.184.96/servie0118?useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useSSL=false
     driver-class-name: com.mysql.jdbc.Driver
     hikari:
       connection-timeout: 10000

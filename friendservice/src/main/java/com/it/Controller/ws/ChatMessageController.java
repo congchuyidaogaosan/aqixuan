@@ -63,8 +63,15 @@ public class ChatMessageController {
      * @param query
      * @return
      */
-    @GetMapping("sty/{Aid}/{Bid}")
-    public Result sty(@PathVariable("Aid") Integer Aid, @PathVariable("Bid") Integer Bid, Query query) {
+    @GetMapping("sty/{Bid}")
+    public Result sty( HttpServletRequest request, @PathVariable("Bid") Integer Bid, Query query) {
+
+        String token = request.getHeader("token");
+        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
+        //我的ID
+        String Aid = stringStringMap.get("userId");
+//        String userId= "1";
+//        QueryWrapper<ChatMessage> queryWrapper = new QueryWrapper<>();
         QueryWrapper<ChatMessage> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("sender_id", Aid).eq("receiver_id", Bid)
                 .or().eq("receiver_id", Aid).eq("sender_id", Bid)

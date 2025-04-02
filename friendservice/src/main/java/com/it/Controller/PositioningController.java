@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
@@ -49,11 +50,13 @@ public class PositioningController {
             @RequestParam("APlaces") String APlaces, @RequestParam("BPlaces") String BPlaces
     ) {
 
-        String url = "https://restapi.amap.com/v3/distance" +
-                "?origins=" + APlaces + "&destination=" + APlaces + "&key=" + key;
+        List<Results> results = null;
 
-        String result = restTemplate.getForObject(url, String.class);
-        List<Results> results = JSONObject.parseObject(result).getJSONArray("results").toJavaList(Results.class);
+            String url = "https://restapi.amap.com/v3/distance" +
+                    "?origins=" + APlaces + "&destination=" + APlaces + "&key=" + key;
+
+            String result = restTemplate.getForObject(url, String.class);
+            results = JSONObject.parseObject(result).getJSONArray("results").toJavaList(Results.class);
 
 
 
