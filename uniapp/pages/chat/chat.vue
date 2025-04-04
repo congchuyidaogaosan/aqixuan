@@ -58,7 +58,7 @@
     <view class="input-area" :class="{ 'keyboard-show': inputFocus, 'more-show': showMorePanel }">
       <!-- 语音按钮 -->
       <view class="voice-btn" @click="toggleVoiceInput">
-        <image :src="isVoiceInput ? '/static/images/keyboard.png' : '/static/images/voice.png'" mode="aspectFit"
+        <image :src="isVoiceInput ? '/static/images/jianpan.png' : '/static/images/yuyin.png'" mode="aspectFit"
           class="icon"></image>
       </view>
 
@@ -74,14 +74,14 @@
 
       <!-- 更多功能按钮 -->
       <view class="more-btn" @click="showMore">
-        <image src="/static/images/more.png" mode="aspectFit" class="icon"></image>
+        <image src="/static/images/gengduo.png" mode="aspectFit" class="icon"></image>
       </view>
     </view>
 
     <!-- 更多功能面板 -->
     <view class="more-panel" v-if="showMorePanel" :class="{ show: showMorePanel }">
       <view class="panel-item" @click="chooseImage">
-        <image src="/static/images/image.png" mode="aspectFit" class="icon"></image>
+        <image src="/static/images/tupian.png" mode="aspectFit" class="icon"></image>
         <text>图片</text>
       </view>
     </view>
