@@ -53,8 +53,8 @@ public class PositioningController {
         List<Results> results = null;
 
             String url = "https://restapi.amap.com/v3/distance" +
-                    "?origins=" + APlaces + "&destination=" + APlaces + "&key=" + key;
-
+                    "?origins=" + APlaces + "&destination=" + BPlaces + "&key=" + key;
+        System.out.println(url);
             String result = restTemplate.getForObject(url, String.class);
             results = JSONObject.parseObject(result).getJSONArray("results").toJavaList(Results.class);
 
@@ -62,7 +62,7 @@ public class PositioningController {
 
         return Result.ok(results);
     }
-
+//
 
 
     /**

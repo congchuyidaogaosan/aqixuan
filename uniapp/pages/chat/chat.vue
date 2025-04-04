@@ -11,12 +11,13 @@
 
     <!-- 聊天内容区域 -->
     <scroll-view class="chat-content" scroll-y :scroll-into-view="scrollToId" :scroll-with-animation="true"
-      @scrolltolower="loadMore" :refresher-enabled="true" :refresher-triggered="refreshing" @refresherrefresh="refresh">
-      <!-- 加载更多 -->
-      <uni-load-more v-if="hasMore" :status="loadingStatus"></uni-load-more>
-
+      @scrolltoupper="loadMore" :upper-threshold="50" :refresher-enabled="false" 
+      :enhanced="true" :bounces="true" :show-scrollbar="false">
       <!-- 消息列表 -->
       <view class="message-list">
+        <!-- 加载更多 -->
+        <uni-load-more v-if="hasMore" :contentText="{contentdown: '下拉加载更多', contentrefresh: '加载中', contentnomore: '没有更多了'}" :status="loadingStatus"></uni-load-more>
+
         <view v-for="(message, index) in messageList" :key="message.id" :id="`msg-${message.id}`" class="message-item"
           :class="{ 'self': message.senderId === userInfo.id }">
           <!-- 时间 -->
@@ -26,6 +27,7 @@
 
           <!-- 消息内容 -->
           <view class="message-content">
+            <!-- 接收者头像 -->
             <image v-if="message.senderId !== userInfo.id" :src="message.avatar || '/static/default-avatar.png'"
               mode="aspectFill" class="avatar" @click="goToProfile(message.senderId)"></image>
 
@@ -44,6 +46,7 @@
               </view>
             </view>
 
+            <!-- 发送者头像 -->
             <image v-if="message.senderId === userInfo.id" :src="userInfo.avatarUrl || '/static/default-avatar.png'"
               mode="aspectFill" class="avatar"></image>
           </view>
@@ -52,7 +55,7 @@
     </scroll-view>
 
     <!-- 底部输入区域 -->
-    <view class="input-area">
+    <view class="input-area" :class="{ 'keyboard-show': inputFocus, 'more-show': showMorePanel }">
       <!-- 语音按钮 -->
       <view class="voice-btn" @click="toggleVoiceInput">
         <image :src="isVoiceInput ? '/static/images/keyboard.png' : '/static/images/voice.png'" mode="aspectFit"
@@ -61,7 +64,7 @@
 
       <!-- 文本输入框 -->
       <input v-if="!isVoiceInput" type="text" v-model="inputContent" class="input" placeholder="说点什么..."
-        :focus="inputFocus" @confirm="sendTextMessage" />
+        :focus="inputFocus" @focus="inputFocus = true" @blur="inputFocus = false" @confirm="sendTextMessage" />
 
       <!-- 语音输入按钮 -->
       <view v-else class="voice-input-btn" @touchstart="startRecording" @touchend="stopRecording"
@@ -76,7 +79,7 @@
     </view>
 
     <!-- 更多功能面板 -->
-    <view class="more-panel" v-if="showMorePanel">
+    <view class="more-panel" v-if="showMorePanel" :class="{ show: showMorePanel }">
       <view class="panel-item" @click="chooseImage">
         <image src="/static/images/image.png" mode="aspectFit" class="icon"></image>
         <text>图片</text>
@@ -130,26 +133,37 @@ const loadMessages = async (isRefresh = false) => {
     }
 
     const res = await getChatMessages(params)
-    if (res && res.data) {
-      const { messages, total } = res.data
+    if (res && res.page) {
+      const { records, total } = res.page
+
+      // 转换消息格式
+      const formattedMessages = records.map(msg => {
+        const isSender = Number(msg.senderId) === Number(userInfo.value.id)
+        return {
+          id: msg.id.toString(),
+          senderId: Number(msg.senderId),
+          content: msg.content,
+          messageType: msg.messageType === '1' ? 'text' : msg.messageType,
+          createdAt: msg.createdAt,
+          status: 'received',
+          avatar: isSender ? userInfo.value.avatarUrl : avatar,
+          nickname: isSender ? userInfo.value.nickname : nickname
+        }
+      }).reverse()
 
       if (isRefresh) {
-        messageList.value = messages
+        messageList.value = formattedMessages
       } else {
-        messageList.value = [...messages, ...messageList.value]
+        messageList.value = [...formattedMessages, ...messageList.value] // 将新消息添加到前面
       }
 
       // 更新加载状态
       hasMore.value = messageList.value.length < total
       loadingStatus.value = hasMore.value ? 'more' : 'noMore'
 
-      if (hasMore.value) {
+      // 在加载完成后增加页码 如果page小于等于res.page.pages则增加页码
+      if (page.value <= res.page.pages) {
         page.value++
-      }
-
-      // 滚动到最新消息
-      if (isRefresh) {
-        scrollToBottom()
       }
     }
   } catch (error) {
@@ -159,8 +173,6 @@ const loadMessages = async (isRefresh = false) => {
       icon: 'none'
     })
     loadingStatus.value = 'more'
-  } finally {
-    refreshing.value = false
   }
 }
 
@@ -231,10 +243,15 @@ const chooseImage = async () => {
       sourceType: ['album', 'camera']
     })
 
-    const tempFilePath = res.tempFilePaths[0]
+    const file = res.tempFilePaths[0]
+
+    const blob = new Blob([file], { type: file.type || 'image/jpeg' })
+    const fileToUpload = new File([blob], file.name || 'image.jpg', {
+      type: file.type || 'image/jpeg'
+    })
 
     // 上传图片
-    const uploadRes = await uploadFile(tempFilePath)
+    const uploadRes = await uploadFile(fileToUpload)
     if (uploadRes.code === 200) {
       // 发送图片消息
       const message = {
@@ -245,19 +262,39 @@ const chooseImage = async () => {
         }
       }
 
-      const sendRes = await sendMessage(message)
-      if (sendRes.code === 200) {
-        // 添加到消息列表
-        messageList.value.push({
-          id: sendRes.data.id,
-          senderId: userInfo.value.id,
-          content: uploadRes.data.url,
-          messageType: 'image',
-          createdAt: new Date().toISOString(),
-          status: 'sent'
-        })
+      // 添加到消息列表
+      messageList.value.push({
+        id: Date.now().toString(), // 临时ID
+        senderId: userInfo.value.id,
+        content: uploadRes.data.url,
+        messageType: 'image',
+        createdAt: new Date().toISOString(),
+        status: 'sending'
+      })
 
-        scrollToBottom()
+      // 滚动到底部
+      scrollToBottom()
+
+      // 通过WebSocket发送消息
+      if (webSocketManager.isConnected) {
+        webSocketManager.socket.send({
+          data: JSON.stringify(message),
+          success() {
+            console.log('图片消息发送成功')
+          },
+          fail(err) {
+            console.error('图片消息发送失败：', err)
+            uni.showToast({
+              title: '发送失败',
+              icon: 'none'
+            })
+          }
+        })
+      } else {
+        uni.showToast({
+          title: '网络连接已断开',
+          icon: 'none'
+        })
       }
     }
   } catch (error) {
@@ -299,20 +336,40 @@ const stopRecording = () => {
           }
         }
 
-        const sendRes = await sendMessage(message)
-        if (sendRes.code === 200) {
-          // 添加到消息列表
-          messageList.value.push({
-            id: sendRes.data.id,
-            senderId: userInfo.value.id,
-            content: uploadRes.data.url,
-            messageType: 'voice',
-            duration: res.duration,
-            createdAt: new Date().toISOString(),
-            status: 'sent'
-          })
+        // 添加到消息列表
+        messageList.value.push({
+          id: Date.now().toString(), // 临时ID
+          senderId: userInfo.value.id,
+          content: uploadRes.data.url,
+          messageType: 'voice',
+          duration: res.duration,
+          createdAt: new Date().toISOString(),
+          status: 'sending'
+        })
 
-          scrollToBottom()
+        // 滚动到底部
+        scrollToBottom()
+
+        // 通过WebSocket发送消息
+        if (webSocketManager.isConnected) {
+          webSocketManager.socket.send({
+            data: JSON.stringify(message),
+            success() {
+              console.log('语音消息发送成功')
+            },
+            fail(err) {
+              console.error('语音消息发送失败：', err)
+              uni.showToast({
+                title: '发送失败',
+                icon: 'none'
+              })
+            }
+          })
+        } else {
+          uni.showToast({
+            title: '网络连接已断开',
+            icon: 'none'
+          })
         }
       }
     }
@@ -369,7 +426,8 @@ const showTime = (index) => {
 
 // 返回上一页
 const goBack = () => {
-  uni.navigateBack()
+  history.back();
+  
 }
 
 // 跳转到用户主页
@@ -383,12 +441,6 @@ const goToProfile = (userId) => {
 const loadMore = () => {
   if (loadingStatus.value === 'loading' || !hasMore.value) return
   loadMessages()
-}
-
-// 下拉刷新
-const refresh = async () => {
-  refreshing.value = true
-  await loadMessages(true)
 }
 
 // 页面加载
@@ -405,7 +457,7 @@ onUnmounted(() => {
   uni.$off('onChatMessage', handleChatMessage)
 })
 
-// 处理接收到的聊天消息
+// 处理接收到的聊天消息 接收 websocket
 const handleChatMessage = (data) => {
   console.log('handleChatMessage', data)
   
@@ -423,19 +475,18 @@ const handleChatMessage = (data) => {
     otherUserId,
     messageSenderId,
     messageReceiverId,
-    isCurrentChat,
-    direction: data.direction
+    isCurrentChat
   })
 
   if (isCurrentChat) {
-    // 根据direction判断是发送还是接收
-    const isSender = data.direction === 'send'
+    const isSender = messageSenderId === currentUserId
     
+    // 将新消息添加到列表末尾
     messageList.value.push({
       id: Date.now().toString(),
-      senderId: isSender ? currentUserId : otherUserId,
+      senderId: messageSenderId,
       content: data.message,
-      messageType: 'text',
+      messageType: data.type === '1' ? 'text' : data.type,
       createdAt: new Date().toISOString(),
       status: 'received',
       avatar: isSender ? userInfo.value.avatarUrl : avatar,
@@ -492,6 +543,8 @@ const handleChatMessage = (data) => {
   .chat-content {
     flex: 1;
     padding: 20rpx;
+    height: calc(100vh - 88rpx - 120rpx); // 减去头部和底部的高度
+    box-sizing: border-box;
 
     .message-list {
       .message-item {
@@ -507,6 +560,7 @@ const handleChatMessage = (data) => {
         .message-content {
           display: flex;
           align-items: flex-start;
+          justify-content: flex-start;
 
           .avatar {
             width: 80rpx;
@@ -521,6 +575,8 @@ const handleChatMessage = (data) => {
             border-radius: 10rpx;
             font-size: 28rpx;
             word-break: break-all;
+            background: #fff;
+            color: #333;
 
             &.text {
               background: #fff;
@@ -558,7 +614,7 @@ const handleChatMessage = (data) => {
 
         &.self {
           .message-content {
-            flex-direction: row-reverse;
+            justify-content: flex-end;
 
             .content {
               &.text {
@@ -578,6 +634,21 @@ const handleChatMessage = (data) => {
     border-top: 1rpx solid #eee;
     display: flex;
     align-items: center;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    transition: all 0.3s ease;
+
+    &.keyboard-show {
+      position: fixed;
+      bottom: var(--window-bottom);
+    }
+
+    &.more-show {
+      transform: translateY(-220rpx); // 更多功能面板的高度
+    }
 
     .voice-btn,
     .more-btn {
@@ -621,6 +692,18 @@ const handleChatMessage = (data) => {
     background: #fff;
     display: flex;
     flex-wrap: wrap;
+    position: fixed;
+    bottom: 0; // 修改为底部
+    left: 0;
+    right: 0;
+    z-index: 99;
+    box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.1);
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+
+    &.show {
+      transform: translateY(0);
+    }
 
     .panel-item {
       width: 160rpx;

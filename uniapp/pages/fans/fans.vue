@@ -56,7 +56,7 @@
             class="user-item"
             v-for="user in userList"
             :key="user.id"
-            @click="goToProfile(user.followedUserId)"
+            @click="goToProfile(user.userId)"
           >
             <image :src="user.avatarUrl || '/static/default-avatar.png'" mode="aspectFill" class="avatar"></image>
             <view class="info">

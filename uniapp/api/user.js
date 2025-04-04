@@ -262,7 +262,7 @@ const api = {
   // 获取聊天消息
   getChatMessages: (params) => {
     return request({
-      url: '/chat/messages',
+      url: `/ChatMessage/sty/${params.chatId}`,
       method: 'GET',
       params
     })
@@ -747,10 +747,10 @@ export const sendMessage = async (data) => {
 export const getChatMessages = async (params) => {
   try {
     const res = await api.getChatMessages(params)
-    return res.code === 200 ? res.data : { messages: [], total: 0 }
+    return res.code === 200 ? res.data : []
   } catch (e) {
     console.log('获取聊天消息失败：', e)
-    return { messages: [], total: 0 }
+    return []
   }
 }
 
