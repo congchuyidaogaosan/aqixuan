@@ -37,7 +37,7 @@
 import { ref } from 'vue'
 import { sendSmsCode, loginByCode, getMyAvatarList } from '@/api/user.js'
 
-const phone = ref('15845587016')
+const phone = ref('')
 const code = ref('')
 const counting = ref(0)
 const codeKey = ref('')

@@ -96,6 +96,7 @@ public class WebSocketServer {
         JSONObject data = JSONObject.parseObject(message).getJSONObject("data");
         String to = data.getString("content");
         String receiverId = data.getString("receiverId");
+        String type = data.getString("messageType");
 //        String toUsername = obj.getString("to"); // to表示发送给哪个用户，比如 admin
 //        String text = obj.getString("text"); // 发送的消息文本  hello
         // {"to": "admin", "text": "聊天文本"}
@@ -108,7 +109,7 @@ public class WebSocketServer {
             thisMessage.setMessage(to);
             thisMessage.setReceiverId(Integer.valueOf(receiverId));
             thisMessage.setSenderId(Integer.valueOf(username));
-            thisMessage.setType("1");
+            thisMessage.setType(type);
 
             String json = new JSONObject().toJSONString(thisMessage);
 
@@ -122,7 +123,7 @@ public class WebSocketServer {
             }
 
         } else {
-            log.info("发送失败，未找到用户username={}的session", to);
+            log.info("发送失败，未找到用户username={}的session", username);
         }
     }
 

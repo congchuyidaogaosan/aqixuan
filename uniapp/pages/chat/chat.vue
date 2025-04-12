@@ -31,16 +31,16 @@
             <image v-if="message.senderId !== userInfo.id" :src="message.avatar || '/static/default-avatar.png'"
               mode="aspectFill" class="avatar" @click="goToProfile(message.senderId)"></image>
 
-            <view class="content" :class="message.messageType">
+            <view class="content" :class="getMessageTypeClass(message.messageType)">
               <!-- 文本消息 -->
-              <text v-if="message.messageType === 'text'">{{ message.content }}</text>
+              <text v-if="message.messageType === 1 || message.messageType == '1'">{{ message.content }}</text>
 
               <!-- 图片消息 -->
-              <image v-else-if="message.messageType === 'image'" :src="message.content" mode="widthFix"
+              <image v-else-if="message.messageType === 2 || message.messageType == '2'" :src="message.content" mode="widthFix"
                 class="image-content" @click="previewImage(message.content)"></image>
 
               <!-- 语音消息 -->
-              <view v-else-if="message.messageType === 'voice'" class="voice-content" @click="playVoice(message)">
+              <view v-else-if="message.messageType === 3 || message.messageType == '3'" class="voice-content" @click="playVoice(message)">
                 <image src="/static/images/voice.png" mode="aspectFit" class="voice-icon"></image>
                 <text class="duration">{{ message.duration }}''</text>
               </view>
@@ -67,9 +67,12 @@
         :focus="inputFocus" @focus="inputFocus = true" @blur="inputFocus = false" @confirm="sendTextMessage" />
 
       <!-- 语音输入按钮 -->
-      <view v-else class="voice-input-btn" @touchstart="startRecording" @touchend="stopRecording"
-        @touchcancel="cancelRecording">
-        按住说话
+      <view v-else class="voice-input-btn" 
+        @touchstart.prevent="startRecording" 
+        @touchend.prevent="stopRecording"
+        @touchcancel.prevent="cancelRecording"
+        :class="{ 'recording': isRecording }">
+        {{ isRecording ? '松开发送' : '按住说话' }}
       </view>
 
       <!-- 更多功能按钮 -->
@@ -117,6 +120,9 @@ const inputFocus = ref(false)
 const isVoiceInput = ref(false)
 const showMorePanel = ref(false)
 
+// 录音相关
+const isRecording = ref(false)
+
 // 加载消息记录
 const loadMessages = async (isRefresh = false) => {
   try {
@@ -143,7 +149,7 @@ const loadMessages = async (isRefresh = false) => {
           id: msg.id.toString(),
           senderId: Number(msg.senderId),
           content: msg.content,
-          messageType: msg.messageType === '1' ? 'text' : msg.messageType,
+          messageType: msg.messageType,
           createdAt: msg.createdAt,
           status: 'received',
           avatar: isSender ? userInfo.value.avatarUrl : avatar,
@@ -185,7 +191,7 @@ const sendTextMessage = async () => {
       data: {
         receiverId: userId,
         content: inputContent.value,
-        messageType: 'text'
+        messageType: 1
       }
     }
 
@@ -194,7 +200,7 @@ const sendTextMessage = async () => {
       id: Date.now().toString(), // 临时ID
       senderId: userInfo.value.id,
       content: inputContent.value,
-      messageType: 'text',
+      messageType: 1,
       createdAt: new Date().toISOString(),
       status: 'sending'
     })
@@ -238,12 +244,11 @@ const sendTextMessage = async () => {
 const chooseImage = async () => {
   try {
     const res = await uni.chooseImage({
-      count: 1,
-      sizeType: ['compressed'],
-      sourceType: ['album', 'camera']
+      count: 1
     })
 
-    const file = res.tempFilePaths[0]
+    console.log('上传图片', res)
+    const file = res.tempFiles[0]
 
     const blob = new Blob([file], { type: file.type || 'image/jpeg' })
     const fileToUpload = new File([blob], file.name || 'image.jpg', {
@@ -253,12 +258,15 @@ const chooseImage = async () => {
     // 上传图片
     const uploadRes = await uploadFile(fileToUpload)
     if (uploadRes.code === 200) {
+    console.log('上传图片成功', uploadRes)
       // 发送图片消息
       const message = {
         data: {
           receiverId: userId,
           content: uploadRes.data.url,
-          messageType: 'image'
+          messageType: 2,
+
+          // messageType: 'image'
         }
       }
 
@@ -267,7 +275,7 @@ const chooseImage = async () => {
         id: Date.now().toString(), // 临时ID
         senderId: userInfo.value.id,
         content: uploadRes.data.url,
-        messageType: 'image',
+        messageType: 2,
         createdAt: new Date().toISOString(),
         status: 'sending'
       })
@@ -306,78 +314,137 @@ const chooseImage = async () => {
   }
 }
 
-// 录音相关
+// 开始录音
 const startRecording = () => {
-  uni.startRecord({
-    success: () => {
+  isRecording.value = true
+  uni.showToast({
+    title: '开始录音',
+    icon: 'none'
+  })
+  
+  // 申请录音权限
+  uni.authorize({
+    scope: 'scope.record',
+    success() {
+      uni.startRecord({
+        success: () => {
+          console.log('开始录音')
+        },
+        fail: (err) => {
+          console.error('录音失败:', err)
+          uni.showToast({
+            title: '录音失败',
+            icon: 'none'
+          })
+        }
+      })
+    },
+    fail() {
+      uni.showModal({
+        title: '提示',
+        content: '需要录音权限才能发送语音消息',
+        success: (res) => {
+          if (res.confirm) {
+            uni.openSetting()
+          }
+        }
+      })
+    }
+  })
+}
+
+// 停止录音
+const stopRecording = () => {
+  if (!isRecording.value) return
+  
+  isRecording.value = false
+  uni.stopRecord({
+    success: async (res) => {
+      console.log('录音成功:', res)
+      const tempFilePath = res.tempFilePath
+      
+      try {
+        // 上传语音文件
+        const formData = new FormData()
+        formData.append('file', tempFilePath)
+        
+        const uploadRes = await uploadFile(formData)
+        if (uploadRes.code === 200) {
+          // 发送语音消息
+          const message = {
+            data: {
+              receiverId: userId,
+              content: uploadRes.data.url,
+              messageType: 3,
+              duration: res.duration || 1
+            }
+          }
+
+          // 添加到消息列表
+          messageList.value.push({
+            id: Date.now().toString(),
+            senderId: userInfo.value.id,
+            content: uploadRes.data.url,
+            messageType: 3,
+            duration: res.duration || 1,
+            createdAt: new Date().toISOString(),
+            status: 'sending',
+            avatar: userInfo.value.avatarUrl
+          })
+
+          // 滚动到底部
+          scrollToBottom()
+
+          // 通过WebSocket发送消息
+          if (webSocketManager.isConnected) {
+            webSocketManager.socket.send({
+              data: JSON.stringify(message),
+              success() {
+                console.log('语音消息发送成功')
+              },
+              fail(err) {
+                console.error('语音消息发送失败：', err)
+                uni.showToast({
+                  title: '发送失败',
+                  icon: 'none'
+                })
+              }
+            })
+          } else {
+            uni.showToast({
+              title: '网络连接已断开',
+              icon: 'none'
+            })
+          }
+        }
+      } catch (error) {
+        console.error('发送语音消息失败：', error)
+        uni.showToast({
+          title: '发送失败',
+          icon: 'none'
+        })
+      }
+    },
+    fail: (err) => {
+      console.error('停止录音失败:', err)
       uni.showToast({
-        title: '开始录音',
+        title: '录音失败',
         icon: 'none'
       })
     }
   })
 }
 
-const stopRecording = () => {
-  uni.stopRecord({
-    success: async (res) => {
-      const tempFilePath = res.tempFilePath
-
-      // 上传语音文件
-      const uploadRes = await uploadChatImage(tempFilePath)
-      if (uploadRes.code === 200) {
-        // 发送语音消息
-        const message = {
-          data: {
-            receiverId: userId,
-            content: uploadRes.data.url,
-            messageType: 'voice',
-            duration: res.duration
-          }
-        }
-
-        // 添加到消息列表
-        messageList.value.push({
-          id: Date.now().toString(), // 临时ID
-          senderId: userInfo.value.id,
-          content: uploadRes.data.url,
-          messageType: 'voice',
-          duration: res.duration,
-          createdAt: new Date().toISOString(),
-          status: 'sending'
-        })
-
-        // 滚动到底部
-        scrollToBottom()
-
-        // 通过WebSocket发送消息
-        if (webSocketManager.isConnected) {
-          webSocketManager.socket.send({
-            data: JSON.stringify(message),
-            success() {
-              console.log('语音消息发送成功')
-            },
-            fail(err) {
-              console.error('语音消息发送失败：', err)
-              uni.showToast({
-                title: '发送失败',
-                icon: 'none'
-              })
-            }
-          })
-        } else {
-          uni.showToast({
-            title: '网络连接已断开',
-            icon: 'none'
-          })
-        }
-      }
-    }
-  })
-}
-
+// 取消录音
 const cancelRecording = () => {
+  if (!isRecording.value) return
+  
+  isRecording.value = false
   uni.stopRecord()
+  uni.showToast({
+    title: '已取消',
+    icon: 'none'
+  })
 }
 
 // 播放语音
@@ -486,7 +553,7 @@ const handleChatMessage = (data) => {
       id: Date.now().toString(),
       senderId: messageSenderId,
       content: data.message,
-      messageType: data.type === '1' ? 'text' : data.type,
+      messageType: data.type,
       createdAt: new Date().toISOString(),
       status: 'received',
       avatar: isSender ? userInfo.value.avatarUrl : avatar,
@@ -496,6 +563,16 @@ const handleChatMessage = (data) => {
     // 滚动到底部
     scrollToBottom()
   }
+}
+
+// 获取消息类型的类名
+const getMessageTypeClass = (type) => {
+  const typeMap = {
+    '1': 'text',
+    '2': 'image',
+    '3': 'voice',
+  }
+  return typeMap[type] || 'text'
 }
 </script>
 
@@ -684,6 +761,12 @@ const handleChatMessage = (data) => {
       margin: 0 20rpx;
       font-size: 28rpx;
       color: #666;
+      transition: all 0.3s;
+      
+      &.recording {
+        background: #e0e0e0;
+        color: #333;
+      }
     }
   }
 
