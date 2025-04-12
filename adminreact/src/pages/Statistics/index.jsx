@@ -48,6 +48,15 @@ const Statistics = () => {
         comments: Math.floor(Math.random() * 200)
       }));
 
+      // 转换数据格式以适应折线图要求
+      const formattedTrends = mockTrends.reduce((acc, item) => {
+        return acc.concat([
+          { date: item.date, type: '用户数', value: item.users },
+          { date: item.date, type: '文章数', value: item.posts },
+          { date: item.date, type: '评论数', value: item.comments }
+        ]);
+      }, []);
+
       const mockCategories = [
         { category: '技术', value: 40 },
         { category: '生活', value: 25 },
@@ -63,7 +72,7 @@ const Statistics = () => {
       ];
 
       setOverview(mockOverview);
-      setTrendsData(mockTrends);
+      setTrendsData(formattedTrends);
       setCategoryData(mockCategories);
       setSourceData(mockSources);
     } catch (error) {
@@ -99,7 +108,10 @@ const Statistics = () => {
     colorField: 'category',
     radius: 0.8,
     label: {
-      type: 'outer'
+      offset: '50%',
+      style: {
+        textAlign: 'center'
+      }
     }
   };
 
@@ -109,7 +121,7 @@ const Statistics = () => {
     xField: 'source',
     yField: 'value',
     label: {
-      position: 'middle',
+      position: 'top',
       style: {
         fill: '#FFFFFF',
         opacity: 0.6

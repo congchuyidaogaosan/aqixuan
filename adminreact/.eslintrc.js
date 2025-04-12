@@ -2,6 +2,8 @@ module.exports = {
   root: true,
   env: {
     node: true,
+    browser: true,
+    es2020: true
   },
   extends: [],
   rules: {
@@ -10,5 +12,9 @@ module.exports = {
   },
   parserOptions: {
     ecmaVersion: 2020,
+    sourceType: 'module',
+    ecmaFeatures: {
+      jsx: true
+    }
   },
 }; 
