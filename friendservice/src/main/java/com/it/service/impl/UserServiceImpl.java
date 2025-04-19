@@ -32,7 +32,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     public List<UserDTO> joinUserAvatar(List<Integer> list) {
         MPJLambdaWrapper<User> wrapper =new MPJLambdaWrapper<User>();
         wrapper.selectAll(User.class).select("avatar_url").leftJoin(UserAvatar.class,UserAvatar::getUserId,User::getId);
-
+        wrapper.orderByAsc("created_at").last("LIMIT 1");
         for (Integer integer:list){
             wrapper.in("t.id",integer);
         }
