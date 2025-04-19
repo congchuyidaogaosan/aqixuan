@@ -95,7 +95,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow>
             stringBuilder.append(ipAddress).append("|");
 
             QueryWrapper<UserAvatar> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("user_id", followAllDTO.getUserId()).orderByDesc("created_at").last("LIMIT 1");
+            queryWrapper.eq("user_id", followAllDTO.getUserId()).orderByAsc("created_at").last("LIMIT 1");
 
             UserAvatar one = userAvatarService.getOne(queryWrapper);
             followAllDTO.setAvatarUrl(one.getAvatarUrl());
