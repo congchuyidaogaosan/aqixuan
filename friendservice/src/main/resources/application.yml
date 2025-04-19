@@ -44,6 +44,7 @@ spring:
         max-wait: -1
         # 连接池中的最大空闲连接
         max-idle: 8
+    database: 5
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
