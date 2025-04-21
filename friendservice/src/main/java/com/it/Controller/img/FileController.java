@@ -85,8 +85,8 @@ public class FileController {
         String name = UUID.randomUUID().toString().replace("-", "").substring(0, 10);
         String type = file.getOriginalFilename().
                 substring(file.getOriginalFilename().lastIndexOf('.'));
-        String value = "/src/main/resources/image/";
-        String valueClass = "/target/classes/image/";
+        String value = "/friendservice/src/main/resources/image/";
+        String valueClass = "/friendservice/target/classes/image/";
 
         InputStream in = file.getInputStream();
         FileOutputStream out = new FileOutputStream(userDir + value + name + type);
