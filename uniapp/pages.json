@@ -116,6 +116,42 @@
 			"style": {
 				"navigationStyle": "custom"
 			}
+		},
+		{
+			"path": "pages/settings/settings",
+			"style": {
+				"navigationBarTitleText": "设置"
+			}
+		},
+		{
+			"path": "pages/account-security/account-security",
+			"style": {
+				"navigationBarTitleText": "账号与安全"
+			}
+		},
+		{
+			"path": "pages/verify-code/verify-code",
+			"style": {
+				"navigationBarTitleText": "验证"
+			}
+		},
+		{
+			"path": "pages/modify-phone/modify-phone",
+			"style": {
+				"navigationBarTitleText": "修改手机号"
+			}
+		},
+		{
+			"path": "pages/verification/verification",
+			"style": {
+				"navigationBarTitleText": "实名认证"
+			}
+		},
+		{
+			"path": "pages/delete-account/delete-account",
+			"style": {
+				"navigationBarTitleText": "注销账号"
+			}
 		}
 	],
 	"globalStyle": {

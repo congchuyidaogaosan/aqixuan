@@ -68,6 +68,7 @@ public class AliIDController {
         return checkIdcard(result.get("num"), result.get("name"));
     }
 
+    @PostMapping("/checkIdcard")
     public JSONObject checkIdcard(Object idcard, Object name) {
         JSONObject result = new JSONObject();
 
