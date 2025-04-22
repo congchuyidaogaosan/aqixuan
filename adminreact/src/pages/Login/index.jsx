@@ -46,7 +46,7 @@ const Login = () => {
     <LoginContainer>
       <LoginCard bordered={false}>
         <LogoTitle>
-          <h1>爱奇轩管理系统</h1>
+          <h1>雅趣轩管理系统</h1>
           <p>专业的社交平台管理后台</p>
         </LogoTitle>
         <Form

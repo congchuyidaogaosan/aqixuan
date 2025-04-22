@@ -52,7 +52,7 @@ const Dashboard = () => {
       </Row>
       <div style={{ marginTop: 24 }}>
         <Card title="系统信息">
-          <p>欢迎使用爱奇轩管理系统！</p>
+          <p>欢迎使用雅趣轩管理系统！</p>
           <p>这里是系统仪表盘，您可以看到系统的关键指标和最新动态。</p>
         </Card>
       </div>

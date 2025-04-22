@@ -114,7 +114,7 @@ const MainLayout = () => {
     <StyledLayout>
       <Sider trigger={null} collapsible collapsed={collapsed} width={256}>
         <StyledLogo>
-          {collapsed ? '爱奇轩' : '爱奇轩管理系统'}
+          {collapsed ? '雅趣轩' : '雅趣轩管理系统'}
         </StyledLogo>
         <Menu
           theme="dark"

@@ -267,14 +267,7 @@ const api = {
       params
     })
   },
-  // 实名认证接口
-  realNameAuth: (data) => {
-    return request({
-      url: '/checkIdcard',
-      method: 'POST',
-      data
-    })
-  }
+
 }
 // 发送验证码
 export const sendSmsCode = async (phone) => {
@@ -763,14 +756,20 @@ export const getChatMessages = async (params) => {
 }
 
 // 实名认证接口
-export const realNameAuth = async (data) => {
-  try {
-    const res = await api.realNameAuth(data)
-    return res.code === 200 ? res.data : null
-  } catch (e) {
-    console.log('实名认证失败：', e)
-    return null
-  }
+export function realNameAuth(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request({
+    url: '/ocr/idcard',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    data: formData,
+    transformRequest: [function (data) {
+      return data // 不转换formData
+    }]
+  })
 }
 
 
