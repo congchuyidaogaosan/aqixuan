@@ -35,6 +35,9 @@ public class StatisticsController {
     @Autowired
     private ActivitySignupService signupService;
 
+    @Autowired
+    private ChatMessageService chatMessageService;
+
     @GetMapping("/overview")
     public Result<Map<String, Object>> getOverview() {
         try {
@@ -388,6 +391,35 @@ public class StatisticsController {
         } catch (Exception e) {
             logger.error("获取活动地点热力图数据失败", e);
             return Result.<Map<String, Object>>build(null, ResultCodeEnum.FAIL).message("获取活动地点热力图数据失败");
+        }
+    }
+
+    @GetMapping("/total-stats")
+    public Result<Map<String, Object>> getTotalStats() {
+        try {
+            Map<String, Object> stats = new HashMap<>();
+            
+            // 获取用户总数
+            long totalUsers = userService.count();
+            
+            // 获取聊天消息总数
+            long totalMessages = chatMessageService.count();
+            
+            // 获取动态总数
+            long totalPosts = momentService.count();
+            
+            // 获取活动总数
+            long totalActivities = activityService.count();
+
+            stats.put("totalUsers", totalUsers);
+            stats.put("totalMessages", totalMessages);
+            stats.put("totalPosts", totalPosts);
+            stats.put("totalActivities", totalActivities);
+
+            return Result.<Map<String, Object>>build(stats, ResultCodeEnum.SUCCESS);
+        } catch (Exception e) {
+            logger.error("获取总数统计失败", e);
+            return Result.<Map<String, Object>>build(null, ResultCodeEnum.FAIL).message("获取总数统计失败");
         }
     }
 } 
