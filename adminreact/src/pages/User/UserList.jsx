@@ -2,21 +2,90 @@ import React, { useState, useEffect } from 'react';
 import {
   Table, Card, Button, Space, Input,
   Form, Select, Tag, Modal, message,
-  Avatar, Tooltip, Switch
+  Avatar, Tooltip, Switch, Carousel,
+  Typography
 } from 'antd';
 import {
   UserOutlined, EditOutlined, DeleteOutlined,
-  SearchOutlined, PlusOutlined, ReloadOutlined
+  SearchOutlined, PlusOutlined, ReloadOutlined,
+  PhoneOutlined, EnvironmentOutlined, CalendarOutlined,
+  HeartOutlined
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { getUserList, deleteUser } from '../../api/user';
 
 const { Option } = Select;
+const { Text } = Typography;
 
 const StyledCard = styled(Card)`
   margin-bottom: 20px;
 `;
 
-const UserList = () => {
+const StyledCarousel = styled(Carousel)`
+  .slick-slide {
+    text-align: center;
+    height: 160px;
+    line-height: 160px;
+    overflow: hidden;
+    background: #f5f5f5;
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+  .slick-dots {
+    display: none !important;
+  }
+`;
+
+const UserInfoCard = styled.div`
+  .user-info-item {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .user-tags {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+`;
+
+const ImageWrapper = styled.div`
+  width: 160px;
+  height: 160px;
+  margin-right: 16px;
+  .ant-carousel {
+    height: 100%;
+  }
+`;
+
+// 用户表单组件
+const UserForm = ({ form, initialValues }) => (
+  <Form form={form} layout="vertical" initialValues={initialValues}>
+    <Form.Item name="phone" label="手机号" rules={[{ required: true, message: '请输入手机号' }]}>
+      <Input placeholder="请输入手机号" />
+    </Form.Item>
+    <Form.Item name="nickname" label="昵称" rules={[{ required: true, message: '请输入昵称' }]}>
+      <Input placeholder="请输入昵称" />
+    </Form.Item>
+    <Form.Item name="introduction" label="简介">
+      <Input.TextArea placeholder="请输入简介" />
+    </Form.Item>
+    <Form.Item name="location" label="位置">
+      <Input placeholder="请输入位置" />
+    </Form.Item>
+  </Form>
+);
+
+export const UserList = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -35,28 +104,21 @@ const UserList = () => {
   const fetchUsers = async (params = {}) => {
     setLoading(true);
     try {
-      // 模拟API调用
-      const mockData = Array.from({ length: 100 }, (_, index) => ({
-        id: index + 1,
-        username: `user${index + 1}`,
-        nickname: `用户${index + 1}`,
-        email: `user${index + 1}@example.com`,
-        phone: `1${String(Math.floor(Math.random() * 1000000000)).padStart(10, '0')}`,
-        avatar: `https://api.dicebear.com/7.x/avatars/svg?seed=${index}`,
-        status: Math.random() > 0.2,
-        role: ['admin', 'user', 'editor'][Math.floor(Math.random() * 3)],
-        createdAt: new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toISOString(),
-      }));
-
-      const { current, pageSize } = params;
-      const start = (current - 1) * pageSize;
-      const end = start + pageSize;
-
-      setUsers(mockData.slice(start, end));
+      const { current, pageSize, keyword, status } = params;
+      const response = await getUserList({
+        current,
+        pageSize,
+        keyword,
+        status
+      });
+      
+      const { data } = response;
+      setUsers(data.records);
       setPagination({
         ...pagination,
-        current,
-        total: mockData.length,
+        current: data.current,
+        pageSize: data.size,
+        total: data.total,
       });
     } catch (error) {
       message.error('获取用户列表失败');
@@ -66,13 +128,17 @@ const UserList = () => {
     }
   };
 
-  // 首次加载获取数据
   useEffect(() => {
     fetchUsers({
       current: pagination.current,
       pageSize: pagination.pageSize,
     });
   }, []);
+
+  // 查看用户详情
+  const handleViewDetail = (userId) => {
+    navigate(`/user/${userId}`);
+  };
 
   // 处理表格变化
   const handleTableChange = (newPagination, filters, sorter) => {
@@ -115,7 +181,7 @@ const UserList = () => {
       cancelText: '取消',
       onOk: async () => {
         try {
-          // 模拟API调用
+          await deleteUser(id);
           message.success('删除成功');
           fetchUsers({
             current: pagination.current,
@@ -138,7 +204,8 @@ const UserList = () => {
       cancelText: '取消',
       onOk: async () => {
         try {
-          // 模拟API调用
+          const deletePromises = selectedRowKeys.map(id => deleteUser(id));
+          await Promise.all(deletePromises);
           message.success('批量删除成功');
           setSelectedRowKeys([]);
           fetchUsers({
@@ -158,78 +225,138 @@ const UserList = () => {
     {
       title: 'ID',
       dataIndex: 'id',
-      width: 80,
+      width: 60,
       fixed: 'left',
     },
     {
-      title: '用户信息',
-      dataIndex: 'username',
+      title: '头像/照片',
+      dataIndex: 'photos',
+      width: 180,
       fixed: 'left',
+      render: (_, record) => (
+        <ImageWrapper>
+          {record.carouselImgs && record.carouselImgs.length > 0 ? (
+            <StyledCarousel autoplay>
+              {record.carouselImgs.map((img, index) => (
+                <div key={index}>
+                  <img src={img} alt={`照片${index + 1}`} />
+                </div>
+              ))}
+            </StyledCarousel>
+          ) : (
+            <Avatar 
+              size={160} 
+              src={record.handImg} 
+              icon={<UserOutlined />} 
+              style={{ width: '100%', height: '100%' }}
+            />
+          )}
+        </ImageWrapper>
+      ),
+    },
+    {
+      title: '基本信息',
+      dataIndex: 'basicInfo',
       width: 200,
       render: (_, record) => (
-        <Space>
-          <Avatar src={record.avatar} icon={<UserOutlined />} />
-          <div>
-            <div>{record.nickname}</div>
-            <div style={{ fontSize: '12px', color: '#999' }}>{record.username}</div>
+        <UserInfoCard>
+          <div style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '8px' }}>
+            {record.nickname}
           </div>
+          <div className="user-info-item">
+            <PhoneOutlined /> {record.phone}
+          </div>
+          {record.location && (
+            <div className="user-info-item">
+              <EnvironmentOutlined /> {record.location}
+            </div>
+          )}
+          {record.introduction && (
+            <div className="user-info-item">
+              {record.introduction}
+            </div>
+          )}
+        </UserInfoCard>
+      ),
+    },
+    {
+      title: '个人特征',
+      dataIndex: 'traits',
+      width: 200,
+      render: (_, record) => (
+        <Space direction="vertical" size="small">
+          {record.roleType && <Tag color="blue">{record.roleType}</Tag>}
+          {record.industry && <Tag color="cyan">{record.industry}</Tag>}
+          {record.emotionStatus && <Tag color="pink">{record.emotionStatus}</Tag>}
+          {record.mbti && <Tag color="purple">{record.mbti}</Tag>}
+          {record.datingPurpose && <Tag color="orange">{record.datingPurpose}</Tag>}
         </Space>
       ),
     },
     {
-      title: '邮箱',
-      dataIndex: 'email',
+      title: '兴趣爱好',
+      dataIndex: 'interests',
       width: 200,
+      render: (_, record) => (
+        <Space direction="vertical" size="small">
+          {record.interests && (
+            <div>
+              <Text type="secondary" style={{ fontSize: '12px' }}>兴趣：</Text>
+              <br />
+              <Text>{record.interests}</Text>
+            </div>
+          )}
+          {record.sports && (
+            <div>
+              <Text type="secondary" style={{ fontSize: '12px' }}>运动：</Text>
+              <br />
+              <Text>{record.sports}</Text>
+            </div>
+          )}
+        </Space>
+      ),
     },
     {
-      title: '手机号',
-      dataIndex: 'phone',
-      width: 150,
-    },
-    {
-      title: '角色',
-      dataIndex: 'role',
+      title: '身高体重',
+      dataIndex: 'bodyInfo',
       width: 100,
-      render: (role) => {
-        const colorMap = {
-          admin: 'red',
-          editor: 'blue',
-          user: 'green',
-        };
-        return <Tag color={colorMap[role]}>{role.toUpperCase()}</Tag>;
-      },
+      render: (_, record) => (
+        <Space direction="vertical" size="small">
+          {record.height && <Text>身高：{record.height}cm</Text>}
+          {record.weight && <Text>体重：{record.weight}kg</Text>}
+        </Space>
+      ),
     },
     {
       title: '状态',
       dataIndex: 'status',
       width: 100,
-      render: (status) => (
-        <Switch
-          checkedChildren="启用"
-          unCheckedChildren="禁用"
-          checked={status}
-          disabled
-        />
+      render: (_, record) => (
+        <Space direction="vertical" size="small">
+          <Tag color={record.isVerified ? 'green' : 'orange'}>
+            {record.isVerified ? '已认证' : '未认证'}
+          </Tag>
+          {record.isDeleted && <Tag color="red">已删除</Tag>}
+        </Space>
       ),
     },
     {
       title: '注册时间',
       dataIndex: 'createdAt',
-      width: 200,
-      render: (date) => new Date(date).toLocaleString(),
+      width: 180,
     },
     {
       title: '操作',
       key: 'action',
       fixed: 'right',
-      width: 150,
+      width: 100,
       render: (_, record) => (
         <Space>
-          <Tooltip title="编辑">
+          <Tooltip title="查看详情">
             <Button
               type="link"
               icon={<EditOutlined />}
-              onClick={() => console.log('编辑用户:', record.id)}
+              onClick={() => handleViewDetail(record.id)}
             />
           </Tooltip>
           <Tooltip title="删除">
@@ -256,22 +383,15 @@ const UserList = () => {
         >
           <Form.Item name="keyword">
             <Input
-              placeholder="用户名/昵称/邮箱"
+              placeholder="用户名/昵称/手机号"
               prefix={<SearchOutlined />}
               allowClear
             />
           </Form.Item>
-          <Form.Item name="role">
-            <Select placeholder="角色" allowClear style={{ width: 120 }}>
-              <Option value="admin">管理员</Option>
-              <Option value="editor">编辑</Option>
-              <Option value="user">普通用户</Option>
-            </Select>
-          </Form.Item>
           <Form.Item name="status">
-            <Select placeholder="状态" allowClear style={{ width: 120 }}>
-              <Option value={true}>启用</Option>
-              <Option value={false}>禁用</Option>
+            <Select placeholder="认证状态" allowClear style={{ width: 120 }}>
+              <Option value={true}>已认证</Option>
+              <Option value={false}>未认证</Option>
             </Select>
           </Form.Item>
           <Form.Item>
@@ -289,7 +409,7 @@ const UserList = () => {
 
       <Card>
         <Space style={{ marginBottom: 16 }}>
-          <Button type="primary" icon={<PlusOutlined />}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/user/new')}>
             新增用户
           </Button>
           {selectedRowKeys.length > 0 && (

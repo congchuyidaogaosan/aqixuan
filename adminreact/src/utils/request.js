@@ -3,7 +3,7 @@ import axios from 'axios';
 import { message } from 'antd';
 
 // 获取环境变量中的API基础URL，如果不存在则使用默认值
-const BASE_URL = process.env.REACT_APP_API_BASE_URL || '/api';
+const BASE_URL = '/api';
 
 // 创建axios实例
 const request = axios.create({

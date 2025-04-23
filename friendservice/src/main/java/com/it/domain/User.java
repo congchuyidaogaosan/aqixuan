@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
@@ -130,7 +131,8 @@ public class User implements Serializable {
     @TableField(exist = false)
     private String handImg;
 
-
+    @TableField(exist = false)
+    private List<String> carouselImgs;
 
     @TableField(exist = false)
     private String token;
