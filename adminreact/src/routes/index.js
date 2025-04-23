@@ -150,7 +150,7 @@ const routes = [
             errorElement: <ErrorBoundary />,
           },
           { 
-            path: ':id', 
+            path: 'detail/:id', 
             element: <ActivityDetail />,
             errorElement: <ErrorBoundary />,
           },

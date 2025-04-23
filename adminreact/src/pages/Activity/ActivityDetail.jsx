@@ -41,29 +41,18 @@ const ActivityDetail = () => {
   const fetchActivityDetail = async () => {
     setLoading(true);
     try {
-      // 模拟API调用
-      const mockActivity = {
-        id: parseInt(id),
-        title: `活动${id}`,
-        cover: `https://picsum.photos/800/400?random=${id}`,
-        startTime: moment().add(id, 'days').format('YYYY-MM-DD HH:mm:ss'),
-        endTime: moment().add(parseInt(id) + 7, 'days').format('YYYY-MM-DD HH:mm:ss'),
-        location: ['线上', '北京', '上海', '广州', '深圳'][Math.floor(Math.random() * 5)],
-        type: ['offline', 'online'][Math.floor(Math.random() * 2)],
-        maxParticipants: 1000,
-        currentParticipants: Math.floor(Math.random() * 1000),
-        description: `这是活动${id}的详细描述，包含了活动的具体内容和安排...\n\n这是第二段描述，可以包含更多细节。`,
-        notice: `1. 请准时参加\n2. 请遵守活动规则\n3. 注意安全`,
-        status: ['draft', 'ongoing', 'ended', 'cancelled'][Math.floor(Math.random() * 4)],
-        createdAt: moment().subtract(id, 'days').format('YYYY-MM-DD HH:mm:ss'),
-        createdBy: {
-          id: 1,
-          nickname: '管理员',
-          avatar: `https://api.dicebear.com/7.x/avatars/svg?seed=admin`,
-        },
-      };
+      const response = await fetch(`/api/manage/activity/detail/${id}`);
+      const data = await response.json();
       
-      setActivity(mockActivity);
+      if (data.code === 200) {
+        setActivity({
+          ...data.data.activity,
+          createdBy: data.data.creator,
+          currentParticipants: data.data.signupCount
+        });
+      } else {
+        message.error(data.message || '获取活动详情失败');
+      }
     } catch (error) {
       message.error('获取活动详情失败');
       console.error('获取活动详情失败:', error);
@@ -75,25 +64,19 @@ const ActivityDetail = () => {
   // 获取参与者列表
   const fetchParticipants = async (page = 1) => {
     try {
-      // 模拟API调用
-      const mockParticipants = Array.from({ length: 50 }, (_, index) => ({
-        id: index + 1,
-        userId: Math.floor(Math.random() * 1000) + 1,
-        nickname: `用户${Math.floor(Math.random() * 1000) + 1}`,
-        avatar: `https://api.dicebear.com/7.x/avatars/svg?seed=user${index}`,
-        joinTime: moment().subtract(index, 'hours').format('YYYY-MM-DD HH:mm:ss'),
-        status: Math.random() > 0.1 ? 'joined' : 'cancelled',
-      }));
-
-      const start = (page - 1) * participantPagination.pageSize;
-      const end = start + participantPagination.pageSize;
+      const response = await fetch(`/api/manage/activity/participants/${id}?pageNum=${page}&pageSize=${participantPagination.pageSize}`);
+      const data = await response.json();
       
-      setParticipants(mockParticipants.slice(start, end));
-      setParticipantPagination({
-        ...participantPagination,
-        current: page,
-        total: mockParticipants.length,
-      });
+      if (data.code === 200) {
+        setParticipants(data.data.records);
+        setParticipantPagination({
+          current: data.data.current,
+          pageSize: data.data.size,
+          total: data.data.total,
+        });
+      } else {
+        message.error(data.message || '获取参与者列表失败');
+      }
     } catch (error) {
       message.error('获取参与者列表失败');
       console.error('获取参与者列表失败:', error);
@@ -113,9 +96,17 @@ const ActivityDetail = () => {
       content: '删除后不可恢复',
       onOk: async () => {
         try {
-          // 模拟API调用
-          message.success('删除成功');
-          navigate('/activity');
+          const response = await fetch(`/api/manage/activity/delete/${id}`, {
+            method: 'POST',
+          });
+          const data = await response.json();
+          
+          if (data.code === 200) {
+            message.success('删除成功');
+            navigate('/activity');
+          } else {
+            message.error(data.message || '删除失败');
+          }
         } catch (error) {
           message.error('删除失败');
           console.error('删除失败:', error);
@@ -127,10 +118,9 @@ const ActivityDetail = () => {
   // 获取活动状态标签
   const getStatusTag = (status) => {
     const statusMap = {
-      draft: { color: 'default', text: '草稿' },
-      ongoing: { color: 'green', text: '进行中' },
-      ended: { color: 'blue', text: '已结束' },
-      cancelled: { color: 'red', text: '已取消' },
+      1: { color: 'green', text: '进行中' },
+      2: { color: 'blue', text: '已结束' },
+      3: { color: 'red', text: '已取消' }
     };
     const { color, text } = statusMap[status] || { color: 'default', text: '未知' };
     return <Tag color={color}>{text}</Tag>;
@@ -187,9 +177,10 @@ const ActivityDetail = () => {
         }
       >
         <Image
-          src={activity.cover}
+          src={activity.handImg || 'https://via.placeholder.com/800x400?text=暂无图片'}
           alt={activity.title}
           style={{ width: '100%', height: 400, objectFit: 'cover', marginBottom: 24 }}
+          fallback="https://via.placeholder.com/800x400?text=图片加载失败"
         />
 
         <Row gutter={24} style={{ marginBottom: 24 }}>
@@ -197,13 +188,13 @@ const ActivityDetail = () => {
             <Statistic
               title="参与人数"
               value={activity.currentParticipants}
-              suffix={`/ ${activity.maxParticipants}`}
+              suffix={`/ ${activity.totalNumber}`}
             />
           </Col>
           <Col span={6}>
             <Statistic
               title="活动类型"
-              value={activity.type === 'online' ? '线上活动' : '线下活动'}
+              value={activity.activityType === '0' ? '户外活动' : '室内活动'}
             />
           </Col>
           <Col span={6}>
@@ -227,8 +218,11 @@ const ActivityDetail = () => {
           <Descriptions.Item label="活动地点">{activity.location}</Descriptions.Item>
           <Descriptions.Item label="创建者">
             <Space>
-              <Avatar src={activity.createdBy.avatar} />
-              {activity.createdBy.nickname}
+              <Avatar 
+                src={activity.createdBy?.avatar || 'https://via.placeholder.com/40x40?text=暂无头像'} 
+                icon={<UserOutlined />}
+              />
+              {activity.createdBy?.nickname}
             </Space>
           </Descriptions.Item>
         </Descriptions>
@@ -252,16 +246,27 @@ const ActivityDetail = () => {
             }}
             renderItem={(participant) => (
               <List.Item
+                key={participant.id}
                 actions={[
-                  <Tag color={participant.status === 'joined' ? 'green' : 'red'}>
-                    {participant.status === 'joined' ? '已参与' : '已取消'}
+                  <Tag key={`tag-${participant.id}`} color={participant.status === 1 ? 'green' : 'red'}>
+                    {participant.status === 1 ? '已参与' : '已取消'}
                   </Tag>
                 ]}
               >
                 <List.Item.Meta
-                  avatar={<Avatar src={participant.avatar} />}
+                  avatar={
+                    <Avatar 
+                      src={participant.avatar || 'https://via.placeholder.com/40x40?text=暂无头像'} 
+                      icon={<UserOutlined />}
+                    />
+                  }
                   title={participant.nickname}
-                  description={`用户ID: ${participant.userId} · 参与时间: ${participant.joinTime}`}
+                  description={
+                    <Space>
+                      <UserOutlined /> 用户ID: {participant.userId}
+                      <ClockCircleOutlined /> 参与时间: {participant.joinTime}
+                    </Space>
+                  }
                 />
               </List.Item>
             )}
