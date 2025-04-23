@@ -1,6 +1,7 @@
 package com.it.Controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.it.domain.User;
 import com.it.domain.UserAvatar;
 import com.it.domain.common.Result;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -30,17 +32,53 @@ public class UserController {
     private TokenUtil tokenUtil;
 
 
-    @RequestMapping("list")
-    public Result list(@RequestBody User user) {
-
-        QueryWrapper<UserAvatar> userAvatarQueryWrapper = new QueryWrapper<>();
-        if (user.getNickname() != null && !user.getNickname().isEmpty()) {
-            userAvatarQueryWrapper.like("nick_Name", user.getNickname());
+    @GetMapping("list")
+    public Result list(
+        @RequestParam(defaultValue = "1") Integer current,
+        @RequestParam(defaultValue = "10") Integer pageSize,
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) Boolean status
+    ) {
+        Page<User> page = new Page<>(current, pageSize);
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        
+        // 添加搜索条件
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            queryWrapper.like("nickname", keyword)
+                    .or()
+                    .like("phone", keyword);
         }
-
-        List<User> list = userService.list();
-        return Result.ok(list);
-
+        
+        if (status != null) {
+            queryWrapper.eq("is_deleted", !status);
+        }
+        
+        // 获取用户列表
+        Page<User> userPage = userService.page(page, queryWrapper);
+        
+        // 获取用户头像
+        List<User> users = userPage.getRecords();
+        for (User user : users) {
+            // 查询用户的所有头像
+            QueryWrapper<UserAvatar> avatarWrapper = new QueryWrapper<>();
+            avatarWrapper.eq("user_id", user.getId());
+            avatarWrapper.orderByAsc("sort_order");
+            List<UserAvatar> avatars = userAvatarService.list(avatarWrapper);
+            
+            // 将头像URL列表添加到用户对象
+            List<String> carouselImgs = new ArrayList<>();
+            for (UserAvatar avatar : avatars) {
+                carouselImgs.add(avatar.getAvatarUrl());
+            }
+            user.setCarouselImgs(carouselImgs);
+            
+            // 设置默认头像
+            if (!carouselImgs.isEmpty()) {
+                user.setHandImg(carouselImgs.get(0));
+            }
+        }
+        
+        return Result.ok(userPage);
     }
 
     @GetMapping("find/{id}")
