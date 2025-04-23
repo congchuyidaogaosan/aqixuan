@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Table, Card, Button, Input, Space, Tag, Modal, 
-  message, Form, Select, DatePicker, Row, Col, Menu, Dropdown, Tooltip 
+  message, Form, Select, DatePicker, Row, Col, Menu, Dropdown, Tooltip, Avatar 
 } from 'antd';
 import { 
   SearchOutlined, DeleteOutlined, ExclamationCircleOutlined, 
@@ -11,9 +11,7 @@ import {
 } from '@ant-design/icons';
 import moment from 'moment';
 import styled from 'styled-components';
-
-// 导入API
-// import { getMessageList, deleteMessage, batchDeleteMessages, reviewMessage, exportMessages } from '../../api/message';
+import { getMessageListWithUserInfo, deleteMessage, batchDeleteMessages } from '../../api/message';
 
 const { confirm } = Modal;
 const { RangePicker } = DatePicker;
@@ -37,377 +35,245 @@ const MessageContent = styled.div`
   -webkit-box-orient: vertical;
 `;
 
+const UserInfo = ({ avatar, nickname, id }) => (
+  <Space>
+    <Avatar src={avatar} size="small">
+      {nickname ? nickname.charAt(0) : id}
+    </Avatar>
+    <span>{nickname || id}</span>
+  </Space>
+);
+
 const MessageList = () => {
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [searchParams, setSearchParams] = useState(null);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
     total: 0,
     showQuickJumper: true,
     showSizeChanger: true,
-    showTotal: (total) => `共 ${total} 条记录`,
+    pageSizeOptions: ['10', '20', '50', '100'],
+    showTotal: (total) => `共 ${total} 条记录`
   });
-  const [filters, setFilters] = useState({});
   const [form] = Form.useForm();
   const [messageDetailVisible, setMessageDetailVisible] = useState(false);
   const [currentMessage, setCurrentMessage] = useState(null);
 
-  // 获取消息列表
-  const fetchMessages = async (params = {}) => {
+  const fetchMessages = async () => {
+    if (!searchParams && !pagination.current) return;
+    
     setLoading(true);
     try {
-      // 在实际项目中，这里会调用API获取数据
-      // const response = await getMessageList(params);
-      
-      // 使用模拟数据
-      const mockData = {
-        data: {
-          records: Array(20).fill().map((_, index) => ({
-            id: index + 1,
-            senderId: 100 + index,
-            senderName: `用户${100 + index}`,
-            senderAvatar: `https://randomuser.me/api/portraits/${index % 2 ? 'women' : 'men'}/${index + 1}.jpg`,
-            receiverId: 200 + index,
-            receiverName: `用户${200 + index}`,
-            receiverAvatar: `https://randomuser.me/api/portraits/${index % 2 ? 'men' : 'women'}/${index + 1}.jpg`,
-            content: `这是一条${['普通', '重要', '紧急'][index % 3]}消息，内容为${['问候', '聊天', '约会', '讨论'][index % 4]}...`,
-            type: (index % 3) + 1, // 1: 文本, 2: 图片, 3: 语音
-            status: index % 10 === 0 ? 0 : (index % 5 === 0 ? 2 : 1), // 0: 待审核, 1: 正常, 2: 违规
-            createdAt: moment().subtract(index, 'hours').format('YYYY-MM-DD HH:mm:ss'),
-            reviewedAt: index % 5 === 0 ? moment().subtract(index, 'hours').add(10, 'minutes').format('YYYY-MM-DD HH:mm:ss') : null,
-            reviewReason: index % 5 === 0 ? '含有敏感词' : null,
-          })),
-          total: 100,
-        },
+      const queryParams = {
+        pageNum: pagination.current,
+        pageSize: pagination.pageSize,
+        ...(searchParams || {})
       };
+
+      const response = await getMessageListWithUserInfo(queryParams);
       
-      setMessages(mockData.data.records);
-      setPagination({
-        ...pagination,
-        current: params.page || 1,
-        total: mockData.data.total,
-      });
+      if (response.code === 200) {
+        setMessages(response.data.records);
+        setPagination(prev => ({
+          ...prev,
+          current: response.data.current,
+          pageSize: response.data.size,
+          total: response.data.total
+        }));
+      } else {
+        message.error(response.msg || '获取消息列表失败');
+      }
     } catch (error) {
-      message.error('获取消息列表失败');
       console.error('获取消息列表失败:', error);
-    } finally {
-      setLoading(false);
+      message.error('获取消息列表失败');
     }
+    setLoading(false);
   };
 
-  // 首次加载和筛选条件变化时获取数据
   useEffect(() => {
-    fetchMessages({
-      page: pagination.current,
-      pageSize: pagination.pageSize,
-      ...filters,
-    });
-  }, [pagination.current, pagination.pageSize, filters]);
-
-  // 表格变化处理
-  const handleTableChange = (pagination) => {
-    setPagination(pagination);
-  };
-
-  // 搜索处理
-  const handleSearch = (values) => {
-    const { dateRange, ...restValues } = values;
-    const filters = { ...restValues };
-    
-    if (dateRange) {
-      filters.startTime = dateRange[0].format('YYYY-MM-DD');
-      filters.endTime = dateRange[1].format('YYYY-MM-DD');
+    if (searchParams !== null) {
+      fetchMessages();
     }
+  }, [pagination.current, pagination.pageSize, searchParams]);
+
+  const handleSearch = () => {
+    const values = form.getFieldsValue();
+    const { timeRange, ...restValues } = values;
     
-    setFilters(filters);
-    setPagination({ ...pagination, current: 1 });
+    const params = { ...restValues };
+    if (timeRange && timeRange[0] && timeRange[1]) {
+      params.startTime = timeRange[0].format('YYYY-MM-DD HH:mm:ss');
+      params.endTime = timeRange[1].format('YYYY-MM-DD HH:mm:ss');
+    }
+
+    setPagination(prev => ({
+      ...prev,
+      current: 1
+    }));
+    setSearchParams(params);
   };
 
-  // 重置搜索
   const handleReset = () => {
     form.resetFields();
-    setFilters({});
-    setPagination({ ...pagination, current: 1 });
+    setPagination(prev => ({
+      ...prev,
+      current: 1
+    }));
+    setSearchParams({});
   };
 
-  // 查看消息详情
-  const handleViewMessage = (record) => {
-    setCurrentMessage(record);
-    setMessageDetailVisible(true);
+  const handleTableChange = (newPagination, filters, sorter) => {
+    setPagination(prev => ({
+      ...prev,
+      current: newPagination.current,
+      pageSize: newPagination.pageSize
+    }));
   };
 
-  // 删除消息
-  const handleDeleteMessage = (id) => {
+  useEffect(() => {
+    handleSearch();
+  }, []);
+
+  const handleDelete = (id) => {
     confirm({
-      title: '确定要删除该消息吗？',
-      icon: <ExclamationCircleOutlined />,
-      content: '删除后无法恢复',
+      title: '确认删除',
+      content: '确定要删除这条消息吗？',
       onOk: async () => {
         try {
-          // 在实际项目中，这里会调用API删除数据
-          // await deleteMessage(id);
-          
-          // 更新本地状态
-          setMessages(messages.filter(item => item.id !== id));
-          message.success('删除成功');
+          const response = await deleteMessage(id);
+          if (response.code === 200) {
+            message.success('删除成功');
+            fetchMessages();
+          }
         } catch (error) {
           message.error('删除失败');
-          console.error('删除失败:', error);
         }
-      },
+      }
     });
   };
 
-  // 批量删除消息
   const handleBatchDelete = () => {
     if (selectedRowKeys.length === 0) {
       message.warning('请选择要删除的消息');
       return;
     }
-    
+
     confirm({
-      title: `确定要删除选中的 ${selectedRowKeys.length} 条消息吗？`,
-      icon: <ExclamationCircleOutlined />,
-      content: '删除后无法恢复',
+      title: '确认批量删除',
+      content: `确定要删除选中的 ${selectedRowKeys.length} 条消息吗？`,
       onOk: async () => {
         try {
-          // 在实际项目中，这里会调用API批量删除数据
-          // await batchDeleteMessages(selectedRowKeys);
-          
-          // 更新本地状态
-          setMessages(messages.filter(item => !selectedRowKeys.includes(item.id)));
-          setSelectedRowKeys([]);
-          message.success('批量删除成功');
+          const response = await batchDeleteMessages(selectedRowKeys);
+          if (response.code === 200) {
+            message.success('批量删除成功');
+            setSelectedRowKeys([]);
+            fetchMessages();
+          }
         } catch (error) {
           message.error('批量删除失败');
-          console.error('批量删除失败:', error);
         }
-      },
+      }
     });
   };
 
-  // 审核消息
-  const handleReviewMessage = (id, status, reason = '') => {
-    confirm({
-      title: status === 1 ? '确定通过该消息吗？' : '确定拒绝该消息吗？',
-      icon: <ExclamationCircleOutlined />,
-      content: status === 2 ? (
-        <Form.Item 
-          label="拒绝原因"
-          rules={[{ required: true, message: '请输入拒绝原因' }]}
-        >
-          <Input.TextArea 
-            rows={3} 
-            placeholder="请输入拒绝原因"
-            onChange={(e) => reason = e.target.value}
-          />
-        </Form.Item>
-      ) : null,
-      onOk: async () => {
-        try {
-          // 在实际项目中，这里会调用API审核消息
-          // await reviewMessage(id, status, reason);
-          
-          // 更新本地状态
-          setMessages(messages.map(item => 
-            item.id === id ? { 
-              ...item, 
-              status, 
-              reviewedAt: moment().format('YYYY-MM-DD HH:mm:ss'),
-              reviewReason: status === 2 ? reason : null
-            } : item
-          ));
-          
-          message.success(status === 1 ? '审核通过成功' : '审核拒绝成功');
-        } catch (error) {
-          message.error('审核失败');
-          console.error('审核失败:', error);
-        }
-      },
-    });
+  const handleViewMessage = (record) => {
+    setCurrentMessage(record);
+    setMessageDetailVisible(true);
   };
 
-  // 导出消息数据
-  const handleExport = async () => {
-    try {
-      // 在实际项目中，这里会调用API导出数据
-      // const response = await exportMessages(filters);
-      
-      // 模拟导出成功
-      message.success('导出成功');
-      
-      // // 创建一个下载链接
-      // const url = window.URL.createObjectURL(new Blob([response]));
-      // const link = document.createElement('a');
-      // link.href = url;
-      // link.setAttribute('download', `消息数据_${moment().format('YYYY-MM-DD')}.xlsx`);
-      // document.body.appendChild(link);
-      // link.click();
-      // document.body.removeChild(link);
-    } catch (error) {
-      message.error('导出失败');
-      console.error('导出失败:', error);
-    }
-  };
-
-  // 表格列定义
   const columns = [
     {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-      width: 80,
-    },
-    {
       title: '发送者',
-      dataIndex: 'senderName',
-      key: 'senderName',
-      width: 120,
-      render: (text, record) => (
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <img 
-            src={record.senderAvatar} 
-            alt={text} 
-            style={{ width: 24, height: 24, borderRadius: '50%', marginRight: 8 }}
-          />
-          {text}
-        </div>
-      ),
+      dataIndex: 'sender',
+      width: 200,
+      render: (_, record) => (
+        <UserInfo 
+          avatar={record.senderAvatar} 
+          nickname={record.senderNickname} 
+          id={record.senderId} 
+        />
+      )
     },
     {
       title: '接收者',
-      dataIndex: 'receiverName',
-      key: 'receiverName',
-      width: 120,
-      render: (text, record) => (
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <img 
-            src={record.receiverAvatar} 
-            alt={text} 
-            style={{ width: 24, height: 24, borderRadius: '50%', marginRight: 8 }}
-          />
-          {text}
-        </div>
-      ),
+      dataIndex: 'receiver',
+      width: 200,
+      render: (_, record) => (
+        <UserInfo 
+          avatar={record.receiverAvatar} 
+          nickname={record.receiverNickname} 
+          id={record.receiverId} 
+        />
+      )
+    },
+    {
+      title: '消息类型',
+      dataIndex: 'messageType',
+      width: 100,
+      render: (type) => {
+        switch (type) {
+          case '1':
+            return '文本';
+          case '2':
+            return '图片';
+          default:
+            return '未知';
+        }
+      }
     },
     {
       title: '消息内容',
       dataIndex: 'content',
-      key: 'content',
-      render: (text, record) => (
-        <MessageContent>
-          {record.type === 1 ? (
-            <span>{text}</span>
-          ) : record.type === 2 ? (
-            <span><FileImageOutlined /> [图片消息]</span>
-          ) : (
-            <span><AudioOutlined /> [语音消息]</span>
-          )}
-        </MessageContent>
-      ),
+      ellipsis: true,
+      render: (content, record) => {
+        if (record.messageType === '2') {
+          return (
+            <img 
+              src={content} 
+              alt="消息图片" 
+              style={{ maxWidth: '100px', maxHeight: '60px', cursor: 'pointer' }}
+              onClick={() => window.open(content, '_blank')}
+            />
+          );
+        }
+        return content;
+      }
     },
     {
-      title: '消息类型',
-      dataIndex: 'type',
-      key: 'type',
-      width: 120,
-      render: (type) => {
-        const typeMap = {
-          1: { text: '文本', icon: <FileTextOutlined /> },
-          2: { text: '图片', icon: <FileImageOutlined /> },
-          3: { text: '语音', icon: <AudioOutlined /> },
-        };
-        const { text, icon } = typeMap[type] || {};
-        return (
-          <span>
-            {icon} {text}
-          </span>
-        );
-      },
-    },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      width: 120,
-      render: (status) => {
-        const statusMap = {
-          0: { text: '待审核', color: 'warning' },
-          1: { text: '正常', color: 'success' },
-          2: { text: '违规', color: 'error' },
-        };
-        const { text, color } = statusMap[status] || {};
-        return <Tag color={color}>{text}</Tag>;
-      },
+      title: '已读状态',
+      dataIndex: 'isRead',
+      width: 100,
+      render: (isRead) => (
+        <Tag color={isRead ? 'green' : 'red'}>
+          {isRead ? '已读' : '未读'}
+        </Tag>
+      )
     },
     {
       title: '发送时间',
       dataIndex: 'createdAt',
-      key: 'createdAt',
       width: 180,
-      sorter: true,
+      render: (text) => moment(text).format('YYYY-MM-DD HH:mm:ss')
     },
     {
       title: '操作',
-      key: 'action',
-      width: 200,
-      render: (_, record) => {
-        const moreMenu = (
-          <Menu>
-            {record.status === 0 && (
-              <>
-                <Menu.Item 
-                  key="approve" 
-                  icon={<CheckCircleOutlined />}
-                  onClick={() => handleReviewMessage(record.id, 1)}
-                >
-                  审核通过
-                </Menu.Item>
-                <Menu.Item 
-                  key="reject" 
-                  icon={<StopOutlined />}
-                  onClick={() => handleReviewMessage(record.id, 2)}
-                >
-                  审核拒绝
-                </Menu.Item>
-                <Menu.Divider />
-              </>
-            )}
-            <Menu.Item 
-              key="delete" 
-              icon={<DeleteOutlined />}
-              onClick={() => handleDeleteMessage(record.id)}
-            >
-              删除
-            </Menu.Item>
-          </Menu>
-        );
-        
-        return (
-          <Space>
-            <Tooltip title="查看详情">
-              <Button 
-                type="primary" 
-                icon={<EyeOutlined />} 
-                size="small"
-                onClick={() => handleViewMessage(record)}
-              />
-            </Tooltip>
-            
-            <Dropdown overlay={moreMenu}>
-              <Button size="small">
-                更多 <DownOutlined />
-              </Button>
-            </Dropdown>
-          </Space>
-        );
-      },
-    },
+      width: 120,
+      render: (_, record) => (
+        <Space>
+          <Button type="link" onClick={() => handleViewMessage(record)}>
+            查看
+          </Button>
+          <Button type="link" danger onClick={() => handleDelete(record.id)}>
+            删除
+          </Button>
+        </Space>
+      )
+    }
   ];
 
-  // 消息详情模态框
   const renderMessageDetail = () => {
     if (!currentMessage) return null;
     
@@ -420,158 +286,77 @@ const MessageList = () => {
           <Button key="close" onClick={() => setMessageDetailVisible(false)}>
             关闭
           </Button>,
+          <Button 
+            key="delete" 
+            type="primary" 
+            danger
+            onClick={() => {
+              setMessageDetailVisible(false);
+              handleDelete(currentMessage.id);
+            }}
+          >
+            删除
+          </Button>
         ]}
         width={700}
       >
-        <Row gutter={16}>
-          <Col span={12}>
-            <Card title="发送者信息" bordered={false}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-                <img 
-                  src={currentMessage.senderAvatar} 
-                  alt={currentMessage.senderName} 
-                  style={{ width: 48, height: 48, borderRadius: '50%', marginRight: 16 }}
+        <Card title="消息信息" bordered={false}>
+          <Row gutter={[16, 16]}>
+            <Col span={12}>
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ marginBottom: 8 }}>发送者：</div>
+                <UserInfo 
+                  avatar={currentMessage.senderAvatar}
+                  nickname={currentMessage.senderNickname}
+                  id={currentMessage.senderId}
                 />
-                <div>
-                  <div style={{ fontWeight: 'bold' }}>{currentMessage.senderName}</div>
-                  <div>ID: {currentMessage.senderId}</div>
-                </div>
               </div>
-            </Card>
-          </Col>
-          <Col span={12}>
-            <Card title="接收者信息" bordered={false}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-                <img 
-                  src={currentMessage.receiverAvatar} 
-                  alt={currentMessage.receiverName} 
-                  style={{ width: 48, height: 48, borderRadius: '50%', marginRight: 16 }}
+            </Col>
+            <Col span={12}>
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ marginBottom: 8 }}>接收者：</div>
+                <UserInfo 
+                  avatar={currentMessage.receiverAvatar}
+                  nickname={currentMessage.receiverNickname}
+                  id={currentMessage.receiverId}
                 />
-                <div>
-                  <div style={{ fontWeight: 'bold' }}>{currentMessage.receiverName}</div>
-                  <div>ID: {currentMessage.receiverId}</div>
-                </div>
-              </div>
-            </Card>
-          </Col>
-        </Row>
-        
-        <Card title="消息内容" style={{ marginTop: 16 }} bordered={false}>
-          <Row gutter={16}>
-            <Col span={8}>
-              <div style={{ marginBottom: 8 }}>
-                <span style={{ fontWeight: 'bold', marginRight: 8 }}>消息ID:</span>
-                <span>{currentMessage.id}</span>
               </div>
             </Col>
-            <Col span={8}>
-              <div style={{ marginBottom: 8 }}>
-                <span style={{ fontWeight: 'bold', marginRight: 8 }}>消息类型:</span>
-                <span>
-                  {
-                    currentMessage.type === 1 ? '文本' :
-                    currentMessage.type === 2 ? '图片' :
-                    currentMessage.type === 3 ? '语音' : '未知'
-                  }
-                </span>
-              </div>
+            <Col span={12}>
+              <div>消息类型: {currentMessage.messageType === '1' ? '文本' : '图片'}</div>
             </Col>
-            <Col span={8}>
-              <div style={{ marginBottom: 8 }}>
-                <span style={{ fontWeight: 'bold', marginRight: 8 }}>发送时间:</span>
-                <span>{currentMessage.createdAt}</span>
-              </div>
+            <Col span={12}>
+              <div>已读状态: <Tag color={currentMessage.isRead ? 'green' : 'red'}>
+                {currentMessage.isRead ? '已读' : '未读'}
+              </Tag></div>
             </Col>
-            <Col span={8}>
-              <div style={{ marginBottom: 8 }}>
-                <span style={{ fontWeight: 'bold', marginRight: 8 }}>状态:</span>
-                <Tag color={
-                  currentMessage.status === 0 ? 'warning' :
-                  currentMessage.status === 1 ? 'success' :
-                  'error'
-                }>
-                  {
-                    currentMessage.status === 0 ? '待审核' :
-                    currentMessage.status === 1 ? '正常' :
-                    '违规'
-                  }
-                </Tag>
-              </div>
+            <Col span={24}>
+              <div>发送时间: {moment(currentMessage.createdAt).format('YYYY-MM-DD HH:mm:ss')}</div>
             </Col>
-            {currentMessage.status === 2 && (
-              <>
-                <Col span={8}>
-                  <div style={{ marginBottom: 8 }}>
-                    <span style={{ fontWeight: 'bold', marginRight: 8 }}>审核时间:</span>
-                    <span>{currentMessage.reviewedAt}</span>
-                  </div>
-                </Col>
-                <Col span={8}>
-                  <div style={{ marginBottom: 8 }}>
-                    <span style={{ fontWeight: 'bold', marginRight: 8 }}>审核原因:</span>
-                    <span>{currentMessage.reviewReason}</span>
-                  </div>
-                </Col>
-              </>
-            )}
-          </Row>
-          
-          <div style={{ marginTop: 16 }}>
-            <div style={{ fontWeight: 'bold', marginBottom: 8 }}>内容:</div>
-            <div 
-              style={{ 
-                padding: 16, 
-                background: '#f5f5f5', 
-                borderRadius: 4,
-                minHeight: 80,
-              }}
-            >
-              {currentMessage.type === 1 ? (
-                <div>{currentMessage.content}</div>
-              ) : currentMessage.type === 2 ? (
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ marginBottom: 8 }}>[图片消息]</div>
+            <Col span={24}>
+              <div>消息内容:</div>
+              {currentMessage.messageType === '2' ? (
+                <div style={{ marginTop: 8 }}>
                   <img 
-                    src="https://via.placeholder.com/300x200" 
-                    alt="图片消息" 
-                    style={{ maxWidth: '100%', maxHeight: 300 }}
+                    src={currentMessage.content} 
+                    alt="消息图片" 
+                    style={{ maxWidth: '100%', cursor: 'pointer' }}
+                    onClick={() => window.open(currentMessage.content, '_blank')}
                   />
                 </div>
               ) : (
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ marginBottom: 8 }}>[语音消息]</div>
-                  <Button icon={<AudioOutlined />}>播放语音</Button>
+                <div style={{ 
+                  marginTop: 8,
+                  padding: 16,
+                  background: '#f5f5f5',
+                  borderRadius: 4
+                }}>
+                  {currentMessage.content}
                 </div>
               )}
-            </div>
-          </div>
+            </Col>
+          </Row>
         </Card>
-        
-        {currentMessage.status === 0 && (
-          <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
-            <Button 
-              type="primary" 
-              icon={<CheckCircleOutlined />}
-              style={{ marginRight: 16 }}
-              onClick={() => {
-                setMessageDetailVisible(false);
-                handleReviewMessage(currentMessage.id, 1);
-              }}
-            >
-              审核通过
-            </Button>
-            <Button 
-              danger 
-              icon={<StopOutlined />}
-              onClick={() => {
-                setMessageDetailVisible(false);
-                handleReviewMessage(currentMessage.id, 2);
-              }}
-            >
-              审核拒绝
-            </Button>
-          </div>
-        )}
       </Modal>
     );
   };
@@ -580,61 +365,55 @@ const MessageList = () => {
     <div>
       <h2>消息管理</h2>
       
-      {/* 搜索表单 */}
       <StyledCard>
         <Form
           form={form}
           layout="inline"
-          onFinish={handleSearch}
           style={{ marginBottom: 16 }}
         >
           <Form.Item name="keyword" label="关键词">
-            <Input placeholder="消息内容" allowClear />
+            <Input placeholder="请输入消息内容关键词" allowClear />
           </Form.Item>
           
-          <Form.Item name="senderId" label="发送者ID">
-            <Input placeholder="发送者ID" allowClear />
+          <Form.Item name="senderNickname" label="发送者">
+            <Input placeholder="请输入发送者用户名" allowClear />
           </Form.Item>
           
-          <Form.Item name="receiverId" label="接收者ID">
-            <Input placeholder="接收者ID" allowClear />
+          <Form.Item name="receiverNickname" label="接收者">
+            <Input placeholder="请输入接收者用户名" allowClear />
           </Form.Item>
           
-          <Form.Item name="type" label="消息类型">
-            <Select placeholder="请选择" allowClear style={{ width: 120 }}>
-              <Option value={1}>文本</Option>
-              <Option value={2}>图片</Option>
-              <Option value={3}>语音</Option>
+          <Form.Item name="messageType" label="消息类型">
+            <Select placeholder="请选择消息类型" allowClear style={{ width: 120 }}>
+              <Option value="1">文本</Option>
+              <Option value="2">图片</Option>
             </Select>
           </Form.Item>
           
-          <Form.Item name="status" label="状态">
-            <Select placeholder="请选择" allowClear style={{ width: 120 }}>
-              <Option value={0}>待审核</Option>
-              <Option value={1}>正常</Option>
-              <Option value={2}>违规</Option>
-            </Select>
-          </Form.Item>
-          
-          <Form.Item name="dateRange" label="发送时间">
-            <RangePicker />
+          <Form.Item name="timeRange" label="发送时间">
+            <RangePicker showTime />
           </Form.Item>
           
           <Form.Item>
-            <Button type="primary" htmlType="submit" icon={<SearchOutlined />}>
-              搜索
-            </Button>
-          </Form.Item>
-          
-          <Form.Item>
-            <Button onClick={handleReset}>重置</Button>
+            <Space>
+              <Button type="primary" onClick={handleSearch}>
+                搜索
+              </Button>
+              <Button onClick={handleReset}>
+                重置
+              </Button>
+            </Space>
           </Form.Item>
         </Form>
       </StyledCard>
       
-      {/* 消息列表 */}
       <Card
-        title="消息列表"
+        title={
+          <Space>
+            消息列表
+            <Tag color="blue">{`共 ${pagination.total} 条记录`}</Tag>
+          </Space>
+        }
         extra={
           <Space>
             <Button 
@@ -644,33 +423,25 @@ const MessageList = () => {
               disabled={selectedRowKeys.length === 0}
               onClick={handleBatchDelete}
             >
-              批量删除
-            </Button>
-            <Button 
-              type="primary" 
-              icon={<ExportOutlined />}
-              onClick={handleExport}
-            >
-              导出数据
+              批量删除 {selectedRowKeys.length > 0 ? `(${selectedRowKeys.length})` : ''}
             </Button>
           </Space>
         }
       >
         <Table
           rowKey="id"
-          rowSelection={{
-            selectedRowKeys,
-            onChange: setSelectedRowKeys,
-          }}
           columns={columns}
           dataSource={messages}
           pagination={pagination}
           loading={loading}
           onChange={handleTableChange}
+          rowSelection={{
+            selectedRowKeys,
+            onChange: setSelectedRowKeys
+          }}
         />
       </Card>
       
-      {/* 消息详情模态框 */}
       {renderMessageDetail()}
     </div>
   );

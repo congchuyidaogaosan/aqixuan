@@ -1,25 +1,48 @@
 // src/api/message.js
-import request from '@/utils/request';
+import request from '../utils/request';
 
 // 获取消息列表
-export const getMessageList = (params) => {
-  return request.get('/messages', { params });
-};
+export function getMessageList(params) {
+  return request({
+    url: '/manage/message/list',
+    method: 'get',
+    params
+  });
+}
+
+// 获取消息列表（包含用户信息）
+export function getMessageListWithUserInfo(params) {
+  return request({
+    url: '/manage/message/listWithUser',
+    method: 'get',
+    params
+  });
+}
 
 // 获取消息详情
-export const getMessageDetail = (id) => {
-  return request.get(`/messages/${id}`);
-};
+export function getMessageDetail(id) {
+  return request({
+    url: `/manage/message/detail/${id}`,
+    method: 'get'
+  });
+}
 
 // 删除消息
-export const deleteMessage = (id) => {
-  return request.delete(`/messages/${id}`);
-};
+export function deleteMessage(id) {
+  return request({
+    url: `/manage/message/delete/${id}`,
+    method: 'post'
+  });
+}
 
 // 批量删除消息
-export const batchDeleteMessages = (ids) => {
-  return request.post('/messages/batch-delete', { ids });
-};
+export function batchDeleteMessages(ids) {
+  return request({
+    url: '/manage/message/batchDelete',
+    method: 'post',
+    data: ids
+  });
+}
 
 // 审核消息
 export const reviewMessage = (id, status, reason) => {
