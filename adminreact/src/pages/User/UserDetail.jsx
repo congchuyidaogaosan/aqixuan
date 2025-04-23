@@ -162,41 +162,156 @@ const UserDetail = () => {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [form] = Form.useForm();
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [photos, setPhotos] = useState([]);
   
   const isCreateMode = id === 'new';
+
+  // 监听表单值变化
+  const handleValuesChange = (changedValues, allValues) => {
+    console.log('表单值变化:', changedValues);
+    console.log('所有表单值:', allValues);
+    
+    // 只在carouselImgs是数组时更新photos状态
+    if (changedValues.carouselImgs && Array.isArray(changedValues.carouselImgs)) {
+      console.log('更新照片列表:', changedValues.carouselImgs);
+      setPhotos(changedValues.carouselImgs);
+    }
+  };
+
+  // 处理头像上传
+  const handleAvatarUpload = async (options) => {
+    const { file, onSuccess, onError } = options;
+    setUploadingAvatar(true);
+    
+    try {
+      const currentPhotos = [...photos];
+      console.log('上传前 - 当前照片列表:', currentPhotos);
+      
+      if (currentPhotos.length >= 6) {
+        message.error('最多只能上传6张头像照片');
+        onError(new Error('最多只能上传6张头像照片'));
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await uploadFile(formData);
+      console.log('上传响应:', response);
+      const { code, data, msg } = response;
+      
+      if (code === 200 && data) {
+        onSuccess();
+        // 检查返回的数据格式，确保获取正确的URL
+        const uploadedUrl = typeof data === 'string' ? data : data.url;
+        console.log('上传的图片URL:', uploadedUrl);
+        
+        if (uploadedUrl) {
+          // 更新照片列表
+          const updatedPhotos = [...currentPhotos, uploadedUrl];
+          console.log('更新后的照片列表:', updatedPhotos);
+          setPhotos(updatedPhotos);
+          
+          // 更新表单数据
+          const formData = {
+            carouselImgs: updatedPhotos,
+            handImg: currentPhotos.length === 0 ? uploadedUrl : form.getFieldValue('handImg')
+          };
+          console.log('设置到表单的数据:', formData);
+          
+          // 使用setTimeout确保在下一个事件循环中设置表单值
+          setTimeout(() => {
+            form.setFieldsValue(formData);
+          }, 0);
+          
+          message.success('头像上传成功');
+        } else {
+          onError(new Error('上传失败：未获取到图片地址'));
+          message.error('上传失败：未获取到图片地址');
+        }
+      } else {
+        onError(new Error(msg || '上传失败'));
+        message.error(msg || '上传失败');
+      }
+    } catch (error) {
+      console.error('上传错误:', error);
+      onError(error);
+      message.error('头像上传失败');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  // 处理头像删除
+  const handleAvatarRemove = (index) => {
+    const currentPhotos = [...photos];
+    console.log('删除前的照片列表:', currentPhotos);
+    const newPhotos = currentPhotos.filter((_, i) => i !== index);
+    console.log('删除后的照片列表:', newPhotos);
+    
+    setPhotos(newPhotos);
+    
+    const formData = {
+      carouselImgs: newPhotos,
+      handImg: currentPhotos[index] === form.getFieldValue('handImg') ? (newPhotos[0] || '') : form.getFieldValue('handImg')
+    };
+    console.log('删除时设置到表单的数据:', formData);
+    form.setFieldsValue(formData);
+  };
+
+  // 设置主头像
+  const setMainAvatar = (url) => {
+    form.setFieldsValue({ handImg: url });
+    message.success('已设为主头像');
+  };
 
   // 获取用户详情
   const fetchUserDetail = async () => {
     if (isCreateMode) {
-      // 初始化表单数据
-      form.setFieldsValue({
-        carouselImgs: [], // 初始化为空数组
-      });
+      const initialValues = {
+        handImg: '',
+        carouselImgs: [],
+        nickname: '',
+        phone: '',
+      };
+      setPhotos([]);
+      form.setFieldsValue(initialValues);
       return;
     }
 
     setLoading(true);
     try {
       const { code, data, msg } = await getUserDetail(id);
+      console.log('获取到的原始用户数据:', data);
       
       if (code === 200 && data) {
+        // 确保carouselImgs是数组
+        const carouselImgs = Array.isArray(data.carouselImgs) ? data.carouselImgs : 
+                            typeof data.carouselImgs === 'string' ? [data.carouselImgs] : [];
+        console.log('处理后的照片列表:', carouselImgs);
+        
+        // 设置照片列表状态
+        setPhotos(carouselImgs);
+        
         // 转换数据格式
         const formattedUser = {
           ...data,
           location: data.location ? data.location.split(' ') : [],
           interests: data.interests ? data.interests.split('、') : [],
           sports: data.sports ? data.sports.split('、') : [],
-          carouselImgs: Array.isArray(data.carouselImgs) ? data.carouselImgs : [], // 确保是数组
+          carouselImgs: carouselImgs,
+          handImg: data.handImg || (carouselImgs.length > 0 ? carouselImgs[0] : '')
         };
         
         setUser(formattedUser);
         
-        // 填充表单
-        form.setFieldsValue({
-          ...formattedUser,
-          birthday: formattedUser.birthday ? moment(formattedUser.birthday) : undefined,
-        });
+        // 使用setTimeout确保在下一个事件循环中设置表单值
+        setTimeout(() => {
+          form.setFieldsValue({
+            ...formattedUser,
+            birthday: formattedUser.birthday ? moment(formattedUser.birthday) : undefined,
+          });
+        }, 0);
       } else {
         message.error(msg || '获取用户详情失败');
       }
@@ -219,6 +334,8 @@ const UserDetail = () => {
   // 提交编辑
   const handleSubmit = async (values) => {
     try {
+      console.log('提交的原始数据:', values);
+      
       // 处理日期
       if (values.birthday) {
         values.birthday = values.birthday.format('YYYY-MM-DD');
@@ -230,11 +347,14 @@ const UserDetail = () => {
         location: values.location ? values.location.join(' ') : '',
         interests: values.interests ? values.interests.join('、') : '',
         sports: values.sports ? values.sports.join('、') : '',
+        carouselImgs: Array.isArray(values.carouselImgs) ? values.carouselImgs : [],
       };
 
       if (!isCreateMode) {
         submitData.id = id;
       }
+
+      console.log('处理后的提交数据:', submitData);
 
       const { code, msg, data } = isCreateMode 
         ? await createUser(submitData)
@@ -261,77 +381,6 @@ const UserDetail = () => {
   // 返回列表
   const handleBack = () => {
     navigate('/user');
-  };
-
-  // 处理头像上传
-  const handleAvatarUpload = async (options) => {
-    const { file, onSuccess, onError } = options;
-    setUploadingAvatar(true);
-    
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      const response = await fetch('http://localhost:8081/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      const result = await response.json();
-      
-      if (result.code === 200) {
-        onSuccess(result);
-        form.setFieldsValue({ handImg: result.data });
-        message.success('头像上传成功');
-      } else {
-        onError(new Error(result.msg || '上传失败'));
-      }
-    } catch (error) {
-      onError(error);
-      message.error('头像上传失败');
-    } finally {
-      setUploadingAvatar(false);
-    }
-  };
-
-  // 处理照片墙上传
-  const handlePhotoUpload = async (options) => {
-    const { file, onSuccess, onError } = options;
-    setUploadingPhotos(true);
-    
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      const response = await uploadFile(formData);
-      
-      const result = await response.json();
-      
-      if (result.code === 200) {
-        onSuccess(result);
-        // 获取当前照片列表并添加新照片
-        const currentPhotos = form.getFieldValue('carouselImgs') || [];
-        const newPhotos = Array.isArray(currentPhotos) ? currentPhotos : [];
-        form.setFieldsValue({ 
-          carouselImgs: [...newPhotos, result.data]
-        });
-        message.success('照片上传成功');
-      } else {
-        onError(new Error(result.msg || '上传失败'));
-      }
-    } catch (error) {
-      onError(error);
-      message.error('照片上传失败');
-    } finally {
-      setUploadingPhotos(false);
-    }
-  };
-
-  // 处理照片删除
-  const handlePhotoRemove = (index) => {
-    const currentPhotos = form.getFieldValue('carouselImgs') || [];
-    const newPhotos = Array.isArray(currentPhotos) ? currentPhotos.filter((_, i) => i !== index) : [];
-    form.setFieldsValue({ carouselImgs: newPhotos });
   };
 
   if (loading) {
@@ -508,91 +557,85 @@ const UserDetail = () => {
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
+          onValuesChange={handleValuesChange}
+          initialValues={{
+            carouselImgs: [],
+            handImg: ''
+          }}
         >
           <Row gutter={16}>
             <Col span={24} style={{ textAlign: 'center', marginBottom: 24 }}>
               <Form.Item
                 name="handImg"
-                label="头像"
+                label="主头像"
+                style={{ marginBottom: 8 }}
               >
-                <Upload
-                  name="file"
-                  listType="picture-card"
-                  className="avatar-uploader"
-                  showUploadList={false}
-                  customRequest={handleAvatarUpload}
-                  beforeUpload={(file) => {
-                    const isImage = file.type.startsWith('image/');
-                    if (!isImage) {
-                      message.error('只能上传图片文件！');
-                    }
-                    const isLt2M = file.size / 1024 / 1024 < 2;
-                    if (!isLt2M) {
-                      message.error('图片必须小于2MB！');
-                    }
-                    return isImage && isLt2M;
-                  }}
-                >
-                  {form.getFieldValue('handImg') ? (
-                    <img 
-                      src={form.getFieldValue('handImg')} 
-                      alt="头像" 
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  {photos.length > 0 && (
+                    <Avatar 
+                      size={120} 
+                      src={photos[0]} 
+                      icon={<UserOutlined />}
                     />
-                  ) : (
-                    <UploadButton loading={uploadingAvatar} />
                   )}
-                </Upload>
+                </div>
               </Form.Item>
-            </Col>
 
-            <Col span={24}>
               <Form.Item
                 name="carouselImgs"
-                label="照片墙"
+                label="头像照片（最多6张，点击设为主头像）"
               >
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {(Array.isArray(form.getFieldValue('carouselImgs')) ? form.getFieldValue('carouselImgs') : []).map((url, index) => (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
+                  {photos.map((url, index) => (
                     <div key={index} style={{ position: 'relative' }}>
-                      <img
+                      <Avatar
+                        size={104}
                         src={url}
-                        alt={`照片${index + 1}`}
-                        style={{ width: '104px', height: '104px', objectFit: 'cover' }}
+                        style={{ 
+                          cursor: 'pointer',
+                          border: url === form.getFieldValue('handImg') ? '2px solid #1890ff' : 'none'
+                        }}
+                        onClick={() => setMainAvatar(url)}
                       />
                       <Button
                         type="text"
                         icon={<DeleteOutlined />}
                         style={{
                           position: 'absolute',
-                          right: 4,
-                          top: 4,
+                          right: -6,
+                          top: -6,
                           color: '#ff4d4f',
                           background: 'rgba(255, 255, 255, 0.8)',
+                          borderRadius: '50%',
+                          padding: 4,
+                          border: '1px solid #ff4d4f'
                         }}
-                        onClick={() => handlePhotoRemove(index)}
+                        onClick={() => handleAvatarRemove(index)}
                       />
                     </div>
                   ))}
-                  <Upload
-                    name="file"
-                    listType="picture-card"
-                    className="photo-uploader"
-                    showUploadList={false}
-                    customRequest={handlePhotoUpload}
-                    beforeUpload={(file) => {
-                      const isImage = file.type.startsWith('image/');
-                      if (!isImage) {
-                        message.error('只能上传图片文件！');
-                      }
-                      const isLt2M = file.size / 1024 / 1024 < 2;
-                      if (!isLt2M) {
-                        message.error('图片必须小于2MB！');
-                      }
-                      return isImage && isLt2M;
-                    }}
-                  >
-                    <UploadButton loading={uploadingPhotos} />
-                  </Upload>
+                  {photos.length < 6 && (
+                    <Upload
+                      name="file"
+                      listType="picture-card"
+                      className="avatar-uploader"
+                      showUploadList={false}
+                      customRequest={handleAvatarUpload}
+                      beforeUpload={(file) => {
+                        const isImage = file.type.startsWith('image/');
+                        if (!isImage) {
+                          message.error('只能上传图片文件！');
+                        }
+                        const isLt2M = file.size / 1024 / 1024 < 2;
+                        if (!isLt2M) {
+                          message.error('图片必须小于2MB！');
+                        }
+                        return isImage && isLt2M;
+                      }}
+                    >
+                      <UploadButton loading={uploadingAvatar} />
+                    </Upload>
+                  )}
                 </div>
               </Form.Item>
             </Col>

@@ -83,6 +83,19 @@ public class UserManageController {
         
         boolean success = userService.save(user);
         if (success) {
+            // 保存用户头像
+            if (user.getCarouselImgs() != null && !user.getCarouselImgs().isEmpty()) {
+                List<UserAvatar> avatars = new ArrayList<>();
+                int sortOrder = 0;
+                for (String avatarUrl : user.getCarouselImgs()) {
+                    UserAvatar avatar = new UserAvatar();
+                    avatar.setUserId(user.getId());
+                    avatar.setAvatarUrl(avatarUrl);
+                    avatar.setSortOrder(sortOrder++);
+                    avatars.add(avatar);
+                }
+                userAvatarService.saveBatch(avatars);
+            }
             return Result.ok(user);
         }
         return Result.fail("创建用户失败");
@@ -98,6 +111,25 @@ public class UserManageController {
         boolean success = userService.updateById(user);
         
         if (success) {
+            // 删除原有头像
+            QueryWrapper<UserAvatar> deleteWrapper = new QueryWrapper<>();
+            deleteWrapper.eq("user_id", user.getId());
+            userAvatarService.remove(deleteWrapper);
+            
+            // 保存新的头像
+            if (user.getCarouselImgs() != null && !user.getCarouselImgs().isEmpty()) {
+                List<UserAvatar> avatars = new ArrayList<>();
+                int sortOrder = 0;
+                for (String avatarUrl : user.getCarouselImgs()) {
+                    UserAvatar avatar = new UserAvatar();
+                    avatar.setUserId(user.getId());
+                    avatar.setAvatarUrl(avatarUrl);
+                    avatar.setSortOrder(sortOrder++);
+                    avatars.add(avatar);
+                }
+                userAvatarService.saveBatch(avatars);
+            }
+            
             // 更新后重新获取用户信息（包含头像）
             User updatedUser = userService.getById(user.getId());
             // 获取用户头像
