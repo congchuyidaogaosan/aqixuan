@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Table, Card, Button, Space, Input,
   Form, Select, Tag, Modal, message,
-  Tooltip, Upload
+  Tooltip, Upload, Image
 } from 'antd';
 import {
   FileOutlined, DeleteOutlined, DownloadOutlined,
@@ -37,28 +37,21 @@ const FileList = () => {
   const fetchFiles = async (params = {}) => {
     setLoading(true);
     try {
-      // 模拟API调用
-      const mockData = Array.from({ length: 100 }, (_, index) => ({
-        id: index + 1,
-        filename: `文件${index + 1}.${['jpg', 'doc', 'pdf', 'xlsx', 'zip'][Math.floor(Math.random() * 5)]}`,
-        size: Math.floor(Math.random() * 10000000),
-        type: ['image', 'document', 'pdf', 'spreadsheet', 'archive'][Math.floor(Math.random() * 5)],
-        uploadTime: new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toISOString(),
-        uploader: `用户${Math.floor(Math.random() * 100) + 1}`,
-        downloads: Math.floor(Math.random() * 1000),
-        status: Math.random() > 0.1,
-      }));
+      const { current, pageSize, type, status, keyword } = params;
+      const response = await fetch(`/api/manage/file/list?pageNum=${current}&pageSize=${pageSize}${type ? `&type=${type}` : ''}${status !== undefined ? `&status=${status}` : ''}${keyword ? `&keyword=${keyword}` : ''}`);
+      const data = await response.json();
 
-      const { current, pageSize } = params;
-      const start = (current - 1) * pageSize;
-      const end = start + pageSize;
-
-      setFiles(mockData.slice(start, end));
-      setPagination({
-        ...pagination,
-        current,
-        total: mockData.length,
-      });
+      if (data.code === 200) {
+        setFiles(data.data.records);
+        setPagination({
+          ...pagination,
+          current: data.data.current,
+          pageSize: data.data.size,
+          total: data.data.total,
+        });
+      } else {
+        message.error(data.message || '获取文件列表失败');
+      }
     } catch (error) {
       message.error('获取文件列表失败');
       console.error('获取文件列表失败:', error);
@@ -116,12 +109,20 @@ const FileList = () => {
       cancelText: '取消',
       onOk: async () => {
         try {
-          // 模拟API调用
-          message.success('删除成功');
-          fetchFiles({
-            current: pagination.current,
-            pageSize: pagination.pageSize,
+          const response = await fetch(`/api/manage/file/delete/${id}`, {
+            method: 'POST'
           });
+          const data = await response.json();
+          
+          if (data.code === 200) {
+            message.success('删除成功');
+            fetchFiles({
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+            });
+          } else {
+            message.error(data.message || '删除失败');
+          }
         } catch (error) {
           message.error('删除失败');
           console.error('删除失败:', error);
@@ -139,13 +140,25 @@ const FileList = () => {
       cancelText: '取消',
       onOk: async () => {
         try {
-          // 模拟API调用
-          message.success('批量删除成功');
-          setSelectedRowKeys([]);
-          fetchFiles({
-            current: pagination.current,
-            pageSize: pagination.pageSize,
+          const response = await fetch('/api/manage/file/batchDelete', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(selectedRowKeys)
           });
+          const data = await response.json();
+          
+          if (data.code === 200) {
+            message.success('批量删除成功');
+            setSelectedRowKeys([]);
+            fetchFiles({
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+            });
+          } else {
+            message.error(data.message || '批量删除失败');
+          }
         } catch (error) {
           message.error('批量删除失败');
           console.error('批量删除失败:', error);
@@ -156,7 +169,7 @@ const FileList = () => {
 
   // 处理下载
   const handleDownload = (record) => {
-    message.success(`开始下载: ${record.filename}`);
+    window.open(record.url, '_blank');
   };
 
   // 处理上传
@@ -208,31 +221,43 @@ const FileList = () => {
       ),
     },
     {
-      title: '大小',
-      dataIndex: 'size',
+      title: '预览',
+      dataIndex: 'url',
       width: 120,
-      render: (size) => formatFileSize(size),
+      render: (url, record) => (
+        record.type === 'image' ? (
+          <Image
+            src={url}
+            alt={record.filename}
+            style={{ width: 50, height: 50, objectFit: 'cover' }}
+            fallback="https://via.placeholder.com/50x50?text=加载失败"
+          />
+        ) : (
+          <FileOutlined style={{ fontSize: 24 }} />
+        )
+      ),
     },
     {
       title: '类型',
       dataIndex: 'type',
       width: 120,
+      render: (type) => {
+        const typeMap = {
+          image: '图片',
+          video: '视频',
+          document: '文档',
+          pdf: 'PDF',
+          spreadsheet: '表格',
+          archive: '压缩包'
+        };
+        return typeMap[type] || type;
+      }
     },
     {
       title: '上传时间',
       dataIndex: 'uploadTime',
       width: 180,
       render: (date) => new Date(date).toLocaleString(),
-    },
-    {
-      title: '上传者',
-      dataIndex: 'uploader',
-      width: 120,
-    },
-    {
-      title: '下载次数',
-      dataIndex: 'downloads',
-      width: 100,
     },
     {
       title: '状态',

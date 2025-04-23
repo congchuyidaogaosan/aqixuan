@@ -12,6 +12,7 @@ import {
   SafetyOutlined,
   NotificationOutlined,
   TeamOutlined,
+  PieChartOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -152,61 +153,61 @@ const MainLayout = () => {
               icon: <FileOutlined />,
               label: '文件管理',
             },
-            {
-              key: '/system',
-              icon: <SettingOutlined />,
-              label: '系统设置',
-              children: [
-                {
-                  key: '/system/settings',
-                  label: '基本设置',
-                },
-                {
-                  key: '/system/sensitive-words',
-                  label: '敏感词设置',
-                },
-              ],
-            },
+            // {
+            //   key: '/system',
+            //   icon: <SettingOutlined />,
+            //   label: '系统设置',
+            //   children: [
+            //     {
+            //       key: '/system/settings',
+            //       label: '基本设置',
+            //     },
+            //     {
+            //       key: '/system/sensitive-words',
+            //       label: '敏感词设置',
+            //     },
+            //   ],
+            // },
             {
               key: '/statistics',
               icon: <BarChartOutlined />,
-              label: '数据统计',
+              label: '基础统计'
             },
-            {
-              key: '/security',
-              icon: <SafetyOutlined />,
-              label: '安全管理',
-              children: [
-                {
-                  key: '/security/login-log',
-                  label: '登录日志',
-                },
-                {
-                  key: '/security/operation-log',
-                  label: '操作日志',
-                },
-              ],
-            },
-            {
-              key: '/announcement',
-              icon: <NotificationOutlined />,
-              label: '公告管理',
-            },
-            {
-              key: '/admin',
-              icon: <TeamOutlined />,
-              label: '管理员设置',
-              children: [
-                {
-                  key: '/admin/list',
-                  label: '管理员列表',
-                },
-                {
-                  key: '/admin/role',
-                  label: '角色管理',
-                },
-              ],
-            },
+            // {
+            //   key: '/security',
+            //   icon: <SafetyOutlined />,
+            //   label: '安全管理',
+            //   children: [
+            //     {
+            //       key: '/security/login-log',
+            //       label: '登录日志',
+            //     },
+            //     {
+            //       key: '/security/operation-log',
+            //       label: '操作日志',
+            //     },
+            //   ],
+            // },
+            // {
+            //   key: '/announcement',
+            //   icon: <NotificationOutlined />,
+            //   label: '公告管理',
+            // },
+            // {
+            //   key: '/admin',
+            //   icon: <TeamOutlined />,
+            //   label: '管理员设置',
+            //   children: [
+            //     {
+            //       key: '/admin/list',
+            //       label: '管理员列表',
+            //     },
+            //     {
+            //       key: '/admin/role',
+            //       label: '角色管理',
+            //     },
+            //   ],
+            // },
           ]}
         />
       </Sider>

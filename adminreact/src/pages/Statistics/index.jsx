@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import {
   Card, Row, Col, Statistic, DatePicker,
-  Spin, Empty
+  Spin, Empty, message
 } from 'antd';
 import {
   UserOutlined, FileOutlined,
-  MessageOutlined, EyeOutlined
+  MessageOutlined, TeamOutlined
 } from '@ant-design/icons';
 import { Line, Column, Pie } from '@ant-design/plots';
 import styled from 'styled-components';
+import moment from 'moment';
+import {
+  getStatisticsOverview,
+  getStatisticsTrends,
+  getActivityTypes,
+  getSignupStats
+} from '../../api/statistics';
 
 const { RangePicker } = DatePicker;
 
@@ -23,67 +30,110 @@ const Statistics = () => {
     totalUsers: 0,
     totalPosts: 0,
     totalComments: 0,
-    totalViews: 0
+    totalActivities: 0,
+    newUsers: 0,
+    newPosts: 0,
+    newActivities: 0
   });
   const [trendsData, setTrendsData] = useState([]);
-  const [categoryData, setCategoryData] = useState([]);
-  const [sourceData, setSourceData] = useState([]);
+  const [activityTypes, setActivityTypes] = useState([]);
+  const [signupStats, setSignupStats] = useState([]);
 
-  // 获取统计数据
-  const fetchStatistics = async () => {
+  // 获取概览数据
+  const fetchOverview = async () => {
+    try {
+      const response = await getStatisticsOverview();
+      if (response.code === 200) {
+        setOverview(response.data);
+      } else {
+        message.error(response.message || '获取概览数据失败');
+      }
+    } catch (error) {
+      console.error('获取概览数据失败:', error);
+      message.error('获取概览数据失败');
+    }
+  };
+
+  // 获取趋势数据
+  const fetchTrends = async () => {
+    try {
+      let startDate, endDate;
+      if (dateRange.length === 2) {
+        startDate = moment(dateRange[0]).format('YYYY-MM-DD');
+        endDate = moment(dateRange[1]).format('YYYY-MM-DD');
+      }
+
+      const response = await getStatisticsTrends(startDate, endDate);
+      if (response.code === 200) {
+        // 转换数据格式以适应折线图要求
+        const formattedTrends = response.data.trends.reduce((acc, item) => {
+          return acc.concat([
+            { date: item.date, type: '用户数', value: item.users },
+            { date: item.date, type: '动态数', value: item.posts },
+            { date: item.date, type: '活动数', value: item.activities }
+          ]);
+        }, []);
+        setTrendsData(formattedTrends);
+      } else {
+        message.error(response.message || '获取趋势数据失败');
+      }
+    } catch (error) {
+      console.error('获取趋势数据失败:', error);
+      message.error('获取趋势数据失败');
+    }
+  };
+
+  // 获取活动类型统计
+  const fetchActivityTypes = async () => {
+    try {
+      const response = await getActivityTypes();
+      if (response.code === 200) {
+        setActivityTypes(response.data.types);
+      } else {
+        message.error(response.message || '获取活动类型统计失败');
+      }
+    } catch (error) {
+      console.error('获取活动类型统计失败:', error);
+      message.error('获取活动类型统计失败');
+    }
+  };
+
+  // 获取报名统计
+  const fetchSignupStats = async () => {
+    try {
+      const response = await getSignupStats();
+      if (response.code === 200) {
+        setSignupStats(response.data.signups);
+      } else {
+        message.error(response.message || '获取报名统计失败');
+      }
+    } catch (error) {
+      console.error('获取报名统计失败:', error);
+      message.error('获取报名统计失败');
+    }
+  };
+
+  // 获取所有统计数据
+  const fetchAllStats = async () => {
     setLoading(true);
     try {
-      // 模拟API调用
-      const mockOverview = {
-        totalUsers: 12345,
-        totalPosts: 5678,
-        totalComments: 9012,
-        totalViews: 345678
-      };
-
-      const mockTrends = Array.from({ length: 30 }, (_, i) => ({
-        date: `2024-${String(i + 1).padStart(2, '0')}-01`,
-        users: Math.floor(Math.random() * 100),
-        posts: Math.floor(Math.random() * 50),
-        comments: Math.floor(Math.random() * 200)
-      }));
-
-      // 转换数据格式以适应折线图要求
-      const formattedTrends = mockTrends.reduce((acc, item) => {
-        return acc.concat([
-          { date: item.date, type: '用户数', value: item.users },
-          { date: item.date, type: '文章数', value: item.posts },
-          { date: item.date, type: '评论数', value: item.comments }
-        ]);
-      }, []);
-
-      const mockCategories = [
-        { category: '技术', value: 40 },
-        { category: '生活', value: 25 },
-        { category: '工作', value: 20 },
-        { category: '其他', value: 15 }
-      ];
-
-      const mockSources = [
-        { source: 'PC端', value: 45 },
-        { source: '移动端', value: 35 },
-        { source: '小程序', value: 15 },
-        { source: 'API', value: 5 }
-      ];
-
-      setOverview(mockOverview);
-      setTrendsData(formattedTrends);
-      setCategoryData(mockCategories);
-      setSourceData(mockSources);
-    } catch (error) {
-      console.error('获取统计数据失败:', error);
+      await Promise.all([
+        fetchOverview(),
+        fetchTrends(),
+        fetchActivityTypes(),
+        fetchSignupStats()
+      ]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchStatistics();
+    fetchAllStats();
+  }, []);
+
+  useEffect(() => {
+    fetchTrends();
   }, [dateRange]);
 
   // 趋势图配置
@@ -93,38 +143,57 @@ const Statistics = () => {
     yField: 'value',
     seriesField: 'type',
     smooth: true,
-    animation: {
-      appear: {
-        animation: 'path-in',
-        duration: 1000
+    animation: false,
+    legend: {
+      position: 'top'
+    },
+    xAxis: {
+      label: {
+        autoRotate: true,
+        autoHide: false
       }
     }
   };
 
-  // 分类图配置
-  const categoryConfig = {
-    data: categoryData,
+  // 活动类型图配置
+  const typeConfig = {
+    data: activityTypes,
     angleField: 'value',
-    colorField: 'category',
+    colorField: 'type',
     radius: 0.8,
+    animation: false,
     label: {
-      offset: '50%',
-      style: {
-        textAlign: 'center'
+      text: (item) => `${item.type}: ${item.value}`,
+      position: 'outside'
+    },
+    legend: {
+      position: 'bottom'
+    },
+    interactions: [
+      {
+        type: 'element-active'
       }
-    }
+    ]
   };
 
-  // 来源图配置
-  const sourceConfig = {
-    data: sourceData,
-    xField: 'source',
+  // 报名状态图配置
+  const signupConfig = {
+    data: signupStats,
+    xField: 'status',
     yField: 'value',
+    animation: false,
     label: {
-      position: 'top',
-      style: {
-        fill: '#FFFFFF',
-        opacity: 0.6
+      text: (item) => item.value,
+    },
+    color: '#1890ff',
+    style: {
+      fillOpacity: 0.85
+    },
+    state: {
+      active: {
+        style: {
+          fillOpacity: 0.95
+        }
       }
     }
   };
@@ -143,30 +212,38 @@ const Statistics = () => {
         <Row gutter={16}>
           <Col span={6}>
             <Statistic
-              title="总用户数"
-              value={overview.totalUsers}
+              title="今日新增用户"
+              value={overview.newUsers || 0}
               prefix={<UserOutlined />}
+              valueStyle={{ color: '#3f8600' }}
+              suffix="人"
             />
           </Col>
           <Col span={6}>
             <Statistic
-              title="总文章数"
-              value={overview.totalPosts}
+              title="今日新增动态"
+              value={overview.newPosts || 0}
               prefix={<FileOutlined />}
+              valueStyle={{ color: '#cf1322' }}
+              suffix="条"
             />
           </Col>
           <Col span={6}>
             <Statistic
-              title="总评论数"
-              value={overview.totalComments}
+              title="今日新增活动"
+              value={overview.newActivities || 0}
+              prefix={<TeamOutlined />}
+              valueStyle={{ color: '#1890ff' }}
+              suffix="个"
+            />
+          </Col>
+          <Col span={6}>
+            <Statistic
+              title="活动参与率"
+              value={overview.newActivities > 0 ? Math.round((overview.newUsers / overview.newActivities) * 100) : 0}
               prefix={<MessageOutlined />}
-            />
-          </Col>
-          <Col span={6}>
-            <Statistic
-              title="总浏览量"
-              value={overview.totalViews}
-              prefix={<EyeOutlined />}
+              valueStyle={{ color: '#722ed1' }}
+              suffix="%"
             />
           </Col>
         </Row>
@@ -174,11 +251,11 @@ const Statistics = () => {
 
       <Row gutter={16}>
         <Col span={24}>
-          <StyledCard title="趋势统计">
-            {trendsData.length > 0 ? (
+          <StyledCard title="数据趋势">
+            {trendsData && trendsData.length > 0 ? (
               <Line {...trendConfig} />
             ) : (
-              <Empty />
+              <Empty description="暂无趋势数据" />
             )}
           </StyledCard>
         </Col>
@@ -186,20 +263,20 @@ const Statistics = () => {
 
       <Row gutter={16}>
         <Col span={12}>
-          <StyledCard title="分类统计">
-            {categoryData.length > 0 ? (
-              <Pie {...categoryConfig} />
+          <StyledCard title="活动类型分布">
+            {activityTypes && activityTypes.length > 0 ? (
+              <Pie {...typeConfig} />
             ) : (
-              <Empty />
+              <Empty description="暂无活动类型数据" />
             )}
           </StyledCard>
         </Col>
         <Col span={12}>
-          <StyledCard title="来源统计">
-            {sourceData.length > 0 ? (
-              <Column {...sourceConfig} />
+          <StyledCard title="活动报名状态">
+            {signupStats && signupStats.length > 0 ? (
+              <Column {...signupConfig} />
             ) : (
-              <Empty />
+              <Empty description="暂无报名数据" />
             )}
           </StyledCard>
         </Col>
