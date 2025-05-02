@@ -3,11 +3,10 @@ import axios from 'axios';
 import { message } from 'antd';
 
 // 获取环境变量中的API基础URL，如果不存在则使用默认值
-const BASE_URL = '/api';
 
 // 创建axios实例
 const request = axios.create({
-  baseURL: BASE_URL,
+  baseURL: "/api",
   timeout: 30000, // 请求超时时间：30秒
   headers: {
     'Content-Type': 'application/json',

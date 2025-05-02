@@ -11,6 +11,7 @@ import {
   FileExcelOutlined, FileZipOutlined
 } from '@ant-design/icons';
 import styled from 'styled-components';
+import { getFileList, deleteFile, batchDeleteFiles, downloadFile, uploadFile } from '../../api/file';
 
 const { Option } = Select;
 
@@ -38,19 +39,25 @@ const FileList = () => {
     setLoading(true);
     try {
       const { current, pageSize, type, status, keyword } = params;
-      const response = await fetch(`/api/manage/file/list?pageNum=${current}&pageSize=${pageSize}${type ? `&type=${type}` : ''}${status !== undefined ? `&status=${status}` : ''}${keyword ? `&keyword=${keyword}` : ''}`);
-      const data = await response.json();
-
-      if (data.code === 200) {
-        setFiles(data.data.records);
+      const requestParams = {
+        pageNum: current,
+        pageSize,
+        type,
+        status,
+        keyword
+      };
+      
+      const response = await getFileList(requestParams);
+      if (response.code === 200) {
+        setFiles(response.data.records);
         setPagination({
           ...pagination,
-          current: data.data.current,
-          pageSize: data.data.size,
-          total: data.data.total,
+          current: response.data.current,
+          pageSize: response.data.size,
+          total: response.data.total,
         });
       } else {
-        message.error(data.message || '获取文件列表失败');
+        message.error(response.message || '获取文件列表失败');
       }
     } catch (error) {
       message.error('获取文件列表失败');
@@ -109,19 +116,16 @@ const FileList = () => {
       cancelText: '取消',
       onOk: async () => {
         try {
-          const response = await fetch(`/api/manage/file/delete/${id}`, {
-            method: 'POST'
-          });
-          const data = await response.json();
+          const response = await deleteFile(id);
           
-          if (data.code === 200) {
+          if (response.code === 200) {
             message.success('删除成功');
             fetchFiles({
               current: pagination.current,
               pageSize: pagination.pageSize,
             });
           } else {
-            message.error(data.message || '删除失败');
+            message.error(response.message || '删除失败');
           }
         } catch (error) {
           message.error('删除失败');
@@ -140,16 +144,9 @@ const FileList = () => {
       cancelText: '取消',
       onOk: async () => {
         try {
-          const response = await fetch('/api/manage/file/batchDelete', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(selectedRowKeys)
-          });
-          const data = await response.json();
+          const response = await batchDeleteFiles(selectedRowKeys);
           
-          if (data.code === 200) {
+          if (response.code === 200) {
             message.success('批量删除成功');
             setSelectedRowKeys([]);
             fetchFiles({
@@ -157,7 +154,7 @@ const FileList = () => {
               pageSize: pagination.pageSize,
             });
           } else {
-            message.error(data.message || '批量删除失败');
+            message.error(response.message || '批量删除失败');
           }
         } catch (error) {
           message.error('批量删除失败');
@@ -168,20 +165,56 @@ const FileList = () => {
   };
 
   // 处理下载
-  const handleDownload = (record) => {
-    window.open(record.url, '_blank');
+  const handleDownload = async (record) => {
+    try {
+      const response = await downloadFile(record.id);
+      // 创建Blob对象并下载
+      const blob = new Blob([response], { type: 'application/octet-stream' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = record.filename;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      message.error('下载失败');
+      console.error('下载失败:', error);
+      // 降级方案：直接打开URL
+      window.open(record.url, '_blank');
+    }
   };
 
   // 处理上传
-  const handleUpload = (info) => {
-    if (info.file.status === 'done') {
-      message.success(`${info.file.name} 上传成功`);
-      fetchFiles({
-        current: 1,
-        pageSize: pagination.pageSize,
-      });
-    } else if (info.file.status === 'error') {
-      message.error(`${info.file.name} 上传失败`);
+  const handleUpload = async (info) => {
+    const { file } = info;
+    
+    if (file.status === 'uploading') {
+      return;
+    }
+    
+    if (file.status === 'done') {
+      // 如果是使用自定义上传，则需要手动上传
+      try {
+        const formData = new FormData();
+        formData.append('file', file.originFileObj);
+        
+        const response = await uploadFile(formData);
+        
+        if (response.code === 200) {
+          message.success(`${file.name} 上传成功`);
+          fetchFiles({
+            current: 1,
+            pageSize: pagination.pageSize,
+          });
+        } else {
+          message.error(response.message || `${file.name} 上传失败`);
+        }
+      } catch (error) {
+        message.error(`${file.name} 上传失败`);
+        console.error('上传失败:', error);
+      }
+    } else if (file.status === 'error') {
+      message.error(`${file.name} 上传失败`);
     }
   };
 
@@ -344,7 +377,10 @@ const FileList = () => {
         <Space style={{ marginBottom: 16 }}>
           <Upload
             showUploadList={false}
-            customRequest={({ onSuccess }) => setTimeout(() => onSuccess('ok'), 0)}
+            customRequest={({ file, onSuccess }) => {
+              // 这里让Upload组件认为上传成功，实际上传工作在handleUpload中处理
+              setTimeout(() => onSuccess('ok'), 0);
+            }}
             onChange={handleUpload}
           >
             <Button type="primary" icon={<UploadOutlined />}>
