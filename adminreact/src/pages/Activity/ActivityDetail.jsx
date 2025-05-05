@@ -69,11 +69,11 @@ const ActivityDetail = () => {
       
       if (data.code === 200) {
         setParticipants(data.data.records);
-        setParticipantPagination({
+      setParticipantPagination({
           current: data.data.current,
           pageSize: data.data.size,
           total: data.data.total,
-        });
+      });
       } else {
         message.error(data.message || '获取参与者列表失败');
       }
@@ -102,8 +102,8 @@ const ActivityDetail = () => {
           const data = await response.json();
           
           if (data.code === 200) {
-            message.success('删除成功');
-            navigate('/activity');
+          message.success('删除成功');
+          navigate('/activity');
           } else {
             message.error(data.message || '删除失败');
           }

@@ -84,7 +84,7 @@ export default {
 		this.loatheAni = uni.createAnimation({
 			duration: 0
 		});
-		console.log(this.item)
+		// console.log(this.item)
 	},
 	methods: {
 		previous() {

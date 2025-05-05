@@ -40,59 +40,59 @@ const Dashboard = () => {
 
   return (
     <Spin spinning={loading}>
-      <div>
-        <h2>系统概览</h2>
-        <Row gutter={16} style={{ marginTop: 24 }}>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="用户总数"
+    <div>
+      <h2>系统概览</h2>
+      <Row gutter={16} style={{ marginTop: 24 }}>
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="用户总数"
                 value={stats.totalUsers}
-                prefix={<UserOutlined />}
+              prefix={<UserOutlined />}
                 valueStyle={{ color: '#3f8600' }}
                 suffix="人"
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="消息总数"
+            />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="消息总数"
                 value={stats.totalMessages}
-                prefix={<MessageOutlined />}
+              prefix={<MessageOutlined />}
                 valueStyle={{ color: '#cf1322' }}
                 suffix="条"
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="动态总数"
+            />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="动态总数"
                 value={stats.totalPosts}
-                prefix={<FileImageOutlined />}
+              prefix={<FileImageOutlined />}
                 valueStyle={{ color: '#1890ff' }}
                 suffix="条"
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="活动总数"
+            />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="活动总数"
                 value={stats.totalActivities}
-                prefix={<CalendarOutlined />}
+              prefix={<CalendarOutlined />}
                 valueStyle={{ color: '#722ed1' }}
                 suffix="个"
-              />
-            </Card>
-          </Col>
-        </Row>
+            />
+          </Card>
+        </Col>
+      </Row>
 
         <Row gutter={16} style={{ marginTop: 24 }}>
           <Col span={24}>
-            <Card title="系统信息">
-              <p>欢迎使用雅趣轩管理系统！</p>
+        <Card title="系统信息">
+          <p>欢迎使用雅趣轩管理系统！</p>
               <p>这里是系统仪表盘，您可以看到系统的关键指标。</p>
               <p>系统数据概览：</p>
               <ul>
@@ -101,7 +101,7 @@ const Dashboard = () => {
                 <li>动态总数：{stats.totalPosts} 条</li>
                 <li>活动总数：{stats.totalActivities} 个</li>
               </ul>
-            </Card>
+        </Card>
           </Col>
         </Row>
       </div>

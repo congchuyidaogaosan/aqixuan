@@ -59,12 +59,13 @@ export default {
 			try {
 				this.isLoading = true;
 				const res = await getRecommendUserList(this.currentPage, this.pageSize)
-				
-				if(res && res.length > 0) {
-					const formattedData = res.map(item => {
+				console.log(res)
+				if(res && res.list.length > 0) {
+					const formattedData = res.list.map(item => {
+						console.log(item)
 						const user = item.user;
-						const interests = user.interests ? JSON.parse(user.interests) : [];
-						const sports = user.sports ? JSON.parse(user.sports) : [];
+						const interests = user.interests ? user.interests.split('、') : [];
+						const sports = user.sports ? user.sports.split('、') : [];
 						
 						// 计算年龄
 						const birthday = new Date(user.birthday);
@@ -96,15 +97,17 @@ export default {
 							sports: sports
 						}
 					})
-					
+					console.log(formattedData);
 					if(isAppend) {
 						// 将新数据追加到数组末尾，并确保_id是连续的
 						this.dataList = [...this.dataList, ...formattedData].map((item, index) => ({
 							...item,
 							_id: index // 重新设置_id确保顺序正确
 						}));
+						console.log(this.dataList);
 					} else {
 						this.dataList = formattedData;
+						console.log(this.dataList)
 					}
 					
 					// 更新页码
