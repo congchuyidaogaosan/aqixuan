@@ -9,6 +9,7 @@ import com.it.domain.common.Result;
 import com.it.domain.common.ResultCodeEnum;
 import com.it.service.ActivityService;
 import com.it.service.ActivitySignupService;
+import com.it.service.UserAvatarService;
 import com.it.service.UserService;
 import com.it.utill.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,9 @@ public class ActivityController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private UserAvatarService userAvatarService;
+
     @RequestMapping("list/{current}/{size}")
     public Result list(@PathVariable("size") Integer size, @PathVariable("current") Integer current, @RequestBody Activity activity) {
         Page<Activity> objectPage = new Page<>(current, size);
@@ -61,28 +65,117 @@ public class ActivityController {
             userAvatarQueryWrapper.lt("cost", activity.getMaxCost());
         }
 
+        // 记录活动列表查询参数和结果
+        System.out.println("活动查询参数: " + activity);
+        
         Page<Activity> page = activityService.page(objectPage, userAvatarQueryWrapper);
+        System.out.println("查询到的活动数量: " + page.getRecords().size());
+        
         ArrayList<Integer> objects = new ArrayList<>();
-        for (Activity activitySignups : page.getRecords()) {
-            Integer id = activitySignups.getUserId();
+        for (Activity activityRecord : page.getRecords()) {
+            Integer id = activityRecord.getUserId();
             objects.add(id);
-
+            System.out.println("活动ID: " + activityRecord.getId() + ", 发布者ID: " + id);
         }
+        
         List<UserDTO> users = userService.joinUserAvatar(objects);
+        System.out.println("查询到的用户数量: " + users.size());
+        
+        // 处理所有用户，确保avatarUrl不为空，设置默认头像
+        for (UserDTO user : users) {
+            if (user.getAvatarUrl() == null || user.getAvatarUrl().isEmpty()) {
+                System.out.println("用户 " + user.getId() + " 的头像URL为空，设置默认头像");
+                // 设置默认头像URL
+                user.setAvatarUrl("/static/images/default-avatar.png");
+                
+                // 尝试从UserAvatar表获取最新的头像
+                try {
+                    List<String> avatarList = userAvatarService.getAvatarList(user.getId(), 1);
+                    if (avatarList != null && !avatarList.isEmpty()) {
+                        String latestAvatar = avatarList.get(0);
+                        if (latestAvatar != null && !latestAvatar.isEmpty()) {
+                            user.setAvatarUrl(latestAvatar);
+                            System.out.println("为用户 " + user.getId() + " 找到头像: " + latestAvatar);
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println("获取用户 " + user.getId() + " 的头像失败: " + e.getMessage());
+                }
+            }
+        }
+        
+        // 如果没有找到用户，获取这些用户的基本信息
+        if (users.size() < objects.size()) {
+            System.out.println("警告: 部分用户信息缺失，尝试获取基本用户信息");
+            List<UserDTO> basicUsers = new ArrayList<>();
+            for (Integer userId : objects) {
+                // 检查是否已经存在这个用户
+                boolean userExists = false;
+                for (UserDTO user : users) {
+                    if (user.getId().equals(userId)) {
+                        userExists = true;
+                        break;
+                    }
+                }
+                
+                // 如果不存在，获取基本信息
+                if (!userExists) {
+                    User user = userService.getById(userId);
+                    if (user != null) {
+                        UserDTO basicUserDTO = new UserDTO();
+                        basicUserDTO.setId(user.getId());
+                        basicUserDTO.setNickname(user.getNickname() != null ? user.getNickname() : "用户" + user.getId());
+                        basicUserDTO.setPhone(user.getPhone());
+                        
+                        // 设置默认头像
+                        basicUserDTO.setAvatarUrl("/static/images/default-avatar.png");
+                        
+                        // 尝试获取用户头像
+                        try {
+                            List<String> avatarList = userAvatarService.getAvatarList(user.getId(), 1);
+                            if (avatarList != null && !avatarList.isEmpty() && avatarList.get(0) != null) {
+                                basicUserDTO.setAvatarUrl(avatarList.get(0));
+                                System.out.println("为新增用户 " + user.getId() + " 设置头像: " + avatarList.get(0));
+                            }
+                        } catch (Exception e) {
+                            System.err.println("获取新增用户 " + user.getId() + " 的头像失败: " + e.getMessage());
+                        }
+                        
+                        basicUsers.add(basicUserDTO);
+                        System.out.println("添加基本用户信息: " + basicUserDTO + ", 头像URL: " + basicUserDTO.getAvatarUrl());
+                    }
+                }
+            }
+            
+            // 将基本用户信息合并到users列表
+            users.addAll(basicUsers);
+        }
+        
         HashMap<Integer, UserDTO> hashMap = new HashMap<>();
-
         for (UserDTO user : users) {
             hashMap.put(user.getId(), user);
+            System.out.println("用户映射: " + user.getId() + " -> " + user.getNickname() + ", 头像URL: " + user.getAvatarUrl());
         }
+        
         ArrayList<ActivitySignupAndUser> activitySignupAndUsers = new ArrayList<>();
 
-        for (Activity activitySignup1 : page.getRecords()) {
-            if (hashMap.containsKey(activitySignup1.getUserId())) {
-                ActivitySignupAndUser activitySignupAndUser = new ActivitySignupAndUser(activitySignup1, hashMap.get(activitySignup1.getUserId()));
+        for (Activity activityRecord : page.getRecords()) {
+            UserDTO userDTO = hashMap.get(activityRecord.getUserId());
+            if (userDTO != null) {
+                ActivitySignupAndUser activitySignupAndUser = new ActivitySignupAndUser(activityRecord, userDTO);
                 activitySignupAndUsers.add(activitySignupAndUser);
+                System.out.println("添加活动与用户: 活动ID=" + activityRecord.getId() + ", 用户ID=" + userDTO.getId() + ", 头像URL=" + userDTO.getAvatarUrl());
             } else {
-                ActivitySignupAndUser activitySignupAndUser = new ActivitySignupAndUser(activitySignup1, null);
+                // 为空的用户创建一个基础UserDTO
+                UserDTO defaultUserDTO = new UserDTO();
+                defaultUserDTO.setId(activityRecord.getUserId());
+                defaultUserDTO.setNickname("未知用户");
+                // 设置默认头像
+                defaultUserDTO.setAvatarUrl("/static/images/default-avatar.png");
+                
+                ActivitySignupAndUser activitySignupAndUser = new ActivitySignupAndUser(activityRecord, defaultUserDTO);
                 activitySignupAndUsers.add(activitySignupAndUser);
+                System.out.println("添加活动与默认用户: 活动ID=" + activityRecord.getId() + ", 用户ID=" + activityRecord.getUserId() + ", 头像URL=" + defaultUserDTO.getAvatarUrl());
             }
         }
 

@@ -733,7 +733,7 @@ const handlePublish = () => {
       })
       // 延迟返回上一页
       setTimeout(() => {
-        uni.navigateBack()
+        history.back();
       }, 1500)
     
   }).catch(err => {

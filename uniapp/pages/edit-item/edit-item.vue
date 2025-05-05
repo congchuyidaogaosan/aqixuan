@@ -387,7 +387,9 @@ const handleSubmit = async () => {
     uni.$emit('updateUserInfo')
     
     uni.hideLoading()
-    uni.navigateBack()
+    // 返回上一页
+    history.back();
+    // uni.navigateBack()
   } catch (error) {
     console.error('保存失败:', error)
     uni.hideLoading()

@@ -221,37 +221,73 @@ const loadActivityList = () => {
   if (isLoading.value || noMore.value) return
   
   isLoading.value = true
-  console.log(active.value)
-  getActivityList(page.value, pageSize, active.value)
+  
+  // 准备请求参数，确保数据类型正确
+  const requestParams = {
+    activityType: active.value.activityType !== '' ? String(active.value.activityType) : '',
+    minNumber: active.value.minNumber,
+    maxNumber: active.value.maxNumber,
+    minCost: active.value.minCost,
+    maxCost: active.value.maxCost
+  }
+  
+  console.log('请求参数:', requestParams)
+  
+  getActivityList(page.value, pageSize, requestParams)
     .then(res => {
+      console.log('API返回结果:', res)
+      
       if (res && Array.isArray(res)) {
         // 处理数据，将活动信息和用户信息组合
-        const list = res.map(item => ({
-          id: item.activity.id,
-          userId: item.activity.userId,
-          activityType: Number(item.activity.activityType),
-          title: item.activity.title,
-          description: item.activity.description,
-          location: item.activity.location,
-          totalNumber: item.activity.totalNumber,
-          currentNumber: item.activity.currentNumber,
-          startTime: item.activity.startTime,
-          endTime: item.activity.endTime,
-          cost: item.activity.cost,
-          costType: item.activity.costType,
-          penaltyCost: item.activity.penaltyCost,
-          status: item.activity.status,
-          handImg: item.activity.handImg,
-          // 用户信息
-          organizer: {
-            id: item.user.id,
-            nickname: item.user.nickname,
-            avatarUrl: item.user.avatarUrl
-          },
-          // 报名信息
-          signup: item.activitySignup
-        }))
+        const list = res.map(item => {
+          // 打印每个item的完整结构
+          console.log('原始item数据:', item)
+          
+          // 检查user对象是否存在
+          const userExists = item.user && item.user.id
+          if (!userExists) {
+            console.warn('警告: 用户数据为空', item)
+          }
+          
+          // 检查activity对象是否存在
+          if (!item.activity) {
+            console.error('错误: activity对象为空', item)
+            return null // 跳过无效数据
+          }
+          
+          return {
+            id: item.activity.id,
+            userId: item.activity.userId,
+            activityType: Number(item.activity.activityType),
+            title: item.activity.title,
+            description: item.activity.description,
+            location: item.activity.location,
+            totalNumber: item.activity.totalNumber,
+            currentNumber: item.activity.currentNumber,
+            startTime: item.activity.startTime,
+            endTime: item.activity.endTime,
+            cost: item.activity.cost,
+            costType: item.activity.costType,
+            penaltyCost: item.activity.penaltyCost,
+            status: item.activity.status,
+            handImg: item.activity.handImg,
+            // 用户信息 - 添加空值检查
+            organizer: userExists ? {
+              id: item.user.id,
+              nickname: item.user.nickname || '未知用户',
+              avatarUrl: item.user.avatarUrl || '/static/images/default-avatar.png'
+            } : {
+              id: item.activity.userId, // 使用活动中的用户ID代替
+              nickname: '未知用户',
+              avatarUrl: '/static/images/default-avatar.png'
+            },
+            // 报名信息
+            signup: item.activitySignup
+          }
+        })
+        .filter(item => item !== null) // 过滤掉无效项
         
+        console.log('处理后列表:', list)
         activityList.value = page.value === 1 ? list : [...activityList.value, ...list]
         
         // 判断是否还有更多数据
@@ -260,6 +296,7 @@ const loadActivityList = () => {
         }
         page.value++
       } else {
+        console.error('返回数据不是数组:', res)
         uni.showToast({
           title: '数据格式错误',
           icon: 'none'
@@ -267,6 +304,7 @@ const loadActivityList = () => {
       }
     })
     .catch(err => {
+      console.error('获取活动列表失败:', err)
       uni.showToast({
         title: err.message || '网络错误',
         icon: 'none'
@@ -434,7 +472,9 @@ const showTypeFilter = () => {
     itemList: ['不限', '运动', '游戏', '旅行', '学习', '美食', '电影', '其他'],
     success: (res) => {
       // 如果选择"不限"，则设置为空字符串
-      active.value.activityType = res.tapIndex === 0 ? '' : res.tapIndex - 1
+      // 否则使用字符串类型的索引值，与后端保持一致
+      active.value.activityType = res.tapIndex === 0 ? '' : String(res.tapIndex - 1)
+      console.log('选择的活动类型:', active.value.activityType)
       refreshList()
     }
   })

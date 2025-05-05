@@ -175,7 +175,7 @@ const handlePublish = async () => {
       // 返回上一页并刷新列表
       setTimeout(() => {
         uni.$emit('refreshMoments') // 触发刷新事件
-        uni.navigateBack()
+        history.back();
       }, 1500)
     } else {
       uni.showToast({
