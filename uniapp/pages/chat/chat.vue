@@ -76,8 +76,12 @@
       </view>
 
       <!-- 更多功能按钮 -->
-      <view class="more-btn" @click="showMore">
+      <view class="more-btn" @click="showMore" v-if="!inputContent">
         <image src="/static/images/gengduo.png" mode="aspectFit" class="icon"></image>
+      </view>
+      <!-- 发送按钮 -->
+      <view class="send-btn" @click="sendTextMessage" v-else>
+        发送
       </view>
     </view>
 
@@ -739,6 +743,19 @@ const getMessageTypeClass = (type) => {
         width: 40rpx;
         height: 40rpx;
       }
+    }
+
+    .send-btn {
+      width: 120rpx;
+      height: 72rpx;
+      background: #07c160;
+      color: #fff;
+      border-radius: 36rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28rpx;
+      margin-left: 20rpx;
     }
 
     .input {

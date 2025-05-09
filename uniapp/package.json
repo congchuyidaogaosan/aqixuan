@@ -19,6 +19,7 @@
   "dependencies": {
     "@dcloudio/uni-ui": "^1.5.7",
     "@gowiny/uni-router": "^1.0.15",
+    "@uni-helper/axios-adapter": "^1.5.2",
     "axios": "^1.7.9",
     "mockjs": "^1.1.0",
     "vue": "^3.2.45"

@@ -26,9 +26,12 @@
         },
         "distribute" : {
             "android" : {
-                "permissions" : []
+                "permissions" : [],
+                "minSdkVersion" : 21
             },
-            "ios" : {},
+            "ios" : {
+                "dSYMs" : false
+            },
             "sdkConfigs" : {
                 "geolocation" : {
                     "amap" : {

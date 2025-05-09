@@ -19,7 +19,7 @@ import java.util.UUID;
  * 上传文件映射表
  */
 @RestController
-@RequestMapping("file")
+@RequestMapping("file11")
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class FileController {
     //	file/upload
@@ -63,7 +63,7 @@ public class FileController {
             throw new RuntimeException(e);
         }
 
-        String str = "http://localhost:8081/" + "image/" + name + type;
+        String str = "http://8.134.184.96:9801/" + "image/" + name + type;
         hashMap.put("url",str);
         hashMap.put("type",type);
         return Result.ok(hashMap);

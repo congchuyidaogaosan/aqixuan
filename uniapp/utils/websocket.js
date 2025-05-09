@@ -1,7 +1,7 @@
 class WebSocketManager {
   constructor() {
     // 根据环境设置WebSocket地址
-    this.url = `ws://localhost:8081/imserver` 
+    this.url = `ws://localhost:9801/imserver` 
     this.socket = null
     this.isConnected = false
     this.reconnectAttempts = 0

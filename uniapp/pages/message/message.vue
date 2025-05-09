@@ -125,9 +125,9 @@ const goToChat = async (item) => {
   try {
     console.log('item', item)
     // 标记消息为已读
-    if (!item.chatMessage.isRead) {
-      await markMessageRead(item.chatMessage.id)
-    }
+    // if (!item.chatMessage.isRead) {
+    //   // await markMessageRead(item.chatMessage.id)
+    // }
     
     uni.navigateTo({
       url: `/pages/chat/chat?userId=${item.user.id}&nickname=${encodeURIComponent(item.user.nickname)}&avatar=${encodeURIComponent(item.userAvatar?.avatarUrl || '')}`

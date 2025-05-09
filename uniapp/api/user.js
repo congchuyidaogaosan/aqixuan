@@ -319,6 +319,7 @@ export const updateUser = async (data) => {
 export function uploadFile(file) {
   const formData = new FormData()
   formData.append('file', file)
+  console.log(formData)
   return request({
     url: '/file/upload',
     method: 'POST',

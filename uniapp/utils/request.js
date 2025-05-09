@@ -1,8 +1,11 @@
 import axios from 'axios'
-
+ 
+import { createUniAppAxiosAdapter } from '@uni-helper/axios-adapter'
 // 创建axios实例
 const request = axios.create({
+  // baseURL: 'http://8.134.184.96:9801/',
   baseURL: '/aqixuan',
+  adapter:createUniAppAxiosAdapter(),
   timeout: 50000
 })
 
