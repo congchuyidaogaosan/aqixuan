@@ -388,8 +388,10 @@ const handleSubmit = async () => {
     
     uni.hideLoading()
     // 返回上一页
-    history.back();
+    // uni.navigateBack(1);
     // uni.navigateBack()
+	uni.navigateBack(1);
+
   } catch (error) {
     console.error('保存失败:', error)
     uni.hideLoading()

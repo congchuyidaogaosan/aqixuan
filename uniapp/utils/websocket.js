@@ -1,14 +1,16 @@
 class WebSocketManager {
   constructor() {
     // 根据环境设置WebSocket地址
+    // this.url = `ws://localhost:9801/imserver` 
     this.url = `ws://localhost:9801/imserver` 
+
     this.socket = null
     this.isConnected = false
     this.reconnectAttempts = 0
     this.maxReconnectAttempts = 5
     this.reconnectInterval = 3000 // 重连间隔时间，单位：毫秒
     this.messageCallbacks = new Map()
-    this.debug = process.env.NODE_ENV === 'development'
+    this.debug = true // 始终启用调试模式
     this.lastMessage = null // 存储最新消息
     
     // 注册默认的消息处理器
@@ -19,7 +21,7 @@ class WebSocketManager {
   registerDefaultHandlers() {
     // 处理聊天消息
     this.onMessage('chat', (data) => {
-      this.debug && console.log('收到聊天消息：', data)
+      console.log('收到聊天消息：', data)
       this.lastMessage = {
         type: 'chat',
         data,
@@ -31,7 +33,7 @@ class WebSocketManager {
 
     // 处理系统通知
     this.onMessage('notification', (data) => {
-      this.debug && console.log('收到系统通知：', data)
+      console.log('收到系统通知：', data)
       this.lastMessage = {
         type: 'notification',
         data,
@@ -43,7 +45,7 @@ class WebSocketManager {
 
     // 处理在线状态变更
     this.onMessage('status', (data) => {
-      this.debug && console.log('收到状态变更：', data)
+      console.log('收到状态变更：', data)
       this.lastMessage = {
         type: 'status',
         data,
@@ -56,23 +58,57 @@ class WebSocketManager {
 
   // 初始化WebSocket连接
   connect(userId) {
+    if (!userId) {
+      console.error('WebSocket连接失败: userId不能为空')
+      uni.$emit('wsError', { message: 'userId不能为空' })
+      return
+    }
+
+    // 尝试将userId转换为字符串
+    const userIdStr = String(userId);
+    console.log('尝试连接WebSocket，用户ID:', userIdStr)
+
     if (this.socket && this.isConnected) {
-      this.debug && console.log('WebSocket已连接')
+      console.log('WebSocket已连接，无需重新连接')
       return
     }
 
     try {
-      this.debug && console.log('正在连接WebSocket:', this.url)
+      console.log('正在连接WebSocket:', `${this.url}/${userIdStr}`)
+      
+      // 先关闭可能存在的连接
+      if (this.socket) {
+        try {
+          this.socket.close()
+        } catch (e) {
+          console.warn('关闭旧连接失败', e)
+        }
+      }
+      
+      // 创建新连接
       this.socket = uni.connectSocket({
-        url: `${this.url}/${userId}`,
-        complete: () => {}
+        url: `${this.url}/${userIdStr}`,
+        success: (res) => {
+          console.log('WebSocket连接请求已发送:', res)
+        },
+        fail: (err) => {
+          console.error('WebSocket连接请求失败:', err)
+          this.isConnected = false
+          uni.$emit('wsError', err)
+        },
+        complete: () => {
+          console.log('WebSocket连接请求已完成')
+        }
       })
 
       // 监听WebSocket连接打开
-      this.socket.onOpen(() => {
-        this.debug && console.log('WebSocket连接已打开')
+      this.socket.onOpen((res) => {
+        console.log('WebSocket连接已打开:', res)
         this.isConnected = true
         this.reconnectAttempts = 0
+        
+        // 发送心跳消息以确认连接
+        this.sendHeartbeat()
         
         // 触发连接成功事件
         uni.$emit('wsConnected')
@@ -89,8 +125,8 @@ class WebSocketManager {
       })
 
       // 监听WebSocket关闭
-      this.socket.onClose(() => {
-        this.debug && console.log('WebSocket连接已关闭')
+      this.socket.onClose((res) => {
+        console.log('WebSocket连接已关闭', res)
         this.isConnected = false
         this.reconnect(userId)
         
@@ -100,24 +136,25 @@ class WebSocketManager {
 
       // 监听WebSocket消息
       this.socket.onMessage((res) => {
+        console.log('收到原始消息数据：', res.data)
         try {
           const message = JSON.parse(res.data)
           this.lastMessage = {
             ...message,
             time: new Date()
           }
-          console.log('收到消息：', this.lastMessage)
+          console.log('解析后的消息：', this.lastMessage)
           
           // 处理心跳消息
           if (message.type === 'heartbeat') {
-            this.debug && console.log('收到心跳消息')
+            console.log('收到心跳消息，连接正常')
             return
           }
           
           // 处理其他消息
           this.handleMessage(message)
         } catch (error) {
-          console.error('解析消息失败：', error)
+          console.error('解析消息失败：', error, '原始数据:', res.data)
         }
       })
 
@@ -127,10 +164,26 @@ class WebSocketManager {
     }
   }
 
+  // 发送心跳消息
+  sendHeartbeat() {
+    const heartbeat = {
+      type: 'heartbeat',
+      sendTime: new Date().getTime()
+    }
+    this.send(heartbeat)
+    
+    // 定时发送心跳
+    setTimeout(() => {
+      if (this.isConnected) {
+        this.sendHeartbeat()
+      }
+    }, 30000) // 30秒一次心跳
+  }
+
   // 重新连接
   reconnect(userId) {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.log('达到最大重连次数')
+      console.log('达到最大重连次数，放弃重连')
       return
     }
 
@@ -149,28 +202,55 @@ class WebSocketManager {
 
   // 处理接收到的消息
   handleMessage(mes) {
-    if (this.debug) {
-      console.log('处理消息：', mes)
-      console.log('消息类型：', mes.type)
-      console.log('消息内容：', mes.message || mes)
+    console.log('处理消息：', mes)
+
+    // 判断消息类型并执行相应处理
+    if (mes.type === 'error') {
+      console.error('收到错误消息:', mes.message);
+      uni.$emit('wsError', mes);
+      return;
+    }
+    
+    if (mes.type === 'system' || mes.type === 'ack' || mes.type === 'sendSuccess' || mes.type === 'offlineMessage') {
+      console.log('收到系统消息:', mes.type, mes.message);
+      uni.$emit('wsSystemMessage', mes);
+      return;
     }
 
     // 获取当前用户ID
     const userInfo = uni.getStorageSync('userInfo')
     const currentUserId = userInfo?.id
-
-    // 如果是聊天消息，判断方向后触发事件
-    const chatMessage =  mes
     
-    console.log('chatMessage', chatMessage.senderId, chatMessage.receiverId, currentUserId)
-    // 添加消息方向标记
-    if(chatMessage.senderId === currentUserId) {
-      chatMessage.direction = 'send' // 发送的消息
-    } else if(chatMessage.receiverId === currentUserId) {
-      chatMessage.direction = 'receive' // 接收的消息
+    if (!currentUserId) {
+      console.warn('处理消息失败：当前用户ID为空')
     }
 
-    this.debug && console.log('触发聊天消息事件：', chatMessage)
+    // 如果是聊天消息，判断方向后触发事件
+    const chatMessage = mes
+    
+    // 转换ID为数字以便比较
+    const senderId = Number(chatMessage.senderId);
+    const receiverId = Number(chatMessage.receiverId);
+    const currentIdNum = Number(currentUserId);
+    
+    console.log('消息方向判断:', {
+      senderId: senderId,
+      receiverId: receiverId,
+      currentUserId: currentIdNum
+    })
+    
+    // 添加消息方向标记
+    if(senderId === currentIdNum) {
+      chatMessage.direction = 'send' // 发送的消息
+      console.log('标记为发送消息')
+    } else if(receiverId === currentIdNum) {
+      chatMessage.direction = 'receive' // 接收的消息
+      console.log('标记为接收消息')
+    } else {
+      console.warn('无法确定消息方向')
+    }
+
+    console.log('触发聊天消息事件：', chatMessage)
     uni.$emit('onChatMessage', chatMessage)
 
     // 处理其他类型的消息
@@ -178,16 +258,18 @@ class WebSocketManager {
     if (callback) {
       callback(mes.message || mes)
     } else {
-      this.debug && console.log('未处理的消息类型：', mes.type, mes)
+      console.log('未找到消息类型处理器：', mes.type, mes)
     }
   }
 
   // 关闭连接
   close() {
-    if (this.socket && this.isConnected) {
+    if (this.socket) {
+      console.log('主动关闭WebSocket连接')
       this.socket.close({
         success: () => {
-          this.debug && console.log('WebSocket连接已关闭')
+          console.log('WebSocket连接已成功关闭')
+          this.isConnected = false
         },
         fail: (error) => {
           console.error('关闭WebSocket连接失败：', error)
@@ -198,30 +280,46 @@ class WebSocketManager {
 
   // 发送消息到WebSocket服务器
   send(message) {
-    if (this.socket && this.isConnected) {
-      try {
-        const jsonMessage = JSON.stringify(message);
-        this.socket.send({
-          data: jsonMessage,
-          success: () => {
-            this.debug && console.log('消息发送成功：', message);
-          },
-          fail: (error) => {
-            console.error('消息发送失败：', error);
-          }
-        });
-      } catch (error) {
-        console.error('消息序列化失败：', error);
-      }
-    } else {
-      console.log('WebSocket未连接，无法发送消息');
+    if (!this.socket) {
+      console.error('WebSocket实例不存在，无法发送消息')
+      return
+    }
+    
+    if (!this.isConnected) {
+      console.error('WebSocket未连接，无法发送消息')
+      return
+    }
+    
+    try {
+      const jsonMessage = typeof message === 'string' ? message : JSON.stringify(message);
+      console.log('发送消息：', jsonMessage)
+      
+      this.socket.send({
+        data: jsonMessage,
+        success: () => {
+          console.log('消息发送成功：', message);
+        },
+        fail: (error) => {
+          console.error('消息发送失败：', error);
+        }
+      });
+    } catch (error) {
+      console.error('消息序列化或发送失败：', error);
     }
   }
-
 
   // 获取最新消息
   getLastMessage() {
     return this.lastMessage
+  }
+  
+  // 获取连接状态
+  getConnectionStatus() {
+    return {
+      isConnected: this.isConnected,
+      reconnectAttempts: this.reconnectAttempts,
+      socketInstance: !!this.socket
+    }
   }
 }
 

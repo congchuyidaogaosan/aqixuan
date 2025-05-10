@@ -90,7 +90,9 @@
 		{
 			"path": "pages/activity-list/activity-list",
 			"style": {
-				"navigationStyle": "custom"
+				"navigationBarTitleText": "活动",
+				"enablePullDownRefresh": true
+
 			}
 		},
 		{

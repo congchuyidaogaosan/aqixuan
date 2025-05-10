@@ -314,7 +314,7 @@ const handleDeleteComment = async (comment) => {
 
 // 返回上一页
 const goBack = () => {
-  history.back();
+  uni.navigateBack(1);
 }
 
 // 下拉刷新

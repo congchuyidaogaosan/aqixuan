@@ -94,7 +94,8 @@ const goToSearch = () => {
 	width: 100%;
 	height: 95vh;
 	background: #f5f5f5;
-	
+	padding-top: calc(var(--status-bar-height) + 20rpx);
+
 	// 页面头部
 	.page-head {
 		width: 100%;
@@ -107,9 +108,9 @@ const goToSearch = () => {
 		right: 0;
 		z-index: 100;
 		box-sizing: border-box;
-		padding-top: calc(var(--status-bar-height) + 20rpx);
 		background: transparent;
-		
+		padding-top: calc(var(--status-bar-height) + 10rpx);
+
 		.search-btn {
 			width: 37rpx;
 			height: 37rpx;

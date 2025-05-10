@@ -8,20 +8,21 @@
       <view class="title">发布活动</view>
       <view class="right"></view>
     </view>
-    
+
     <!-- 表单内容 -->
     <scroll-view class="content" scroll-y>
       <!-- 活动类型 -->
       <view class="form-item" @click="showActivityTypePopup">
         <view class="label">活动类型</view>
         <view class="value">
-          <text :class="{'placeholder': formData.activityType === ''}">
-            {{formData.activityType !== '' ? activityTypes.find(t => t.value === formData.activityType)?.label : '请选择活动类型'}}
+          <text :class="{ 'placeholder': formData.activityType === '' }">
+            {{formData.activityType !== '' ? activityTypes.find(t => t.value === formData.activityType)?.label :
+              '请选择活动类型'}}
           </text>
           <image src="/static/images/arrow-right.png" mode="aspectFit" class="arrow-icon"></image>
         </view>
       </view>
-      
+
       <!-- 添加图片上传 -->
       <view class="form-item">
         <view class="label">活动图片</view>
@@ -36,40 +37,31 @@
           </view>
         </view>
       </view>
-      
+
       <!-- 活动详情 -->
       <view class="form-section">
         <view class="section-title">活动详情</view>
-        
+
         <!-- 活动名称 -->
         <view class="input-item">
-        <input 
-          type="text" 
-          v-model="formData.title" 
-            placeholder="请填写活动名称"
-            placeholder-class="placeholder"
-        />
-      </view>
-      
+          <input type="text" v-model="formData.title" placeholder="请填写活动名称" placeholder-class="placeholder" />
+        </view>
+
         <!-- 活动人数 -->
         <view class="input-item">
-        <input 
-          type="number" 
-          v-model="formData.totalNumber" 
-            placeholder="请填写活动人数(含发起人)"
-            placeholder-class="placeholder"
-        />
-      </view>
-      
+          <input type="number" v-model="formData.totalNumber" placeholder="请填写活动人数(含发起人)"
+            placeholder-class="placeholder" />
+        </view>
+
         <!-- 活动时间 -->
         <view class="time-section">
-        <view class="time-picker">
+          <view class="time-picker">
             <text class="label">开始时间</text>
             <view class="picker-wrapper" @click="showTimePicker('start')">
               <view class="picker-group">
-                <view :class="{'placeholder': !formData.startTime}">
-                  {{formData.startTime ? formatDateTimeString(formData.startTime) : '选择时间'}}
-          </view>
+                <view :class="{ 'placeholder': !formData.startTime }">
+                  {{ formData.startTime ? formatDateTimeString(formData.startTime) : '选择时间' }}
+                </view>
               </view>
               <image src="/static/images/arrow-right.png" mode="aspectFit" class="arrow-icon"></image>
             </view>
@@ -78,55 +70,45 @@
             <text class="label">结束时间</text>
             <view class="picker-wrapper" @click="showTimePicker('end')">
               <view class="picker-group">
-                <view :class="{'placeholder': !formData.endTime}">
-                  {{formData.endTime ? formatDateTimeString(formData.endTime) : '选择时间'}}
+                <view :class="{ 'placeholder': !formData.endTime }">
+                  {{ formData.endTime ? formatDateTimeString(formData.endTime) : '选择时间' }}
                 </view>
               </view>
               <image src="/static/images/arrow-right.png" mode="aspectFit" class="arrow-icon"></image>
+            </view>
           </view>
         </view>
-      </view>
-      
+
         <!-- 活动地点 -->
         <view class="location-section">
           <view class="location-picker" @click="chooseLocation">
             <image src="/static/images/location.png" mode="aspectFit" class="location-icon"></image>
-            <text :class="{'placeholder': !formData.location}">{{formData.location || '请选择活动地点'}}</text>
+            <text :class="{ 'placeholder': !formData.location }">{{ formData.location || '请选择活动地点' }}</text>
             <image src="/static/images/arrow-right.png" mode="aspectFit" class="arrow-icon"></image>
           </view>
         </view>
-        
+
         <!-- 费用类型 -->
         <view class="cost-section">
           <view class="cost-type">
-            <text 
-              :class="['type-btn', {'active': formData.costType === 0}]"
-              @click="handleCostTypeChange('free')"
-            >免费</text>
-            <text 
-              :class="['type-btn', {'active': formData.costType === 1}]"
-              @click="handleCostTypeChange('aa')"
-            >AA</text>
-            <text 
-              :class="['type-btn', {'active': formData.costType === 2}]"
-              @click="handleCostTypeChange('other')"
-            >其他</text>
+            <text :class="['type-btn', { 'active': formData.costType === 0 }]"
+              @click="handleCostTypeChange('free')">免费</text>
+            <text :class="['type-btn', { 'active': formData.costType === 1 }]"
+              @click="handleCostTypeChange('aa')">AA</text>
+            <text :class="['type-btn', { 'active': formData.costType === 2 }]"
+              @click="handleCostTypeChange('other')">其他</text>
           </view>
-          
+
           <view class="deposit-input" v-if="formData.costType === 1 || formData.costType === 2">
-          <input 
-            type="digit" 
-            v-model="formData.cost" 
-              :placeholder="formData.costType === 1 ? '请输入总费用（将平均分配）' : '请输入总费用金额'"
-              placeholder-class="placeholder"
-          />
+            <input type="digit" v-model="formData.cost"
+              :placeholder="formData.costType === 1 ? '请输入总费用（将平均分配）' : '请输入总费用金额'" placeholder-class="placeholder" />
             <text class="unit">元</text>
-        </view>
-          
+          </view>
+
           <view class="cost-tip" v-if="formData.costType === 1">
-            <text>每人预计支付：{{calculateAACost}}元</text>
-      </view>
-      
+            <text>每人预计支付：{{ calculateAACost }}元</text>
+          </view>
+
           <!-- 添加鸽子费输入框 -->
           <view class="penalty-section" v-if="formData.costType !== 0">
             <view class="penalty-title">
@@ -134,36 +116,27 @@
               <text class="penalty-tip">（报名后不参加将扣除该费用）</text>
             </view>
             <view class="deposit-input">
-        <input 
-          type="digit" 
-          v-model="formData.penaltyCost" 
-                placeholder="请输入鸽子费金额"
-                placeholder-class="placeholder"
-        />
+              <input type="digit" v-model="formData.penaltyCost" placeholder="请输入鸽子费金额"
+                placeholder-class="placeholder" />
               <text class="unit">元</text>
             </view>
           </view>
         </view>
-        
+
         <!-- 活动介绍 -->
         <view class="desc-section">
-          <textarea 
-            v-model="formData.description"
-            placeholder="请详细描述活动内容、要求等"
-            placeholder-class="placeholder"
-            maxlength="500"
-            :show-confirm-bar="false"
-          ></textarea>
-          <text class="word-count">{{formData.description.length}}/500</text>
+          <textarea v-model="formData.description" placeholder="请详细描述活动内容、要求等" placeholder-class="placeholder"
+            maxlength="500" :show-confirm-bar="false"></textarea>
+          <text class="word-count">{{ formData.description.length }}/500</text>
         </view>
       </view>
     </scroll-view>
-    
+
     <!-- 底部按钮 -->
     <view class="bottom-btn">
       <button class="publish-btn" @click="handlePublish">立即发布</button>
     </view>
-    
+
     <!-- 活动类型弹窗 -->
     <uni-popup ref="activityTypePopup" type="bottom">
       <view class="popup-content">
@@ -172,19 +145,14 @@
           <text class="close" @click="hideActivityTypePopup">关闭</text>
         </view>
         <view class="popup-body">
-          <view 
-            class="popup-item"
-            v-for="type in activityTypes"
-            :key="type.value"
-            @click="selectActivityType(type)"
-          >
-            <text :class="{'active': formData.activityType === type.value}">{{type.label}}</text>
+          <view class="popup-item" v-for="type in activityTypes" :key="type.value" @click="selectActivityType(type)">
+            <text :class="{ 'active': formData.activityType === type.value }">{{ type.label }}</text>
           </view>
         </view>
       </view>
     </uni-popup>
-    
-    
+
+
     <!-- 时间选择弹窗 -->
     <uni-popup ref="timePopup" type="bottom">
       <view class="popup-content">
@@ -193,25 +161,21 @@
           <text class="close" @click="hideTimePopup">关闭</text>
         </view>
         <view class="picker-view-wrapper">
-          <picker-view
-            :value="currentDateTimeIndexes"
-            class="picker-view"
-            @change="onPickerChange"
-          >
+          <picker-view :value="currentDateTimeIndexes" class="picker-view" @change="onPickerChange">
             <picker-view-column>
-              <view class="item" v-for="year in years" :key="year">{{year}}年</view>
+              <view class="item" v-for="year in years" :key="year">{{ year }}年</view>
             </picker-view-column>
             <picker-view-column>
-              <view class="item" v-for="month in months" :key="month">{{month}}月</view>
+              <view class="item" v-for="month in months" :key="month">{{ month }}月</view>
             </picker-view-column>
             <picker-view-column>
-              <view class="item" v-for="day in days" :key="day">{{day}}日</view>
+              <view class="item" v-for="day in days" :key="day">{{ day }}日</view>
             </picker-view-column>
             <picker-view-column>
-              <view class="item" v-for="hour in hours" :key="hour">{{hour}}时</view>
+              <view class="item" v-for="hour in hours" :key="hour">{{ hour }}时</view>
             </picker-view-column>
             <picker-view-column>
-              <view class="item" v-for="minute in minutes" :key="minute">{{minute}}分</view>
+              <view class="item" v-for="minute in minutes" :key="minute">{{ minute }}分</view>
             </picker-view-column>
           </picker-view>
           <view class="picker-actions">
@@ -226,7 +190,8 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { publishActivity, uploadFile } from '@/api/user'
+import { publishActivity } from '@/api/user'
+import uploadFile from '@/api/upload'
 // 获取当前时间作为默认值
 const now = new Date()
 const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
@@ -327,8 +292,8 @@ const timePopup = ref(null)
 const initTimePickerData = () => {
   // 年份：当前年份到未来3年
   const currentYear = new Date().getFullYear()
-  years.value = Array.from({length: 4}, (_, i) => currentYear + i)
-  
+  years.value = Array.from({ length: 4 }, (_, i) => currentYear + i)
+
   updateMonths()
 }
 
@@ -336,11 +301,11 @@ const initTimePickerData = () => {
 const updateMonths = () => {
   const currentDate = new Date()
   const selectedYear = years.value[currentDateTimeIndexes.value[0]]
-  
+
   if (selectedYear === currentDate.getFullYear()) {
     // 如果是当前年份，则从当前月份开始
     months.value = Array.from(
-      {length: 12 - currentDate.getMonth()}, 
+      { length: 12 - currentDate.getMonth() },
       (_, i) => currentDate.getMonth() + i + 1
     )
     // 如果当前选择的月份小于当前月份，重置为当前月份
@@ -349,9 +314,9 @@ const updateMonths = () => {
     }
   } else {
     // 如果是未来年份，显示所有月份
-    months.value = Array.from({length: 12}, (_, i) => i + 1)
+    months.value = Array.from({ length: 12 }, (_, i) => i + 1)
   }
-  
+
   updateDays()
 }
 
@@ -361,28 +326,28 @@ const updateDays = () => {
   const selectedYear = years.value[currentDateTimeIndexes.value[0]]
   const selectedMonth = months.value[currentDateTimeIndexes.value[1]]
   const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate()
-  
-  if (selectedYear === currentDate.getFullYear() && 
-      selectedMonth === currentDate.getMonth() + 1) {
+
+  if (selectedYear === currentDate.getFullYear() &&
+    selectedMonth === currentDate.getMonth() + 1) {
     // 如果是当前年月，则从当前日期开始
     days.value = Array.from(
-      {length: daysInMonth - currentDate.getDate() + 1}, 
+      { length: daysInMonth - currentDate.getDate() + 1 },
       (_, i) => currentDate.getDate() + i
     )
     // 如果当前选择的日期超出了当月天数或小于当前日期，重置为第一个可选日期
-    if (currentDateTimeIndexes.value[2] >= days.value.length || 
-        currentDateTimeIndexes.value[2] < 0) {
+    if (currentDateTimeIndexes.value[2] >= days.value.length ||
+      currentDateTimeIndexes.value[2] < 0) {
       currentDateTimeIndexes.value[2] = 0
     }
   } else {
     // 如果是未来年月，显示所有日期
-    days.value = Array.from({length: daysInMonth}, (_, i) => i + 1)
+    days.value = Array.from({ length: daysInMonth }, (_, i) => i + 1)
     // 如果当前选择的日期超出了当月天数，重置为当月最后一天
     if (currentDateTimeIndexes.value[2] >= daysInMonth) {
       currentDateTimeIndexes.value[2] = daysInMonth - 1
     }
   }
-  
+
   updateHours()
 }
 
@@ -392,13 +357,13 @@ const updateHours = () => {
   const selectedYear = years.value[currentDateTimeIndexes.value[0]]
   const selectedMonth = months.value[currentDateTimeIndexes.value[1]]
   const selectedDay = days.value[currentDateTimeIndexes.value[2]]
-  
-  if (selectedYear === currentDate.getFullYear() && 
-      selectedMonth === currentDate.getMonth() + 1 && 
-      selectedDay === currentDate.getDate()) {
+
+  if (selectedYear === currentDate.getFullYear() &&
+    selectedMonth === currentDate.getMonth() + 1 &&
+    selectedDay === currentDate.getDate()) {
     // 如果是当前日期，则从当前小时开始
     hours.value = Array.from(
-      {length: 24 - currentDate.getHours()}, 
+      { length: 24 - currentDate.getHours() },
       (_, i) => String(currentDate.getHours() + i).padStart(2, '0')
     )
     // 如果当前选择的小时小于当前小时，重置为当前小时
@@ -407,9 +372,9 @@ const updateHours = () => {
     }
   } else {
     // 如果是未来日期，显示所有小时
-    hours.value = Array.from({length: 24}, (_, i) => String(i).padStart(2, '0'))
+    hours.value = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'))
   }
-  
+
   updateMinutes()
 }
 
@@ -420,14 +385,14 @@ const updateMinutes = () => {
   const selectedMonth = months.value[currentDateTimeIndexes.value[1]]
   const selectedDay = days.value[currentDateTimeIndexes.value[2]]
   const selectedHour = Number(hours.value[currentDateTimeIndexes.value[3]])
-  
-  if (selectedYear === currentDate.getFullYear() && 
-      selectedMonth === currentDate.getMonth() + 1 && 
-      selectedDay === currentDate.getDate() && 
-      selectedHour === currentDate.getHours()) {
+
+  if (selectedYear === currentDate.getFullYear() &&
+    selectedMonth === currentDate.getMonth() + 1 &&
+    selectedDay === currentDate.getDate() &&
+    selectedHour === currentDate.getHours()) {
     // 如果是当前时间，则从当前分钟开始
     minutes.value = Array.from(
-      {length: 60 - currentDate.getMinutes()}, 
+      { length: 60 - currentDate.getMinutes() },
       (_, i) => String(currentDate.getMinutes() + i).padStart(2, '0')
     )
     // 如果当前选择的分钟小于当前分钟，重置为当前分钟
@@ -436,7 +401,7 @@ const updateMinutes = () => {
     }
   } else {
     // 如果是未来时间，显示所有分钟
-    minutes.value = Array.from({length: 60}, (_, i) => String(i).padStart(2, '0'))
+    minutes.value = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'))
   }
 }
 
@@ -444,12 +409,12 @@ const updateMinutes = () => {
 const onPickerChange = (e) => {
   const oldIndexes = [...currentDateTimeIndexes.value]
   const newIndexes = [...e.detail.value]
-  
+
   // 判断哪一列发生了变化
   for (let i = 0; i < 5; i++) {
     if (oldIndexes[i] !== newIndexes[i]) {
       currentDateTimeIndexes.value = newIndexes
-      switch(i) {
+      switch (i) {
         case 0: // 年份变化
           updateMonths()
           break
@@ -471,23 +436,23 @@ const onPickerChange = (e) => {
 // 显示时间选择器
 const showTimePicker = (type) => {
   currentTimeType.value = type
-  let currentDate = type === 'start' ? 
+  let currentDate = type === 'start' ?
     (formData.value.startTime ? new Date(formData.value.startTime) : new Date()) :
     (formData.value.endTime ? new Date(formData.value.endTime) : new Date())
-  
+
   // 如果时间早于当前时间，使用当前时间
   const now = new Date()
   if (currentDate < now) {
     currentDate = now
   }
-  
+
   // 设置当前选中值
   const yearIndex = years.value.indexOf(currentDate.getFullYear())
   const monthIndex = months.value.indexOf(currentDate.getMonth() + 1)
   const dayIndex = days.value.indexOf(currentDate.getDate())
   const hourIndex = hours.value.indexOf(String(currentDate.getHours()).padStart(2, '0'))
   const minuteIndex = minutes.value.indexOf(String(currentDate.getMinutes()).padStart(2, '0'))
-  
+
   currentDateTimeIndexes.value = [
     yearIndex >= 0 ? yearIndex : 0,
     monthIndex >= 0 ? monthIndex : 0,
@@ -495,13 +460,13 @@ const showTimePicker = (type) => {
     hourIndex >= 0 ? hourIndex : 0,
     minuteIndex >= 0 ? minuteIndex : 0
   ]
-  
+
   // 确保所有选项都已更新
   updateMonths()
   updateDays()
   updateHours()
   updateMinutes()
-  
+
   timePopup.value.open()
 }
 
@@ -517,7 +482,7 @@ const confirmDateTime = () => {
   const selectedDay = days.value[currentDateTimeIndexes.value[2]]
   const selectedHour = hours.value[currentDateTimeIndexes.value[3]]
   const selectedMinute = minutes.value[currentDateTimeIndexes.value[4]]
-  
+
   const selectedDate = new Date(
     selectedYear,
     selectedMonth - 1,
@@ -525,7 +490,7 @@ const confirmDateTime = () => {
     Number(selectedHour),
     Number(selectedMinute)
   )
-  
+
   // 再次验证是否早于当前时间
   const currentDate = new Date()
   if (selectedDate < currentDate) {
@@ -535,14 +500,14 @@ const confirmDateTime = () => {
     })
     return
   }
-  
+
   // 直接设置为Date对象
   if (currentTimeType.value === 'start') {
     formData.value.startTime = selectedDate
   } else {
     formData.value.endTime = selectedDate
   }
-  
+
   validateTimeRange()
   hideTimePopup()
 }
@@ -550,10 +515,10 @@ const confirmDateTime = () => {
 // 验证时间范围
 const validateTimeRange = () => {
   if (!formData.value.startTime || !formData.value.endTime) return
-  
+
   const startDateTime = new Date(formData.value.startTime)
   const endDateTime = new Date(formData.value.endTime)
-  
+
   if (endDateTime < startDateTime) {
     uni.showToast({
       title: '结束时间不能早于开始时间',
@@ -585,21 +550,15 @@ const chooseImage = async () => {
     sizeType: ['compressed'],
     sourceType: ['album', 'camera']
   })
-  
-  uni.showLoading({ title: '上传中...' })
+
+  uni.showLoading({ title: '上传中...' });
   
   try {
-    // 上传选中的文件
-    const file = res.tempFiles[0]
-    const blob = new Blob([file], { type: file.type || 'image/jpeg' })
-    const fileToUpload = new File([blob], file.name || 'image.jpg', {
-      type: file.type || 'image/jpeg'
-    })
-    
     // 上传文件
-    const uploadRes = await uploadFile(fileToUpload)
-    if (uploadRes.code === 200) {
-      formData.value.image = uploadRes.data.url
+    const uploadRes = await uploadFile(res)
+    console.log('uploadRes', uploadRes)
+    if (uploadRes.result === "SUCCESS") {
+      formData.value.image = uploadRes.data
       uni.showToast({
         title: '上传成功',
         icon: 'success'
@@ -716,26 +675,26 @@ const handlePublish = () => {
     // 活动图片
     handImg: formData.value.image
   }
-  
+
   // 显示加载提示
   uni.showLoading({
     title: '发布中...',
     mask: true
   })
   console.log('submitData', submitData)
-  
+
   // 调用发布接口
   publishActivity(submitData).then(res => {
     uni.hideLoading()
-      uni.showToast({
-        title: '发布成功',
-        icon: 'success'
-      })
-      // 延迟返回上一页
-      setTimeout(() => {
-        history.back();
-      }, 1500)
-    
+    uni.showToast({
+      title: '发布成功',
+      icon: 'success'
+    })
+    // 延迟返回上一页
+    setTimeout(() => {
+      uni.navigateBack(1);
+    }, 1500)
+
   }).catch(err => {
     uni.hideLoading()
     console.error('发布失败：', err)
@@ -748,7 +707,7 @@ const handlePublish = () => {
 
 // 返回上一页
 const goBack = () => {
-  history.back();
+  uni.navigateBack(1);
 }
 
 // 在 onMounted 中初始化
@@ -758,7 +717,7 @@ onMounted(() => {
 
 // 处理费用类型变化
 const handleCostTypeChange = (type) => {
-  switch(type) {
+  switch (type) {
     case 'free':
       formData.value.costType = 0
       formData.value.cost = 0
@@ -782,7 +741,7 @@ const handleCostTypeChange = (type) => {
 .publish-partner {
   min-height: 100vh;
   background: #f8f8f8;
-  
+
   .nav-header {
     display: flex;
     align-items: center;
@@ -793,33 +752,33 @@ const handleCostTypeChange = (type) => {
     position: sticky;
     top: 0;
     z-index: 100;
-    
+
     .left {
       width: 60rpx;
       height: 60rpx;
       display: flex;
       align-items: center;
-      
+
       .back-icon {
         width: 40rpx;
         height: 40rpx;
       }
     }
-    
+
     .title {
       font-size: 32rpx;
       font-weight: 500;
       color: #333;
     }
-    
+
     .right {
       width: 60rpx;
     }
   }
-  
+
   .content {
     height: calc(100vh - 88rpx - 120rpx);
-    
+
     .form-item {
       display: flex;
       align-items: center;
@@ -827,49 +786,49 @@ const handleCostTypeChange = (type) => {
       padding: 30rpx 20rpx;
       background: #fff;
       margin-bottom: 2rpx;
-      
+
       .label {
         font-size: 28rpx;
         color: #333;
       }
-      
+
       .value {
         display: flex;
         align-items: center;
         gap: 8rpx;
-        
+
         text {
           font-size: 28rpx;
           color: #333;
-          
+
           &.placeholder {
             color: #999;
           }
         }
-        
+
         .arrow-icon {
           width: 32rpx;
           height: 32rpx;
         }
       }
     }
-    
+
     .form-section {
       margin-top: 20rpx;
       background: #fff;
       padding: 0 20rpx;
-      
+
       .section-title {
         padding: 20rpx 0;
         font-size: 28rpx;
         font-weight: 500;
         color: #333;
       }
-      
+
       .input-item {
         padding: 20rpx 0;
         border-bottom: 1rpx solid #f5f5f5;
-        
+
         input {
           width: 100%;
           height: 40rpx;
@@ -877,45 +836,45 @@ const handleCostTypeChange = (type) => {
           color: #333;
         }
       }
-      
+
       .time-section {
         padding: 20rpx 0;
-        
+
         .time-picker {
           display: flex;
           align-items: center;
           justify-content: space-between;
           padding: 20rpx 0;
           border-bottom: 1rpx solid #f5f5f5;
-          
+
           .label {
             font-size: 28rpx;
             color: #333;
             min-width: 140rpx;
           }
-          
+
           .picker-wrapper {
             flex: 1;
             display: flex;
             align-items: center;
             justify-content: flex-end;
             gap: 8rpx;
-            
+
             .picker-group {
               display: flex;
               gap: 20rpx;
-              
+
               view {
                 font-size: 28rpx;
                 color: #333;
                 text-align: center;
-                
+
                 &.placeholder {
                   color: #999;
                 }
               }
             }
-            
+
             .arrow-icon {
               width: 32rpx;
               height: 32rpx;
@@ -924,90 +883,90 @@ const handleCostTypeChange = (type) => {
           }
         }
       }
-      
+
       .location-section {
         padding: 20rpx 0;
         border-bottom: 1rpx solid #f5f5f5;
-        
+
         .location-picker {
           display: flex;
           align-items: center;
           gap: 12rpx;
-          
+
           .location-icon {
             width: 32rpx;
             height: 32rpx;
           }
-          
+
           text {
             flex: 1;
             font-size: 28rpx;
             color: #333;
-            
+
             &.placeholder {
               color: #999;
             }
           }
-          
+
           .arrow-icon {
             width: 32rpx;
             height: 32rpx;
           }
         }
       }
-      
+
       .cost-section {
         padding: 20rpx 0;
-        
+
         .cost-type {
           display: flex;
           gap: 20rpx;
           margin-bottom: 20rpx;
-          
+
           .type-btn {
             padding: 10rpx 30rpx;
             font-size: 26rpx;
             color: #666;
             background: #f5f5f5;
             border-radius: 30rpx;
-            
+
             &.active {
               color: #fff;
               background: #007AFF;
             }
           }
         }
-        
+
         .deposit-input {
           display: flex;
           align-items: center;
           gap: 12rpx;
-          
+
           input {
             flex: 1;
             height: 40rpx;
             font-size: 28rpx;
             color: #333;
           }
-          
+
           .unit {
             font-size: 28rpx;
             color: #666;
           }
         }
       }
-      
+
       .desc-section {
         padding: 20rpx 0;
         position: relative;
-        
+
         textarea {
           width: 100%;
           height: 200rpx;
           font-size: 28rpx;
           color: #333;
         }
-        
+
         .word-count {
           position: absolute;
           right: 0;
@@ -1018,7 +977,7 @@ const handleCostTypeChange = (type) => {
       }
     }
   }
-  
+
   .bottom-btn {
     position: fixed;
     left: 0;
@@ -1026,7 +985,7 @@ const handleCostTypeChange = (type) => {
     bottom: 0;
     padding: 20rpx;
     background: #fff;
-    
+
     .publish-btn {
       width: 100%;
       height: 80rpx;
@@ -1043,39 +1002,39 @@ const handleCostTypeChange = (type) => {
 .popup-content {
   background: #fff;
   border-radius: 20rpx 20rpx 0 0;
-  
+
   .popup-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 30rpx 20rpx;
     border-bottom: 1rpx solid #f5f5f5;
-    
+
     .title {
       font-size: 30rpx;
       font-weight: 500;
       color: #333;
     }
-    
+
     .close {
       font-size: 28rpx;
       color: #999;
     }
   }
-  
+
   .popup-body {
     padding: 20rpx;
     max-height: 60vh;
     overflow-y: auto;
-    
+
     .popup-item {
       padding: 20rpx 0;
       text-align: center;
-      
+
       text {
         font-size: 28rpx;
         color: #333;
-        
+
         &.active {
           color: #007AFF;
         }
@@ -1090,11 +1049,11 @@ const handleCostTypeChange = (type) => {
 
 .picker-view-wrapper {
   background-color: #fff;
-  
+
   .picker-view {
     width: 100%;
     height: 400rpx;
-    
+
     .item {
       line-height: 80rpx;
       text-align: center;
@@ -1102,12 +1061,12 @@ const handleCostTypeChange = (type) => {
       color: #333;
     }
   }
-  
+
   .picker-actions {
     display: flex;
     padding: 20rpx;
     border-top: 1rpx solid #eee;
-    
+
     button {
       flex: 1;
       height: 80rpx;
@@ -1115,12 +1074,12 @@ const handleCostTypeChange = (type) => {
       margin: 0 10rpx;
       font-size: 28rpx;
       border-radius: 40rpx;
-      
+
       &.cancel-btn {
         background: #f5f5f5;
         color: #666;
       }
-      
+
       &.confirm-btn {
         background: #007AFF;
         color: #fff;
@@ -1168,13 +1127,13 @@ const handleCostTypeChange = (type) => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  
+
   .upload-icon {
     width: 48rpx;
     height: 48rpx;
     margin-bottom: 12rpx;
   }
-  
+
   .upload-text {
     font-size: 24rpx;
     color: #999;
@@ -1185,13 +1144,13 @@ const handleCostTypeChange = (type) => {
   position: relative;
   width: 200rpx;
   height: 200rpx;
-  
+
   .preview-image {
     width: 100%;
     height: 100%;
     border-radius: 12rpx;
   }
-  
+
   .delete-btn {
     position: absolute;
     top: -20rpx;
@@ -1203,11 +1162,11 @@ const handleCostTypeChange = (type) => {
     display: flex;
     align-items: center;
     justify-content: center;
-    
+
     .delete-icon {
       width: 24rpx;
       height: 24rpx;
     }
   }
 }
-</style> 
+</style>

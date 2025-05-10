@@ -73,8 +73,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { uploadFile, publishMoment } from '@/api/user.js'
-
+import { publishMoment } from '@/api/user.js'
+import uploadFile from '@/api/upload'
 // 媒体列表
 const mediaList = ref([])
 // 文本内容
@@ -101,18 +101,10 @@ const chooseMedia = async () => {
     uni.showLoading({ title: '上传中...' })
     
     try {
-      // 上传所有选中的文件
-      for (const file of res.tempFiles) {
-        const blob = new Blob([file], { type: file.type || 'image/jpeg' })
-        const fileToUpload = new File([blob], file.name || 'image.jpg', {
-          type: file.type || 'image/jpeg'
-        })
-        
-        const uploadRes = await uploadFile(fileToUpload)
+        const uploadRes = await uploadFile(res)
         mediaList.value.push({
-          url: uploadRes.data.url
+          url: uploadRes.data
         })
-      }
     } catch (error) {
       console.log('上传失败：', error)
       uni.showToast({
@@ -175,7 +167,7 @@ const handlePublish = async () => {
       // 返回上一页并刷新列表
       setTimeout(() => {
         uni.$emit('refreshMoments') // 触发刷新事件
-        history.back();
+        uni.navigateBack(1);
       }, 1500)
     } else {
       uni.showToast({

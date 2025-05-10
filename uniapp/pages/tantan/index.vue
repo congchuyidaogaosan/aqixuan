@@ -14,16 +14,17 @@
 				</view>
 			</movable-view>
 		</movable-area>
-		<view class=""
-			style="position: absolute;z-index: 999999;left: 0;bottom: 0;display: flex;align-items: center;justify-content: space-between;width: 100%;height: 10%;padding: 0 40rpx;box-sizing: border-box;">
+		<view class="bottom-area">
 			<view class="loathe1">
 				<image src="../../static/back.png" style="width: 54upx;height: 54upx;"></image>
 			</view>
 			<view class="loathe" @click="tapLoathe">
-				<view class="iconfont icon-chacha1" :style="{ fontSize: '30rpx' }"></view>
+				<image src="../../static/images/chacha.png" style="width: 54upx;height: 54upx;"></image>
+				<!-- <view class="iconfont icon-chacha1" :style="{ fontSize: '30rpx' }"></view> -->
 			</view>
 			<view class="love" @click="tapLove">
-				<view class="iconfont icon-xinaixin" :style="{ fontSize: '34rpx' }"></view>
+				<image src="../../static/images/xihuan.png" style="width: 54upx;height: 54upx;"></image>
+				<!-- <view class="iconfont icon-xinaixin" :style="{ fontSize: '34rpx' }"></view> -->
 			</view>
 			<!-- <view class="star">
 				<view class="iconfont icon-wujiaoxing1" :style="{ fontSize: '40rpx' }"></view>
@@ -40,7 +41,22 @@
 					ref="cardBox">
 				</card-box>
 			</view>
-
+			<view class="bottom-area">
+			<view class="loathe1">
+				<image src="../../static/back.png" style="width: 54upx;height: 54upx;"></image>
+			</view>
+			<view class="loathe" @click="tapLoathe">
+				<image src="../../static/images/chacha.png" style="width: 54upx;height: 54upx;"></image>
+				<!-- <view class="iconfont icon-chacha1" :style="{ fontSize: '30rpx' }"></view> -->
+			</view>
+			<view class="love" @click="tapLove">
+				<image src="../../static/images/xihuan.png" style="width: 54upx;height: 54upx;"></image>
+				<!-- <view class="iconfont icon-xinaixin" :style="{ fontSize: '34rpx' }"></view> -->
+			</view>
+			<!-- <view class="star">
+				<view class="iconfont icon-wujiaoxing1" :style="{ fontSize: '40rpx' }"></view>
+			</view> -->
+		</view>
 
 		</view>
 		<!-- #endif -->
@@ -316,12 +332,22 @@ export default {
 	height: 100%;
 }
 
+.bottom-area {
+	position: absolute;
+	width: 100%;
+	height: 10%;
+	bottom: 0;
+	z-index: 999999;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0 40rpx;
+	box-sizing: border-box;
+}
+
 .move-view {
 	width: 100%;
-	position: absolute;
 	height: 100%;
-	left: 50%;
-	top: 50%;
 	transform: translate(-50%, -50%);
 	margin-left: 0;
 	margin-top: 0;
@@ -342,6 +368,7 @@ export default {
 	width: 100%;
 	height: 100%;
 }
+
 
 .loathe1 {
 	width: 80rpx;

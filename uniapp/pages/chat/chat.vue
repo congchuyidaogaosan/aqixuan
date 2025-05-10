@@ -97,9 +97,10 @@
 
 <script setup>
 import { ref, onMounted, computed, onUnmounted } from 'vue'
-import { getChatMessages, sendMessage, uploadFile } from '@/api/user'
+import { getChatMessages, sendMessage } from '@/api/user'
 import { formatTime } from '@/utils/date'
 import webSocketManager from '@/utils/websocket'
+import uploadFile from '@/api/upload'
 
 // 用户信息
 const userInfo = ref(uni.getStorageSync('userInfo') || {})
@@ -251,23 +252,16 @@ const chooseImage = async () => {
       count: 1
     })
 
-    console.log('上传图片', res)
-    const file = res.tempFiles[0]
-
-    const blob = new Blob([file], { type: file.type || 'image/jpeg' })
-    const fileToUpload = new File([blob], file.name || 'image.jpg', {
-      type: file.type || 'image/jpeg'
-    })
-
+   
     // 上传图片
-    const uploadRes = await uploadFile(fileToUpload)
+    const uploadRes = await uploadFile(res)
     if (uploadRes.code === 200) {
     console.log('上传图片成功', uploadRes)
       // 发送图片消息
       const message = {
         data: {
           receiverId: userId,
-          content: uploadRes.data.url,
+          content: uploadRes.data,
           messageType: 2,
 
           // messageType: 'image'
@@ -497,7 +491,7 @@ const showTime = (index) => {
 
 // 返回上一页
 const goBack = () => {
-  history.back();
+  uni.navigateBack(1);
   
 }
 

@@ -119,7 +119,7 @@ public class ImageUtil {
             ApplicationHome h = new ApplicationHome(getClass());
             File jarF = h.getSource();
             //在jar包所在目录下生成一个upload文件夹用来存储上传的图片
-            String s1 = jarF.getParentFile().toString()+"/upload/";
+            String s1 = jarF.getParentFile().toString()+"/uploads/";
 
 //            String s1= "D:\\image\\";
 

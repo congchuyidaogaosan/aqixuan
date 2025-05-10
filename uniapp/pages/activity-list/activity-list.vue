@@ -82,7 +82,7 @@
       <view class="activity-item" v-for="(item, index) in activityList" :key="index" @click="goToDetail(item.id, item.userId)">
         <view class="activity-main">
           <!-- 活动图片 -->
-          <image :src="item.handImg || '/static/images/default-activity.png'" mode="aspectFill" class="activity-image"></image>
+          <image :src="item.handImg" mode="aspectFill" class="activity-image"></image>
           
           <!-- 活动基本信息 -->
           <view class="activity-info">
@@ -91,7 +91,7 @@
             
             <!-- 发起人信息 -->
             <view class="organizer-info">
-              <image :src="item.organizer.avatarUrl || '/static/images/default-avatar.png'" mode="aspectFill" class="avatar"></image>
+              <image :src="item.organizer.avatarUrl" mode="aspectFill" class="avatar"></image>
               <text class="nickname">{{item.organizer.nickname}}</text>
             </view>
             
@@ -114,7 +114,7 @@
             
             <!-- 费用信息 -->
             <view class="cost-info" v-if="item.costType !== 0">
-              <text class="cost">{{getCostTypeText(item.costType, item.cost)}}</text>
+              <text class="cost">{{getCostTypeText(item.costType, item.cost, item.totalNumber)}}</text>
               <text class="penalty" v-if="item.penaltyCost > 0">鸽子费{{item.penaltyCost}}元</text>
             </view>
           </view>
@@ -148,6 +148,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+
 import { getActivityList } from '@/api/user'
 
 // 当前位置
@@ -270,14 +272,14 @@ const loadActivityList = () => {
             costType: item.activity.costType,
             penaltyCost: item.activity.penaltyCost,
             status: item.activity.status,
-            handImg: item.activity.handImg,
+            handImg: item.activity.handImg || '/static/images/default-activity.png',
             // 用户信息 - 添加空值检查
             organizer: userExists ? {
               id: item.user.id,
               nickname: item.user.nickname || '未知用户',
               avatarUrl: item.user.avatarUrl || '/static/images/default-avatar.png'
             } : {
-              id: item.activity.userId, // 使用活动中的用户ID代替
+              id: item.activity.userId,
               nickname: '未知用户',
               avatarUrl: '/static/images/default-avatar.png'
             },
@@ -481,7 +483,7 @@ const showTypeFilter = () => {
 }
 
 // 获取费用类型文本
-const getCostTypeText = (costType, cost) => {
+const getCostTypeText = (costType, cost, totalNumber) => {
   switch(costType) {
     case 1:
       return `AA制 每人${(cost / totalNumber).toFixed(2)}元`
@@ -534,6 +536,11 @@ const getFilterText = () => {
 
 onMounted(() => {
   loadActivityList()
+})
+
+// 添加页面显示时的刷新逻辑
+onShow(() => {
+  refreshList()
 })
 </script>
 

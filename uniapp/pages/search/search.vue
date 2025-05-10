@@ -67,14 +67,15 @@ const handleSearch = async () => {
 // 跳转到用户主页
 const goToProfile = (userId) => {
   console.log('跳转到用户主页：', userId)
+
   uni.navigateTo({
-    url: `/pages/profile/profile?userId=${userId}`
+    url: '/pages/profile/profile?userId=' + userId
   })
 }
 
 // 返回上一页
 const goBack = () => {
-  history.back();
+  uni.navigateBack(1);
 }
 
 </script>
