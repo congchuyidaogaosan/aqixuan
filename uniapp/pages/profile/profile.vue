@@ -146,12 +146,12 @@
 
 		<!-- 底部按钮 -->
 		<view class="bottom-btns">
-			<template v-if="currentIsMyProfile">
+			<view v-show="currentIsMyProfile">
 				<button class="action-btn" @click="publishMoment">
 					<image src="/static/images/xiangji.png" mode="aspectFill" class="icon"></image>
 				</button>
-			</template>
-			<template v-else>
+			</view>
+			<view v-show="!currentIsMyProfile" class="other-profile-btns">
 				<!-- 关注 -->
 				<button class="action-btn" :class="{ followed: isFollowed }" @click="handleFollow">
 					<image :src="isFollowed ? '/static/images/yiguanzhu.png' : '/static/images/weiguanzhu.png'"
@@ -161,7 +161,12 @@
 				<button class="action-btn" @click="sendMessage">
 					<image src="/static/images/dazhaohu.png" mode="aspectFill" class="icon"></image>
 				</button>
-			</template>
+			</view>
+			
+			<!-- 调试信息 -->
+			<!-- <view class="debug-info" @click="forceUpdate">
+				<text>当前状态: {{currentIsMyProfile ? '我的资料' : '他人资料'}}</text>
+			</view> -->
 		</view>
 	</view>
 </template>
@@ -170,7 +175,8 @@
 	import {
 		ref,
 		onMounted,
-		watch
+		watch,
+		nextTick
 	} from 'vue'
 	import {
 		onShow,
@@ -251,12 +257,30 @@
 		const currentUser = uni.getStorageSync('userInfo')
 		const currentUserId = currentUser?.id
 		
-		// 判断逻辑
-		const result = !paramsUserId.value || (paramsUserId.value == currentUserId+'')
-		console.log('计算isMyProfile:', {pageUserId: paramsUserId.value, currentUserId, result})
+		// 确保转换为字符串进行比较
+		const currentUserIdStr = String(currentUserId || '')
+		const paramsUserIdStr = String(paramsUserId.value || '')
 		
-		// 更新ref变量
-		currentIsMyProfile.value = result
+		// 判断逻辑：空参数或参数等于当前用户ID
+		const result = !paramsUserId.value || paramsUserIdStr === currentUserIdStr
+		
+		console.log('计算isMyProfile:', {
+			pageUserId: paramsUserIdStr,
+			currentUserId: currentUserIdStr,
+			result,
+			oldValue: currentIsMyProfile.value
+		})
+		
+		// 只有当值真正变化时才更新
+		if (result !== currentIsMyProfile.value) {
+			currentIsMyProfile.value = result
+			console.log('currentIsMyProfile已更新为:', result)
+		}
+		
+		// 使用nextTick确保DOM更新
+		nextTick(() => {
+			console.log('DOM已更新，currentIsMyProfile:', currentIsMyProfile.value)
+		})
 	}
 
 	// 设备宽度 - 初始化为固定值，避免getBoundingClientRect错误
@@ -399,12 +423,12 @@
 						mbti: info.mbti || ''
 					}
 					
-					// 确保在设置数据前updateIsMyProfile已经更新
-					updateIsMyProfile()
-					
 					// 整体替换对象以触发响应式更新
 					userData.value = newUserData
 					console.log("用户信息更新完");
+					
+					// 在数据更新后再次检查状态
+					updateIsMyProfile()
 					
 					// 计算距离
 					const myInfo = uni.getStorageSync('userInfo')
@@ -421,6 +445,10 @@
 					if (info.ip) {
 						await getLocationByIp(info.ip)
 					}
+					
+					// 数据加载完成后再次确认状态
+					await nextTick()
+					updateIsMyProfile()
 				}
 			} else {
 				// 获取当前登录用户信息
@@ -444,11 +472,12 @@
 							mbti: info.mbti || ''
 						}
 						
-						// 确保在设置数据前updateIsMyProfile已经更新
-						updateIsMyProfile()
-						
 						// 整体替换对象以触发响应式更新
 						userData.value = newUserData
+						
+						// 在数据更新后再次检查状态
+						updateIsMyProfile()
+						await nextTick()
 					} catch (error) {
 						// 创建新对象然后整体替换
 						const newUserData = {
@@ -466,17 +495,22 @@
 							mbti: info.mbti || ''
 						}
 						
-						// 确保在设置数据前updateIsMyProfile已经更新
-						updateIsMyProfile()
-						
 						// 整体替换对象以触发响应式更新
 						userData.value = newUserData
+						
+						// 在数据更新后再次检查状态
+						updateIsMyProfile()
+						await nextTick()
 					}
 				}
 				// 获取IP地址信息
 				if (info?.ip) {
 					await getLocationByIp(info.ip)
 				}
+				
+				// 数据加载完成后再次确认状态
+				await nextTick()
+				updateIsMyProfile()
 			}
 		} catch (error) {
 			console.error('获取用户信息失败：', error)
@@ -665,51 +699,67 @@
 		currentIsMyProfile.value = false
 	}
 
-	// 页面加载时获取用户信息和设备信息
-	onMounted(async () => {
-		// 获取页面参数
-		const pages = getCurrentPages()
-		const currentPage = pages[pages.length - 1]
-		const optionsUserId = currentPage.options?.userId
-
-		// 设置用户ID参数
-		paramsUserId.value = optionsUserId
-		console.log('onMounted paramsUserId:', paramsUserId.value)
-		
-		// 更新isMyProfile状态
+	// 添加一个强制更新函数
+	const forceUpdate = () => {
 		updateIsMyProfile()
-        
-     userId = paramsUserId.value || uni.getStorageSync('userInfo')?.id
+		uni.showToast({
+			title: `当前状态: ${currentIsMyProfile.value ? '我的资料' : '他人资料'}`,
+			icon: 'none'
+		})
+	}
 
-		// 获取用户信息
-		console.log('onMounted userId:', userId)
-		await loadUserInfo(userId)
-		
-		// 获取动态列表
-		await loadMoments(userId)
-
-		// 如果不是自己的主页，检查关注状态
-		if (!currentIsMyProfile.value && userId) {
-			await checkFollowStatus(userId)
-		}
-	})
-
-	// onShow(async (options) => {
+	// 页面加载时获取用户信息和设备信息
+	// onMounted(async () => {
 	// 	// 获取页面参数
- //    let pages = getCurrentPages();
- //  // 数组中索引最大的页面--当前页面
- //    let currentPage = pages[pages.length-1];
- //  // 打印出当前页面中的 options
- //    console.log(currentPage.options.userId)	
+	// 	const pages = getCurrentPages()
+	// 	const currentPage = pages[pages.length - 1]
+	// 	const optionsUserId = currentPage.options?.userId
+
+	// 	// 设置用户ID参数
+	// 	paramsUserId.value = optionsUserId
+	// 	console.log('onMounted paramsUserId:', paramsUserId.value)
+		
+	// 	// 更新isMyProfile状态
+	// 	updateIsMyProfile()
+		
+	// 	// 强制刷新状态
+	// 	await nextTick()
+        
+	// 	const userId = paramsUserId.value || uni.getStorageSync('userInfo')?.id
+
+	// 	// 获取用户信息
+	// 	console.log('onMounted userId:', userId)
+	// 	await loadUserInfo(userId)
+		
+	// 	// 获取动态列表
+	// 	await loadMoments(userId)
+
+	// 	// 如果不是自己的主页，检查关注状态
+	// 	if (!currentIsMyProfile.value && userId) {
+	// 		await checkFollowStatus(userId)
+	// 	}
+	// })
+
+	// onShow(async () => {
+	// 	// 获取页面参数
+	// 	let pages = getCurrentPages();
+	// 	// 数组中索引最大的页面--当前页面
+	// 	let currentPage = pages[pages.length-1];
+	// 	// 打印出当前页面中的 options
+	// 	console.log(currentPage.options?.userId)	
 	// 	const optionsUserId = currentPage.options?.userId
 
 	// 	// 设置用户ID参数
 	// 	paramsUserId.value = optionsUserId
 	// 	console.log('onShow paramsUserId:', paramsUserId.value)
+		
 	// 	// 更新isMyProfile状态
 	// 	updateIsMyProfile()
 		
- //    const userId = paramsUserId.value || uni.getStorageSync('userInfo')?.id
+	// 	// 强制刷新状态
+	// 	await nextTick()
+		
+	// 	const userId = paramsUserId.value || uni.getStorageSync('userInfo')?.id
 		
 	// 	console.log('onShow userId:', userId)
 	// 	// 获取用户信息
@@ -722,6 +772,10 @@
 	// 	if (!currentIsMyProfile.value && userId) {
 	// 		await checkFollowStatus(userId)
 	// 	}
+		
+	// 	// 再次确保状态更新
+	// 	updateIsMyProfile()
+	// 	await nextTick()
 	// })
 
 	onLoad(async (options) => {
@@ -733,8 +787,11 @@
 		
 		// 更新isMyProfile状态
 		updateIsMyProfile()
+		
+		// 强制刷新状态
+		await nextTick()
 
-		const userId = paramsUserId.value || uni.getStorageSync('userInfo')?.id
+		const userId = paramsUserId.value ? paramsUserId.value : uni.getStorageSync('userInfo')?.id
 
 		console.log('onLoad userId:', userId)
 		// 获取用户信息
@@ -747,6 +804,10 @@
 		if (!currentIsMyProfile.value && userId) {
 			await checkFollowStatus(userId)
 		}
+		
+		// 再次确保状态更新
+		updateIsMyProfile()
+		await nextTick()
 	})
 
 	// 当页面卸载时清空所有数据
@@ -1039,7 +1100,8 @@
 				box-shadow: 0 4rpx 16rpx rgba(143, 139, 250, 0.3); // 添加带颜色的阴影
 				transition: all 0.3s ease; // 添加过渡效果
 
-				&:active {
+
+  				&:active {
 					transform: scale(0.95); // 点击时缩小效果
 				}
 
@@ -1058,6 +1120,33 @@
 					box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
 				}
 			}
+
+      .other-profile-btns{
+        display: flex;
+        gap: 20rpx;
+
+
+  				&:active {
+					transform: scale(0.95); // 点击时缩小效果
+				}
+
+				&::after {
+					border: none;
+				}
+
+				.icon {
+					width: 48rpx;
+					height: 48rpx;
+				}
+
+				// 已关注状态的样式
+				&.followed {
+					background: linear-gradient(135deg, #F0F0F0, #E0E0E0); // 灰色渐变
+					box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+				}
+      }
 		}
+
+		
 	}
 </style>

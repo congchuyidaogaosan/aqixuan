@@ -229,45 +229,128 @@ public class ActivityController {
         return Result.ok(activitySignupAndUsers);
     }
 
+    
     @GetMapping("find/{id}")
     public Result find(@PathVariable("id") Integer id, HttpSession session) {
-        HashMap<String, Object> hashMap1 = new HashMap<>();
-        Activity byId = activityService.getById(id);
-        List<ActivitySignup> activity_id=null;
-        hashMap1.put("activity",byId);
+        // 创建返回结果的Map
+        HashMap<String, Object> resultMap = new HashMap<>();
+        
+        // 1. 获取活动详情
+        Activity activity = activityService.getById(id);
+        if (activity == null) {
+            return Result.fail("活动不存在");
+        }
+        resultMap.put("activity", activity);
+        
+        // 2. 获取活动创建者信息
         try {
-            activity_id = activitySignupService.list(new QueryWrapper<ActivitySignup>().eq("activity_id", byId.getId()));
-
-        }catch (Exception e){
-            System.out.println(e);
-            return Result.ok("数据为null");
-        }
-
-
-        ArrayList<Integer> objects = new ArrayList<>();
-
-        for (ActivitySignup activitySignup : activity_id) {
-            Integer activitySignupUserId = activitySignup.getUserId();
-            objects.add(activitySignupUserId);
-
-        }
-        List<UserDTO> users = userService.joinUserAvatar(objects);
-        HashMap<Integer, UserDTO> hashMap = new HashMap<>();
-
-        for (UserDTO user : users) {
-            hashMap.put(user.getId(), user);
-        }
-        ArrayList<ActivitySignupAndUser> activitySignupAndUsers = new ArrayList<>();
-
-        for (ActivitySignup activitySignup1 : activity_id) {
-            if (hashMap.containsKey(activitySignup1.getUserId())) {
-                ActivitySignupAndUser activitySignupAndUser = new ActivitySignupAndUser(activitySignup1, hashMap.get(activitySignup1.getUserId()));
-                activitySignupAndUsers.add(activitySignupAndUser);
+            User activityCreator = userService.getById(activity.getUserId());
+            if (activityCreator != null) {
+                UserDTO creatorDTO = new UserDTO();
+                creatorDTO.setId(activityCreator.getId());
+                creatorDTO.setNickname(activityCreator.getNickname());
+                
+                // 获取创建者头像
+                List<String> creatorAvatars = userAvatarService.getAvatarList(activityCreator.getId(), 1);
+                if (creatorAvatars != null && !creatorAvatars.isEmpty()) {
+                    creatorDTO.setAvatarUrl(creatorAvatars.get(0));
+                } else {
+                    creatorDTO.setAvatarUrl("/static/images/default-avatar.png");
+                }
+                
+                resultMap.put("creator", creatorDTO);
             }
+        } catch (Exception e) {
+            System.out.println("获取活动创建者信息失败: " + e.getMessage());
         }
-        hashMap1.put("ActivitySignupAndUserList",activitySignupAndUsers);
-        return Result.ok(hashMap1);
-
+        
+        // 3. 获取活动报名用户信息
+        List<ActivitySignup> signupList = null;
+        try {
+            // 按报名时间降序排序
+            QueryWrapper<ActivitySignup> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("activity_id", activity.getId())
+                       .orderByDesc("created_at");
+            
+            signupList = activitySignupService.list(queryWrapper);
+            System.out.println("活动ID " + id + " 的报名人数: " + (signupList != null ? signupList.size() : 0));
+            
+            if (signupList == null || signupList.isEmpty()) {
+                resultMap.put("participants", new ArrayList<>());
+                return Result.ok(resultMap);
+            }
+        } catch (Exception e) {
+            System.out.println("获取活动报名列表失败: " + e.getMessage());
+            e.printStackTrace();
+            resultMap.put("participants", new ArrayList<>());
+            return Result.ok(resultMap);
+        }
+        
+        // 4. 获取所有报名用户的ID
+        ArrayList<Integer> userIds = new ArrayList<>();
+        for (ActivitySignup signup : signupList) {
+            userIds.add(signup.getUserId());
+        }
+        
+        // 5. 批量获取用户详细信息（包含头像）
+        List<UserDTO> usersList = userService.joinUserAvatar(userIds);
+        
+        // 创建用户ID到用户信息的映射，方便查找
+        HashMap<Integer, UserDTO> userMap = new HashMap<>();
+        for (UserDTO user : usersList) {
+            userMap.put(user.getId(), user);
+        }
+        
+        // 6. 组装报名用户信息列表
+        ArrayList<ActivitySignupAndUser> participantsList = new ArrayList<>();
+        for (ActivitySignup signup : signupList) {
+            Integer userId = signup.getUserId();
+            UserDTO userDTO = userMap.get(userId);
+            
+            if (userDTO == null) {
+                // 如果在映射中找不到用户，尝试单独获取
+                User user = userService.getById(userId);
+                if (user != null) {
+                    userDTO = new UserDTO();
+                    userDTO.setId(user.getId());
+                    userDTO.setNickname(user.getNickname() != null ? user.getNickname() : "用户" + user.getId());
+                    
+                    // 获取用户头像
+                    try {
+                        List<String> avatars = userAvatarService.getAvatarList(user.getId(), 1);
+                        if (avatars != null && !avatars.isEmpty()) {
+                            userDTO.setAvatarUrl(avatars.get(0));
+                        } else {
+                            userDTO.setAvatarUrl("/static/images/default-avatar.png");
+                        }
+                    } catch (Exception e) {
+                        userDTO.setAvatarUrl("/static/images/default-avatar.png");
+                        System.out.println("获取用户 " + user.getId() + " 的头像失败: " + e.getMessage());
+                    }
+                } else {
+                    // 用户不存在，创建一个默认用户DTO
+                    userDTO = new UserDTO();
+                    userDTO.setId(userId);
+                    userDTO.setNickname("未知用户");
+                    userDTO.setAvatarUrl("/static/images/default-avatar.png");
+                }
+            }
+            
+            // 确保用户头像不为空
+            if (userDTO.getAvatarUrl() == null || userDTO.getAvatarUrl().isEmpty()) {
+                userDTO.setAvatarUrl("/static/images/default-avatar.png");
+            }
+            
+            // 创建并添加ActivitySignupAndUser对象
+            ActivitySignupAndUser signupAndUser = new ActivitySignupAndUser(signup, userDTO);
+            participantsList.add(signupAndUser);
+        }
+        
+        // 7. 将参与者列表添加到结果中
+        resultMap.put("participants", participantsList);
+        
+        // 8. 返回结果
+        return Result.ok(resultMap);
     }
 
     @PostMapping("save")

@@ -3,11 +3,29 @@
 		<!-- #ifndef APP-PLUS -->
 		<movable-area class="move-area">
 			<movable-view id="move" class="move-view" v-for="(item, index) in dataList" :key="item._id"
-				:style="{ zIndex: `${index === 0 ? 999 : 998 - index}` }" direction="all" :x="item.moveX"
-				:y="item.moveY" out-of-bounds :disabled="index != 0" :animation="item.animation" @tap="tapCard(item)"
-				@touchend="touchend" @touchmove="touchMove" @touchstart="touchStart">
+				:style="{ 
+					zIndex: `${index === 0 ? 999 : 998 - index}`,
+					width: `${100 - index * 3}%`,
+					height: `${100 - index * 3}%`
+				}" 
+				direction="all" 
+				:x="item.moveX"
+				:y="item.moveY" 
+				out-of-bounds 
+				:disabled="index != 0" 
+				:animation="item.animation" 
+				@tap="tapCard(item)"
+				@touchend="touchend" 
+				@touchmove="touchMove" 
+				@touchstart="touchStart">
 				<view class="cardBox" :animation="animationData[index]"
-					:style="{ transform: index < number ? `scale(${1 - (1 - scale.x) * index},${1 - (1 - scale.y) * index}) translate(${translate.x * index}px, ${translate.y * index}px)` : `scale(${1 - (1 - scale.x) * (number - 1)},${1 - (1 - scale.y) * (number - 1)}) translate(${translate.x * (number - 1)}px, ${translate.y * (number - 1)}px)`, opacity: index < number ? `${1 - (1 - opacity) * index}` : `${1 - (1 - opacity) * (number - 1)}` }">
+					:style="{ 
+						transform: index < number ? 
+							`scale(${1 - (1 - scale.x) * index}) translate(${translate.x * index}px, ${translate.y * index}px)` 
+							: 
+							`scale(${1 - (1 - scale.x) * (number - 1)}) translate(${translate.x * (number - 1)}px, ${translate.y * (number - 1)}px)`, 
+						opacity: index < number ? `${1 - (1 - opacity) * index}` : `${1 - (1 - opacity) * (number - 1)}`
+					}">
 					<card-box :item="item"
 						ref="cardBox">
 					</card-box>
@@ -35,13 +53,24 @@
 		<view class="move-view" :key="item._id" @touchend="touchend" @tap="tapCard(item)"
 			v-for="(item, index) in dataList" @touchmove="touchMove" @touchstart="touchStart"
 			:animation="animationData[index]"
-			:style="{ transform: index < number ? `rotate(${rotate * index}deg) scale(${1 - (1 - scale.x) * index},${1 - (1 - scale.y) * index}) skew(${skew.x * index}deg, ${skew.y * index}deg) translate(${translate.x * index}px, ${translate.y * index}px)` : `rotate(${rotate * (number - 1)}deg) scale(${1 - (1 - scale.x) * (number - 1)},${1 - (1 - scale.y) * (number - 1)}) skew(${skew.x * (number - 1)}deg, ${skew.y * (number - 1)}deg) translate(${translate.x * (number - 1)}px, ${translate.y * (number - 1)}px)`, zIndex: `${99999 - item._id}`, opacity: index < number ? `${1 - (1 - opacity) * index}` : `${1 - (1 - opacity) * (number - 1)}` }">
-			<view class="cardBox">
+			:style="{ 
+				transform: index < number ? 
+					`rotate(${rotate * index}deg) scale(${1 - (1 - scale.x) * index},${1 - (1 - scale.y) * index}) translate(${translate.x * index}px, ${translate.y * index}px)` 
+					: 
+					`rotate(${rotate * (number - 1)}deg) scale(${1 - (1 - scale.x) * (number - 1)},${1 - (1 - scale.y) * (number - 1)}) translate(${translate.x * (number - 1)}px, ${translate.y * (number - 1)}px)`, 
+				zIndex: `${99999 - index}`, 
+				opacity: index < number ? `${1 - (1 - opacity) * index}` : `${1 - (1 - opacity) * (number - 1)}`,
+				width: `${100 - index * 3}%`,
+				height: `${100 - index * 3}%`
+			}">
+			<view class="cardBox" :style="{ transform: `scale(${1 - index * 0.02})` }">
 				<card-box :item="item"
 					ref="cardBox">
 				</card-box>
 			</view>
-			<view class="bottom-area">
+		</view>
+		
+		<view class="bottom-area">
 			<view class="loathe1">
 				<image src="../../static/back.png" style="width: 54upx;height: 54upx;"></image>
 			</view>
@@ -56,8 +85,6 @@
 			<!-- <view class="star">
 				<view class="iconfont icon-wujiaoxing1" :style="{ fontSize: '40rpx' }"></view>
 			</view> -->
-		</view>
-
 		</view>
 		<!-- #endif -->
 	</view>
@@ -92,8 +119,11 @@ export default {
 		//设置初始参数
 		init() {
 			this.number = 3 //card 3
-			this.translate = { x: 0, y: 0 } // 移除y轴位移
-			this.scale = { x: 0.92, y: 0.92 } // 设置缩放比例
+			this.translate = { x: 0, y: 5 } // 减小y轴位移，让卡片更紧凑
+			this.scale = { x: 0.92, y: 0.92 } // 设置更小的缩放比例，使层叠卡片更大
+			this.rotate = 0.3 // 减小旋转角度
+			this.skew = { x: 0, y: 0 } // 添加倾斜角度值
+			this.opacity = 0.95 // 设置较高的透明度递减
 			this.type = true
 			this.delMoveD = uni.getSystemInfoSync().screenWidth * 2 // 设置删除移动距离
 			this.touchMoveD = uni.getSystemInfoSync().screenWidth / 4 // 设置触摸移动距离
@@ -140,28 +170,32 @@ export default {
 
 			this.animationData[0] = this.touchAnimation.export()
 
-			//其他card动画优化
-			if (!this.moveAnimation) {
-				this.moveAnimation = uni.createAnimation({
-					duration: 0,
-					timingFunction: 'linear'
-				})
-			}
-
-			//计算其他卡片的缩放和位移
-			let d = this.moveX * this.moveX + this.moveY * this.moveY
-			let ratio = Math.sqrt(d) / this.touchMoveD
-			ratio = ratio > 1 ? 1 : ratio
-
-			// 只对第二张卡片应用动画
-			if (this.dataList.length > 1) {
-				this.moveAnimation
-					.scale(1 - (1 - this.scale.x) * ratio, 1 - (1 - this.scale.y) * ratio)
-					.translateX(this.translate.x * ratio)
-					.translateY(this.translate.y * ratio)
+			// 为剩余卡片创建动画
+			for(let i = 1; i < Math.min(this.dataList.length, this.number); i++) {
+				if(!this['moveAnimation'+i]) {
+					this['moveAnimation'+i] = uni.createAnimation({
+						duration: 0,
+						timingFunction: 'linear'
+					})
+				}
+				
+				// 计算当前卡片应该前进的程度
+				let d = this.moveX * this.moveX + this.moveY * this.moveY
+				let ratio = Math.sqrt(d) / this.touchMoveD
+				ratio = ratio > 1 ? 1 : ratio
+				
+				// 前一张卡片的比例
+				const prevScale = 1 - (1 - this.scale.x) * (i-1)
+				// 当前卡片的目标比例
+				const targetScale = 1 - (1 - this.scale.x) * (i-1) * (1-ratio)
+				
+				this['moveAnimation'+i]
+					.scale(targetScale, targetScale)
+					.translateX(this.translate.x * (i-ratio))
+					.translateY(this.translate.y * (i-ratio))
 					.step({ immediate: true })
-
-				this.animationData[1] = this.moveAnimation.export()
+				
+				this.animationData[i] = this['moveAnimation'+i].export()
 			}
 
 			this.moveJudge(this.moveX, this.moveY, ratio)
@@ -222,6 +256,25 @@ export default {
 				.step()
 
 			this.animationData[0] = this.delanimation.export()
+			
+			// 为剩余卡片添加前进动画
+			for(let i = 1; i < Math.min(this.dataList.length, this.number); i++) {
+				if(!this['cardAnimationUp'+i]) {
+					this['cardAnimationUp'+i] = uni.createAnimation({
+						duration: this.delTime,
+						timingFunction: 'ease-out'
+					})
+				}
+				
+				// 当第一张卡片消失时，后面的卡片应该放大并前进
+				this['cardAnimationUp'+i]
+					.scale(1 - (1 - this.scale.x) * (i-1), 1 - (1 - this.scale.y) * (i-1))
+					.translateX(this.translate.x * (i-1))
+					.translateY(this.translate.y * (i-1))
+					.step()
+				
+				this.animationData[i] = this['cardAnimationUp'+i].export()
+			}
 
 			setTimeout(() => {
 				this.delCard(this.moveX, this.moveY)
@@ -235,6 +288,13 @@ export default {
 				this.touchAnimation = null
 				this.moveAnimation = null
 				this.delanimation = null
+				
+				// 清除其他动画
+				for(let i = 1; i < this.number; i++) {
+					this['moveAnimation'+i] = null
+					this['cardAnimationUp'+i] = null
+				}
+				
 				this.animationData = {}
 
 				if (this.type) {
@@ -330,6 +390,9 @@ export default {
 	position: absolute;
 	width: 100%;
 	height: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
 
 .bottom-area {
@@ -346,12 +409,12 @@ export default {
 }
 
 .move-view {
+	position: absolute;
 	width: 100%;
 	height: 100%;
-	transform: translate(-50%, -50%);
-	margin-left: 0;
-	margin-top: 0;
-	transition: none; // 移除默认过渡
+	display: flex;
+	justify-content: center;
+	align-items: center;
 	will-change: transform; // 提示浏览器这个元素会频繁变化
 	backface-visibility: hidden; // 防止3D变换时的闪烁
 	-webkit-backface-visibility: hidden;
@@ -363,12 +426,11 @@ export default {
 
 .cardBox {
 	position: relative;
-	// width: 600rpx;
-	// height: 900rpx;
+	// 设置基础尺寸，由父元素的style动态缩放
 	width: 100%;
 	height: 100%;
+	
 }
-
 
 .loathe1 {
 	width: 80rpx;

@@ -161,6 +161,8 @@
 		longitude: 0
 	})
 
+	const optionsActivityId = ref(0)
+
 	// 参与者列表
 	const participants = ref([])
 
@@ -298,68 +300,103 @@
 
 		getActivityDetailApi(activityId)
 			.then(res => {
-				console.log(res);
+				console.log("后端返回数据:", res);
 				if (res) {
-					getUserInfoById(res.activity.userId).then(userInfo => {
-						console.log(userInfo);
-						const activity = res.activity
-						activityInfo.value = {
-							id: activity.id,
-							userId: activity.userId,
-							userInfo: userInfo.data,
-							activityType: Number(activity.activityType),
-							title: activity.title,
-							description: activity.description,
-							location: activity.location,
-							totalNumber: activity.totalNumber,
-							currentNumber: activity.currentNumber,
-							startTime: activity.startTime,
-							endTime: activity.endTime,
-							cost: activity.cost,
-							costType: activity.costType,
-							penaltyCost: activity.penaltyCost,
-							status: activity.status,
-							handImg: activity.handImg
-						}
-						console.log(activityInfo.value);
-
-						// 处理经纬度
-						if (activity.ip) {
-							const [longitude, latitude] = activity.ip.split(',')
-							activityInfo.value.latitude = Number(latitude)
-							activityInfo.value.longitude = Number(longitude)
-						}
-
-						// 处理报名列表
-						participants.value = res.ActivitySignupAndUserList.map(item => ({
-							id: item.activitySignup.id,
-							avatar: item.user?.avatarUrl ||
-								'/static/images/default-avatar.png',
-							nickname: item.user?.nickname || '未知用户',
-							joinTime: item.activitySignup.createdAt,
-							status: Number(item.activitySignup.status),
-							userId: item.user.id
-						}))
-
-						// 检查当前用户是否已报名
-						const currentUserId = getCurrentUserId()
-						hasJoined.value = res.ActivitySignupAndUserList.some(item =>
-							item.user.id === currentUserId
-						)
-					})
-					// 处理活动信息
-
+					// 1. 获取活动信息
+					const activity = res.activity;
+					
+					// 2. 获取创建者信息
+					const creator = res.creator || {};
+					
+					// 如果没有创建者信息，再请求一次
+					if (!creator || !creator.id) {
+						getUserInfoById(activity.userId).then(userInfo => {
+							console.log("单独获取的创建者信息:", userInfo);
+							
+							// 更新活动信息对象
+							updateActivityInfo(activity, userInfo.data);
+						}).catch(err => {
+							console.error("获取创建者信息失败:", err);
+							
+							// 创建默认的创建者信息对象
+							const defaultCreator = {
+								id: activity.userId,
+								nickname: "未知用户",
+								avatarUrl: "/static/images/default-avatar.png"
+							};
+							
+							// 更新活动信息对象
+							updateActivityInfo(activity, defaultCreator);
+						});
+					} else {
+						// 直接更新活动信息对象
+						updateActivityInfo(activity, creator);
+					}
+					
+					// 3. 处理报名列表
+					const participantsList = res.participants || [];
+					console.log("报名列表:", participantsList);
+					
+					participants.value = participantsList.map(item => ({
+						id: item.activitySignup.id,
+						avatar: item.user?.avatarUrl || '/static/images/default-avatar.png',
+						nickname: item.user?.nickname || '未知用户',
+						joinTime: item.signupTime || item.activitySignup.createdAt, // 使用新的signupTime字段
+						status: Number(item.activitySignup.status),
+						userId: item.user.id
+					}));
+					
+					// 4. 检查当前用户是否已报名
+					const currentUserId = getCurrentUserId();
+					hasJoined.value = participantsList.some(item => 
+						item.user.id === currentUserId
+					);
 				}
 			})
 			.catch(err => {
 				uni.showToast({
 					title: err.message || '加载失败',
 					icon: 'none'
-				})
+				});
+				console.error("获取活动详情失败:", err);
 			})
 			.finally(() => {
-				uni.hideLoading()
-			})
+				uni.hideLoading();
+			});
+	}
+	
+	// 辅助函数：更新活动信息对象
+	const updateActivityInfo = (activity, creator) => {
+		activityInfo.value = {
+			id: activity.id,
+			userId: activity.userId,
+			userInfo: {
+				id: creator.id,
+				nickname: creator.nickname || "未知用户",
+				handImg: creator.avatarUrl || "/static/images/default-avatar.png"
+			},
+			activityType: Number(activity.activityType),
+			title: activity.title,
+			description: activity.description,
+			location: activity.location,
+			totalNumber: activity.totalNumber,
+			currentNumber: activity.currentNumber,
+			startTime: activity.startTime,
+			endTime: activity.endTime,
+			cost: activity.cost,
+			costType: activity.costType,
+			penaltyCost: activity.penaltyCost,
+			status: activity.status,
+			handImg: activity.handImg || "/static/images/default-activity.png"
+		};
+		console.log("更新后的活动信息:", activityInfo.value);
+		
+		// 处理经纬度
+		if (activity.ip) {
+			const [longitude, latitude] = activity.ip.split(',');
+			activityInfo.value.latitude = Number(latitude);
+			activityInfo.value.longitude = Number(longitude);
+		}
 	}
 
 	// 返回上一页
@@ -368,26 +405,26 @@
 	}
 
 	// 页面加载时获取活动详情
-	onMounted(() => {
-		const pages = getCurrentPages()
-		const currentPage = pages[pages.length - 1]
-		const activityId = currentPage.options.id
-		getActivityDetail(activityId)
-	})
+	// onMounted(() => {
+	// 	const pages = getCurrentPages()
+	// 	const currentPage = pages[pages.length - 1]
+	// 	const activityId = currentPage.options.id
+	// 	getActivityDetail(activityId)
+	// })
 	
-	onShow((options)=> {
+	onShow(()=> {
 		// 获取活动详情
 		// const pages`` = getCurrentPages()
-		var activityId = options.id;
-		console.log(activityId)
+		// var activityId = options.id;
+		// console.log(activityId)
 		// const currentPage = pages[pages.length - 1]
 		// const activityId = currentPage.options.id
-		getActivityDetail(activityId)
+		getActivityDetail(optionsActivityId.value)
 	})
 	
 	onLoad((options)=>{
-	    var activityId = options.id;
-		getActivityDetail(activityId)
+	    optionsActivityId.value = options.id;
+		getActivityDetail(optionsActivityId.value)
 		
 	})
 

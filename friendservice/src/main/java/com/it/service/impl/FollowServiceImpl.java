@@ -103,12 +103,15 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow>
 
         String substring = stringBuilder.substring(0, stringBuilder.length() - 1);
 
-        List<Results> data = positioningController.CalculateTwoPlacesAll(substring, byId.getIpAddress()).getData();
+        // 高德
+//        List<Results> data = positioningController.CalculateTwoPlacesAll(substring, byId.getIpAddress()).getData();
 
         for (int a = 0; a < records.size(); a++) {
-            Results results = data.get(a);
+            // 将高德结果加入返回中
+//            Results results = data.get(a);
             FollowAllDTO followAllDTO = records.get(a);
-            followAllDTO.setPositioning(results.getDistance());
+            // 将高德结果加入返回中
+//            followAllDTO.setPositioning(results.getDistance());
         }
 
 

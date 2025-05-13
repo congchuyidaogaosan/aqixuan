@@ -165,6 +165,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { formatTime } from '@/utils/date.js'
+import { onShow, onLoad } from '@dcloudio/uni-app'
+
 import { 
   getMomentDetail,
   likeMoment, 
@@ -180,15 +182,21 @@ const showCommentInput = ref(false)
 const replyTo = ref(null)
 const commentContent = ref('')
 const userInfo = ref(uni.getStorageSync('userInfo') || {})
+const momentId = ref(null)
+
+onLoad((options) => {
+  momentId.value = options.id
+})
+
+onShow(() => {
+  loadMomentDetail()
+})
 
 // 获取动态详情
 const loadMomentDetail = async () => {
   try {
-    const pages = getCurrentPages()
-    const currentPage = pages[pages.length - 1]
-    const momentId = currentPage.options?.momentId
     
-    if (!momentId) {
+    if (!momentId.value) {
       uni.showToast({
         title: '参数错误',
         icon: 'none'
@@ -196,7 +204,7 @@ const loadMomentDetail = async () => {
       return
     }
 
-    const res = await getMomentDetail(momentId)
+    const res = await getMomentDetail(momentId.value)
     if (res && res.length > 0) {
       // 获取用户信息
       const userRes = await getUserInfoById(res[0].userId)
@@ -331,9 +339,14 @@ const previewImage = (urls, current) => {
   })
 }
 
-onMounted(() => {
-  loadMomentDetail()
+onLoad((options)=>{
+	momentId.value = options.momentId;
+	loadMomentDetail();
 })
+
+// onMounted(() => {
+//   loadMomentDetail()
+// })
 </script>
 
 <style lang="less" scoped>

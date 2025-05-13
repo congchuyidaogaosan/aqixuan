@@ -97,6 +97,8 @@
 
 <script setup>
 import { ref, onMounted, computed, onUnmounted } from 'vue'
+import { onShow, onLoad } from '@dcloudio/uni-app'
+
 import { getChatMessages, sendMessage } from '@/api/user'
 import { formatTime } from '@/utils/date'
 import webSocketManager from '@/utils/websocket'
@@ -106,9 +108,11 @@ import uploadFile from '@/api/upload'
 const userInfo = ref(uni.getStorageSync('userInfo') || {})
 
 // 页面参数
-const pages = getCurrentPages()
-const currentPage = pages[pages.length - 1]
-const { userId, nickname, avatar } = currentPage.options
+const userId = ref('')
+const nickname = ref('')
+const avatar = ref('')
+
+
 
 // 消息列表
 const messageList = ref([])
@@ -128,6 +132,14 @@ const showMorePanel = ref(false)
 // 录音相关
 const isRecording = ref(false)
 
+
+onLoad((options)=>{
+	console.log(options);
+	userId.value = options.userId;
+    nickname.value = options.nickname;
+    avatar.value = options.avatar;
+})
+
 // 加载消息记录
 const loadMessages = async (isRefresh = false) => {
   try {
@@ -138,12 +150,13 @@ const loadMessages = async (isRefresh = false) => {
 
     loadingStatus.value = 'loading'
     const params = {
-      chatId: userId,
+      chatId: userId.value,
       page: page.value,
       pageSize: pageSize.value
     }
 
     const res = await getChatMessages(params)
+	console.log('获取消息记录：', res);
     if (res && res.page) {
       const { records, total } = res.page
 
@@ -194,7 +207,7 @@ const sendTextMessage = async () => {
   try {
     const message = {
       data: {
-        receiverId: userId,
+        receiverId: userId.value,
         content: inputContent.value,
         messageType: 1
       }
@@ -255,12 +268,12 @@ const chooseImage = async () => {
    
     // 上传图片
     const uploadRes = await uploadFile(res)
-    if (uploadRes.code === 200) {
+    if (uploadRes.result === "SUCCESS") {
     console.log('上传图片成功', uploadRes)
       // 发送图片消息
       const message = {
         data: {
-          receiverId: userId,
+          receiverId: userId.value,
           content: uploadRes.data,
           messageType: 2,
 
@@ -371,7 +384,7 @@ const stopRecording = () => {
           // 发送语音消息
           const message = {
             data: {
-              receiverId: userId,
+              receiverId: userId.value,
               content: uploadRes.data.url,
               messageType: 3,
               duration: res.duration || 1
@@ -527,7 +540,7 @@ const handleChatMessage = (data) => {
   console.log('handleChatMessage', data)
   
   const currentUserId = Number(userInfo.value.id)
-  const otherUserId = Number(userId)
+  const otherUserId = Number(userId.value)
   const messageSenderId = Number(data.senderId)
   const messageReceiverId = Number(data.receiverId)
 

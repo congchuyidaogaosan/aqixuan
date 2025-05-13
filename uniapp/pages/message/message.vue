@@ -79,11 +79,11 @@ const loadMessages = async (isRefresh = false) => {
     const res = await getMessageList(params)
     console.log('res', res)
     if (res) {
-      if (isRefresh) {
+      // if (isRefresh) {
         messageList.value = res
-      } else {
-        messageList.value = [...messageList.value, ...res]
-      }
+      // } else {
+        // messageList.value = [...messageList.value, ...res]
+      // }
       
       // 更新加载状态
       if (res.length < pageSize.value) {

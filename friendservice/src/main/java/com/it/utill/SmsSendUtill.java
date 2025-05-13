@@ -55,13 +55,10 @@ public class SmsSendUtill {
     }
 
     public Result<?> goDuanXin(@NotNull String phone) {
-
         String key = randomStringGenerator.getSubString(10);
-
         String randoNumber = generateRandomNumber.getRandoNumber(6);
         System.out.println("subString" + key + " ： randoNumber " + randoNumber);
         redisTemplate.opsForValue().set(key, randoNumber, 5, TimeUnit.MINUTES);
-
         String host = "https://gyytz.market.alicloudapi.com";
         String path = "/sms/smsSend";
         String method = "POST";
@@ -72,13 +69,10 @@ public class SmsSendUtill {
         Map<String, String> querys = new HashMap<String, String>();
         querys.put("mobile", phone);
         querys.put("param", "**code**:" + randoNumber + ",**minute**:5");
-
-//smsSignId（短信前缀）和templateId（短信模板），可登录国阳云控制台自助申请。参考文档：http://help.guoyangyun.com/Problem/Qm.html
+        //smsSignId（短信前缀）和templateId（短信模板），可登录国阳云控制台自助申请。参考文档：http://help.guoyangyun.com/Problem/Qm.html
         querys.put("smsSignId", "2e65b1bb3d054466b82f0c9d125465e2");
         querys.put("templateId", "908e94ccf08b4476ba6c876d13f084ad");
         Map<String, String> bodys = new HashMap<String, String>();
-
-
         try {
             /**
              * 重要提示如下:
@@ -94,15 +88,11 @@ public class SmsSendUtill {
             phoneReturn.setInfoDate(new Date());
             phoneReturn.setKey(key);
             phoneReturn.setPhone(phone);
-
-
             return Result.ok(phoneReturn);
         } catch (Exception e) {
             e.printStackTrace();
             return Result.fail(e.toString());
         }
-
-
     }
 
     public Result<User> isDuanXin(@NotNull String phone, @NotNull String code, @NotNull String key) {
