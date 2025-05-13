@@ -154,6 +154,13 @@
 			"style": {
 				"navigationBarTitleText": "注销账号"
 			}
+		},
+		{
+			"path": "pages/blacklist/blacklist",
+			"style": {
+				"navigationStyle": "custom",
+				"enablePullDownRefresh": false
+			}
 		}
 	],
 	"globalStyle": {

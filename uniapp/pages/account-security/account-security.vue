@@ -43,7 +43,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-
+import { onLoad, onShow } from '@dcloudio/uni-app'
 // 用户手机号码
 const phoneNumber = ref('')
 // 实名认证状态
@@ -51,7 +51,23 @@ const isVerified = ref(false)
 const verificationStatus = ref('未认证')
 
 // 获取用户信息
-onMounted(async () => {
+// onMounted(async () => {
+// 	const userInfo = uni.getStorageSync('userInfo')
+// 	if (userInfo) {
+// 		phoneNumber.value = userInfo.phone || ''
+// 		isVerified.value = userInfo.isVerified || false
+// 		verificationStatus.value = isVerified.value ? '已认证' : '未认证'
+// 	}
+// })
+onLoad(() => {
+	const userInfo = uni.getStorageSync('userInfo')
+	if (userInfo) {
+		phoneNumber.value = userInfo.phone || ''
+		isVerified.value = userInfo.isVerified || false
+		verificationStatus.value = isVerified.value ? '已认证' : '未认证'
+	}
+})
+onShow(() => {
 	const userInfo = uni.getStorageSync('userInfo')
 	if (userInfo) {
 		phoneNumber.value = userInfo.phone || ''

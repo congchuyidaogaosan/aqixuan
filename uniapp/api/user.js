@@ -274,6 +274,40 @@ const api = {
       method: 'GET',
       params: data
     })
+  },
+  // 添加用户到黑名单
+  addToBlacklist: (data) => {
+    return request({
+      url: '/BlackList/save',
+      method: 'POST',
+      data
+    })
+  },
+
+  // 获取用户的黑名单列表
+  getUserBlacklist: () => {
+    return request({
+      url: `/BlackList/getUserBlacklist`,
+      method: 'GET'
+    })
+  },
+
+  // 检查用户是否在黑名单中
+  checkInBlacklist: (targetUserId) => {
+    return request({
+      url: '/BlackList/checkInBlacklist',
+      method: 'GET',
+      params: { targetUserId }
+    })
+  },
+
+  // 从黑名单中移除用户
+  removeFromBlacklist: (blockedUserId) => {
+    return request({
+      url: '/BlackList/removeFromBlacklist',
+      method: 'POST',
+      params: { blockedUserId }
+    })
   }
 }
 // 发送验证码
@@ -369,11 +403,38 @@ export const findUserByName = (nickname) => {
 }
 
 // 获取用户信息
-export const getUserInfo = (userId) => {
-  return request({
-    url: `/user/find/${userId}`,
-    method: 'GET'
-  })
+export const getUserInfo = async (userId) => {
+  try {
+    const res = await request({
+      url: `/user/find/${userId}`,
+      method: 'GET'
+    });
+    
+    if (res.code === 200) {
+      // 处理返回数据结构适配
+      if (res.data && typeof res.data === 'object' && res.data.data && res.data.avatars) {
+        // 新API结构：返回带有data和avatars的对象
+        return {
+          code: 200,
+          data: {
+            ...res.data.data,
+            avatars: res.data.avatars || []
+          }
+        };
+      } else {
+        // 兼容现有API结构
+        return res;
+      }
+    }
+    return res;
+  } catch (error) {
+    console.error('获取用户信息失败：', error);
+    return {
+      code: 500,
+      data: null,
+      msg: error.message || '获取用户信息失败'
+    };
+  }
 }
 
 // 获取用户信息有头像
@@ -768,10 +829,54 @@ export const getChatMessages = async (params) => {
 export const realNameAuth = async (data) => {
   try {
     const res = await api.realNameAuth(data)
-    return res.code === 200 ? res.data : null
+    return res.code === 200 ? res : null
   } catch (e) {
     console.log('实名认证失败：', e)
     return null
+  }
+}
+
+// 添加用户到黑名单
+export const addToBlacklist = async (data) => {
+  try {
+    const res = await api.addToBlacklist(data)
+    return res.code === 200 ? res.data : null
+  } catch (e) {
+    console.error('添加黑名单失败：', e)
+    return null
+  }
+}
+
+// 获取用户的黑名单列表
+export const getUserBlacklist = async () => {
+  try {
+    const res = await api.getUserBlacklist()
+    return res.code === 200 ? res.data : []
+  } catch (e) {
+    console.error('获取黑名单列表失败：', e)
+    return []
+  }
+}
+
+// 检查用户是否在黑名单中
+export const checkInBlacklist = async (targetUserId) => {
+  try {
+    const res = await api.checkInBlacklist(targetUserId)
+    return res.code === 200 ? res.data : { isInTargetBlacklist: false, isInUserBlacklist: false }
+  } catch (e) {
+    console.error('检查黑名单状态失败：', e)
+    return { isInTargetBlacklist: false, isInUserBlacklist: false }
+  }
+}
+
+// 从黑名单中移除用户
+export const removeFromBlacklist = async (blockedUserId) => {
+  try {
+    const res = await api.removeFromBlacklist(blockedUserId)
+    return res.code === 200
+  } catch (e) {
+    console.error('移除黑名单失败：', e)
+    return false
   }
 }
 

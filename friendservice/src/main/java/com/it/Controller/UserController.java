@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -83,8 +84,31 @@ public class UserController {
 
     @GetMapping("find/{id}")
     public Result find(@PathVariable("id") Integer id) {
-        User byId = userService.getById(id);
-        return Result.ok(byId);
+        // 获取用户基本信息
+        User user = userService.getById(id);
+        
+        if (user != null) {
+            // 查询用户的头像列表
+            QueryWrapper<UserAvatar> avatarQueryWrapper = new QueryWrapper<>();
+            avatarQueryWrapper.eq("user_id", user.getId());
+            avatarQueryWrapper.orderByAsc("sort_order"); // 按排序顺序获取
+            List<UserAvatar> avatars = userAvatarService.list(avatarQueryWrapper);
+            
+            // 设置主头像
+            if (!avatars.isEmpty()) {
+                UserAvatar mainAvatar = avatars.get(0);
+                user.setHandImg(mainAvatar.getAvatarUrl());
+            }
+            
+            // 创建返回数据结构
+            Map<String, Object> result = new HashMap<>();
+            result.put("data", user);
+            result.put("avatars", avatars);
+            
+            return Result.ok(result);
+        }
+        
+        return Result.ok(user);
     }
 
     // 按照昵称搜索

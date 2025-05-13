@@ -103,12 +103,12 @@ public class User implements Serializable {
     /**
      * 是否实名认证
      */
-    private Boolean isVerified;
+    private Integer isVerified;
 
     /**
      * 是否注销
      */
-    private Boolean isDeleted;
+    private Integer isDeleted;
 
     /**
      * 注销时间

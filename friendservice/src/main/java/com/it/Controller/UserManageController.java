@@ -76,8 +76,8 @@ public class UserManageController {
     @PostMapping("create")
     public Result create(@RequestBody User user) {
         // 设置默认值
-        user.setIsVerified(false);
-        user.setIsDeleted(false);
+        user.setIsVerified(0);
+        user.setIsDeleted(0);
         user.setCreatedAt(new Date());
         user.setUpdatedAt(new Date());
         

@@ -6,6 +6,11 @@
 			<view class="back-btn" @click="goBack">
 				<image src="/static/images/fanhui.png" mode="aspectFit" class="icon"></image>
 			</view>
+			
+			<!-- 右上角菜单按钮 - 仅在查看他人主页时显示 -->
+			<view class="menu-btn" @click="showPopup" v-if="!currentIsMyProfile">
+				<image src="/static/images/more.png" mode="aspectFit" class="icon"></image>
+			</view>
 		</view>
 
 		<!-- 头像轮播和基本信息区域 -->
@@ -151,7 +156,7 @@
 					<image src="/static/images/xiangji.png" mode="aspectFill" class="icon"></image>
 				</button>
 			</view>
-			<view v-show="!currentIsMyProfile" class="other-profile-btns">
+			<view v-show="!currentIsMyProfile && !isInBlacklist && !isInTargetBlacklist" class="other-profile-btns">
 				<!-- 关注 -->
 				<button class="action-btn" :class="{ followed: isFollowed }" @click="handleFollow">
 					<image :src="isFollowed ? '/static/images/yiguanzhu.png' : '/static/images/weiguanzhu.png'"
@@ -163,11 +168,51 @@
 				</button>
 			</view>
 			
+			<!-- 黑名单状态提示 -->
+			<view v-if="!currentIsMyProfile && (isInBlacklist || isInTargetBlacklist)" class="blacklist-status">
+				<text v-if="isInBlacklist" class="blacklist-text">已将该用户拉黑</text>
+				<text v-else-if="isInTargetBlacklist" class="blacklist-text">您已被该用户拉黑</text>
+			</view>
+			
 			<!-- 调试信息 -->
 			<!-- <view class="debug-info" @click="forceUpdate">
 				<text>当前状态: {{currentIsMyProfile ? '我的资料' : '他人资料'}}</text>
 			</view> -->
 		</view>
+		
+		<!-- 操作弹窗 -->
+		<uni-popup ref="popup" type="bottom" background-color="#f5f5f5">
+			<view class="popup-content">
+				<view class="popup-title">选择操作</view>
+				
+				<view class="popup-options">
+					<view class="option-item" @click="addUserToBlacklist">
+						<view class="option-btn blacklist-btn">
+							<image :src="isInBlacklist ? '/static/images/unblacklist.png' : '/static/images/blacklist.png'" mode="aspectFill" class="option-icon"></image>
+						</view>
+						<text class="option-text">{{isInBlacklist ? '移出黑名单' : '拉黑用户'}}</text>
+					</view>
+					
+					<!-- 
+					<view class="option-item" @click="reportUser">
+						<view class="option-btn report-btn">
+							<image src="/static/images/report.png" mode="aspectFill" class="option-icon"></image>
+						</view>
+						<text class="option-text">举报</text>
+					</view>
+					
+					<view class="option-item" @click="shareUser">
+						<view class="option-btn share-btn">
+							<image src="/static/images/share.png" mode="aspectFill" class="option-icon"></image>
+						</view>
+						<text class="option-text">分享</text>
+					</view>
+					-->
+				</view>
+        <!-- 取消按钮 -->
+					<view class="cancel-btn" @click="closePopup">取消</view>
+			</view>
+		</uni-popup>
 	</view>
 </template>
 
@@ -193,7 +238,10 @@
 		unfollowUser,
 		checkFollow,
 		getMomentList,
-		getMomentListByUserId
+		getMomentListByUserId,
+		addToBlacklist,
+		checkInBlacklist,
+		removeFromBlacklist
 	} from '@/api/user.js'
 	import {
 		calculateDistance,
@@ -309,6 +357,10 @@
 	const isFollowed = ref(false)
 	const followed = ref({})
 
+	// 黑名单状态
+	const isInBlacklist = ref(false)
+	const isInTargetBlacklist = ref(false)
+
 	// 动态列表数据
 	const loadingStatus = ref('more')
 	const refreshing = ref(false)
@@ -400,17 +452,16 @@
 		try {
 			if (userId) {
 				console.log(userId);
-				const [userRes, avatarRes] = await Promise.all([
+				const [userRes] = await Promise.all([
 					fetchUserInfo(userId),
-					getUserAvatars(userId)
 				])
-				console.log(userRes,avatarRes);
-				if (userRes.data) {
+				console.log(userRes);
+				
 					const info = userRes.data
 					// 创建新对象然后整体替换
 					const newUserData = {
 						...info,
-						avatars: avatarRes.data || [],
+						avatars: userRes.data.avatars || [],
 						interests: typeof info.interests === 'string' ? info.interests.split('、') : info.interests || [],
 						constellation: calculateConstellation(info.birthday) || '',
 						nickname: info.nickname || '',
@@ -449,7 +500,7 @@
 					// 数据加载完成后再次确认状态
 					await nextTick()
 					updateIsMyProfile()
-				}
+				
 			} else {
 				// 获取当前登录用户信息
 				const info = uni.getStorageSync('userInfo')
@@ -626,6 +677,41 @@
 		}
 	}
 
+	// 检查黑名单状态
+	const checkBlacklistStatus = async (targetUserId) => {
+		if (!targetUserId) return
+		
+		try {
+			const res = await checkInBlacklist(targetUserId)
+			console.log('黑名单检查结果：', res)
+			
+			// 用户是否将对方拉黑
+			isInBlacklist.value = res.isInUserBlacklist || false
+			// 用户是否被对方拉黑
+			isInTargetBlacklist.value = res.isInTargetBlacklist || false
+			
+			// 如果被对方拉黑，显示提示
+			if (isInTargetBlacklist.value) {
+				uni.showToast({
+					title: '您已被该用户拉黑',
+					icon: 'none',
+					duration: 2000
+				})
+			}
+			
+			// 如果已拉黑对方，显示状态并禁用相关按钮
+			if (isInBlacklist.value) {
+				uni.showToast({
+					title: '您已将该用户拉黑',
+					icon: 'none',
+					duration: 2000
+				})
+			}
+		} catch (error) {
+			console.error('检查黑名单状态失败：', error)
+		}
+	}
+
 	// 处理关注/取消关注
 	const handleFollow = async () => {
 		if (!userData.value.id) return
@@ -708,75 +794,126 @@
 		})
 	}
 
-	// 页面加载时获取用户信息和设备信息
-	// onMounted(async () => {
-	// 	// 获取页面参数
-	// 	const pages = getCurrentPages()
-	// 	const currentPage = pages[pages.length - 1]
-	// 	const optionsUserId = currentPage.options?.userId
+	// 显示操作菜单
+	const showPopup = () => {
+		if (!userData.value || !userData.value.id) return;
+		proxy.$refs.popup.open('bottom');
+	}
 
-	// 	// 设置用户ID参数
-	// 	paramsUserId.value = optionsUserId
-	// 	console.log('onMounted paramsUserId:', paramsUserId.value)
-		
-	// 	// 更新isMyProfile状态
-	// 	updateIsMyProfile()
-		
-	// 	// 强制刷新状态
-	// 	await nextTick()
-        
-	// 	const userId = paramsUserId.value || uni.getStorageSync('userInfo')?.id
+	// 关闭弹窗
+	const closePopup = () => {
+		proxy.$refs.popup.close();
+	}
 
-	// 	// 获取用户信息
-	// 	console.log('onMounted userId:', userId)
-	// 	await loadUserInfo(userId)
+	// 拉黑用户方法
+	const addUserToBlacklist = async () => {
+		if (!userData.value || !userData.value.id) return;
+		closePopup(); // 先关闭弹窗
 		
-	// 	// 获取动态列表
-	// 	await loadMoments(userId)
+		// 根据当前黑名单状态决定执行添加还是移除操作
+		if (isInBlacklist.value) {
+			// 移除黑名单操作
+			uni.showModal({
+				title: '确认移除',
+				content: `确定将"${userData.value.nickname || '该用户'}"从黑名单中移除吗？`,
+				confirmText: '确定移除',
+				confirmColor: '#007AFF',
+				success: async function (res) {
+					if (res.confirm) {
+						try {
+							// 获取当前登录用户信息
+							const userInfo = uni.getStorageSync('userInfo');
+							if (!userInfo || !userInfo.id) {
+								uni.showToast({
+									title: '请先登录',
+									icon: 'none'
+								});
+								return;
+							}
+							
+							// 调用API从黑名单中移除
+							const result = await removeFromBlacklist(userData.value.id);
+							
+							if (result) {
+								// 更新黑名单状态
+								isInBlacklist.value = false;
+								
+								uni.showToast({
+									title: '已从黑名单中移除',
+									icon: 'success'
+								});
+							} else {
+								throw new Error('从黑名单中移除失败');
+							}
+						} catch (error) {
+							console.error('移除黑名单失败:', error);
+							uni.showToast({
+								title: '操作失败，请稍后重试',
+								icon: 'none'
+							});
+						}
+					}
+				}
+			});
+		} else {
+			// 添加黑名单操作
+			uni.showModal({
+				title: '确认拉黑',
+				content: `确定将"${userData.value.nickname || '该用户'}"加入黑名单吗？加入黑名单后，TA将无法查看您的资料，也无法向您发送消息。`,
+				confirmText: '确定拉黑',
+				confirmColor: '#FF3B30',
+				success: async function (res) {
+					if (res.confirm) {
+						try {
+							// 获取当前登录用户信息
+							const userInfo = uni.getStorageSync('userInfo');
+							if (!userInfo || !userInfo.id) {
+								uni.showToast({
+									title: '请先登录',
+									icon: 'none'
+								});
+								return;
+							}
+							
+							// 创建黑名单对象
+							const blacklistData = {
+								blockedUserId: userData.value.id
+							};
+							
+							// 调用API添加黑名单
+							const result = await addToBlacklist(blacklistData);
+							
+							if (result) {
+								// 更新黑名单状态
+								isInBlacklist.value = true;
+								
+								uni.showToast({
+									title: '已加入黑名单',
+									icon: 'success'
+								});
+								// 返回上一页
+								setTimeout(() => {
+									uni.navigateBack();
+								}, 1500);
+							} else {
+								throw new Error('添加黑名单失败');
+							}
+						} catch (error) {
+							console.error('拉黑用户失败:', error);
+							uni.showToast({
+								title: '操作失败，请稍后重试',
+								icon: 'none'
+							});
+						}
+					}
+				}
+			});
+		}
+	}
 
-	// 	// 如果不是自己的主页，检查关注状态
-	// 	if (!currentIsMyProfile.value && userId) {
-	// 		await checkFollowStatus(userId)
-	// 	}
-	// })
-
-	// onShow(async () => {
-	// 	// 获取页面参数
-	// 	let pages = getCurrentPages();
-	// 	// 数组中索引最大的页面--当前页面
-	// 	let currentPage = pages[pages.length-1];
-	// 	// 打印出当前页面中的 options
-	// 	console.log(currentPage.options?.userId)	
-	// 	const optionsUserId = currentPage.options?.userId
-
-	// 	// 设置用户ID参数
-	// 	paramsUserId.value = optionsUserId
-	// 	console.log('onShow paramsUserId:', paramsUserId.value)
-		
-	// 	// 更新isMyProfile状态
-	// 	updateIsMyProfile()
-		
-	// 	// 强制刷新状态
-	// 	await nextTick()
-		
-	// 	const userId = paramsUserId.value || uni.getStorageSync('userInfo')?.id
-		
-	// 	console.log('onShow userId:', userId)
-	// 	// 获取用户信息
-	// 	await loadUserInfo(userId)
-		
-	// 	// 获取动态列表
-	// 	await loadMoments(userId)
-
-	// 	// 如果不是自己的主页，检查关注状态
-	// 	if (!currentIsMyProfile.value && userId) {
-	// 		await checkFollowStatus(userId)
-	// 	}
-		
-	// 	// 再次确保状态更新
-	// 	updateIsMyProfile()
-	// 	await nextTick()
-	// })
+	// 获取Vue实例的代理对象，用于访问ref
+	import { getCurrentInstance } from 'vue';
+	const { proxy } = getCurrentInstance();
 
 	onLoad(async (options) => {
 		// 获取页面参数
@@ -800,14 +937,23 @@
 		// 获取动态列表
 		await loadMoments(userId)
 
-		// 如果不是自己的主页，检查关注状态
+		// 如果不是自己的主页，检查关注状态和黑名单状态
 		if (!currentIsMyProfile.value && userId) {
 			await checkFollowStatus(userId)
+			await checkBlacklistStatus(userId)
 		}
 		
 		// 再次确保状态更新
 		updateIsMyProfile()
 		await nextTick()
+	})
+	
+	// 页面每次显示时更新黑名单状态
+	onShow(async () => {
+		// 如果是查看他人的资料页，则重新检查黑名单状态
+		if (!currentIsMyProfile.value && paramsUserId.value) {
+			await checkBlacklistStatus(paramsUserId.value)
+		}
 	})
 
 	// 当页面卸载时清空所有数据
@@ -848,6 +994,24 @@
 
 				.icon {
 					width: 100%; // 使用100%以填充容器
+					height: 100%;
+				}
+			}
+
+			// 右上角菜单按钮 - 仅在查看他人主页时显示
+			.menu-btn {
+				position: absolute;
+				top: calc(var(--status-bar-height) + 30rpx);
+				right: 20rpx;
+				width: 37rpx;
+				height: 37rpx;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				pointer-events: auto;
+
+				.icon {
+					width: 100%;
 					height: 100%;
 				}
 			}
@@ -1147,6 +1311,82 @@
       }
 		}
 
-		
+		// 弹窗样式
+		:deep(.uni-popup) {
+			z-index: 999;
+			
+			.popup-content {
+				padding: 30rpx;
+				
+				.popup-title {
+					font-size: 28rpx;
+					color: #999;
+					text-align: center;
+					margin-bottom: 30rpx;
+				}
+				
+				.popup-options {
+					display: flex;
+					justify-content: flex-start;
+					margin-bottom: 40rpx;
+					padding: 0 30rpx;
+					
+					.option-item {
+						display: flex;
+						flex-direction: column;
+						align-items: center;
+						margin-right: 60rpx;
+						
+						.option-btn {
+							width: 100rpx;
+							height: 100rpx;
+							border-radius: 50%;
+							background-color: #f5f5f5;
+							display: flex;
+							align-items: center;
+							justify-content: center;
+							margin-bottom: 20rpx;
+							
+							&.blacklist-btn {
+								background-color: #ffffff;
+							}
+							
+							&.report-btn {
+								// background-color: #FF9500;
+							}
+							
+							&.share-btn {
+								// background-color: #34C759;
+							}
+							
+							.option-icon {
+								width: 48rpx;
+								height: 48rpx;
+							}
+						}
+						
+						.option-text {
+							font-size: 26rpx;
+							color: #333;
+						}
+					}
+				}
+				
+				.cancel-btn {
+					height: 90rpx;
+					line-height: 90rpx;
+					text-align: center;
+					font-size: 32rpx;
+					color: #333;
+					background-color: #ffffff;
+					border-radius: 45rpx;
+					box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+					
+					&:active {
+						opacity: 0.8;
+					}
+				}
+			}
+		}
 	}
 </style>

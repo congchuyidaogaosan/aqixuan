@@ -3,12 +3,14 @@ package com.it.Controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.it.domain.*;
+import com.it.domain.Blacklist;
 import com.it.domain.DTO.ActivitySignupAndUser;
 import com.it.domain.DTO.UserDTO;
 import com.it.domain.common.Result;
 import com.it.domain.common.ResultCodeEnum;
 import com.it.service.ActivityService;
 import com.it.service.ActivitySignupService;
+import com.it.service.BlacklistService;
 import com.it.service.UserAvatarService;
 import com.it.service.UserService;
 import com.it.utill.TokenUtil;
@@ -39,9 +41,24 @@ public class ActivityController {
 
     @Autowired
     private UserAvatarService userAvatarService;
+    
+    @Autowired
+    private BlacklistService blacklistService;
 
     @RequestMapping("list/{current}/{size}")
-    public Result list(@PathVariable("size") Integer size, @PathVariable("current") Integer current, @RequestBody Activity activity) {
+    public Result list(@PathVariable("size") Integer size, @PathVariable("current") Integer current, @RequestBody Activity activity, HttpServletRequest request) {
+        // 获取当前用户ID
+        String token = request.getHeader("token");
+        Integer currentUserId = null;
+        
+        if (token != null && !token.isEmpty()) {
+            Map<String, String> tokenMap = tokenUtil.parseToken(token);
+            String userIdStr = tokenMap.get("userId");
+            if (userIdStr != null && !userIdStr.isEmpty()) {
+                currentUserId = Integer.parseInt(userIdStr);
+            }
+        }
+        
         Page<Activity> objectPage = new Page<>(current, size);
         QueryWrapper<Activity> userAvatarQueryWrapper = new QueryWrapper<>();
         if (activity.getActivityType() != null && !activity.getActivityType().equals("")) {
@@ -158,8 +175,26 @@ public class ActivityController {
         }
         
         ArrayList<ActivitySignupAndUser> activitySignupAndUsers = new ArrayList<>();
+        
+        // 获取当前用户的黑名单列表
+        List<Integer> blacklistedUserIds = new ArrayList<>();
+        if (currentUserId != null) {
+            try {
+                // 查询黑名单表
+                blacklistedUserIds = getBlacklistedUserIds(currentUserId);
+                System.out.println("用户 " + currentUserId + " 的黑名单列表: " + blacklistedUserIds);
+            } catch (Exception e) {
+                System.err.println("获取黑名单失败: " + e.getMessage());
+            }
+        }
 
         for (Activity activityRecord : page.getRecords()) {
+            // 如果活动发布者在黑名单中，则跳过该活动
+            if (blacklistedUserIds.contains(activityRecord.getUserId())) {
+                System.out.println("跳过黑名单用户 " + activityRecord.getUserId() + " 发布的活动: " + activityRecord.getId());
+                continue;
+            }
+            
             UserDTO userDTO = hashMap.get(activityRecord.getUserId());
             if (userDTO != null) {
                 ActivitySignupAndUser activitySignupAndUser = new ActivitySignupAndUser(activityRecord, userDTO);
@@ -180,6 +215,30 @@ public class ActivityController {
         }
 
         return Result.ok(activitySignupAndUsers);
+    }
+    
+    /**
+     * 获取用户的黑名单列表
+     * @param userId 用户ID
+     * @return 黑名单用户ID列表
+     */
+    private List<Integer> getBlacklistedUserIds(Integer userId) {
+        List<Integer> blacklistedUserIds = new ArrayList<>();
+        try {
+            // 查询数据库获取黑名单列表
+            QueryWrapper<Blacklist> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("user_id", userId);
+            List<Blacklist> blacklists = blacklistService.list(queryWrapper);
+            
+            // 提取被拉黑用户的ID
+            for (Blacklist blacklist : blacklists) {
+                // 将Long类型转换为Integer
+                blacklistedUserIds.add(blacklist.getBlockedUserId().intValue());
+            }
+        } catch (Exception e) {
+            System.err.println("获取黑名单列表失败: " + e.getMessage());
+        }
+        return blacklistedUserIds;
     }
 
     /**
