@@ -12,7 +12,7 @@ const api = {
       method: 'get',
       params: { 
         phone,
-        isFlag:'1160'
+        isFlag:'1161'
       }
     })
   },
@@ -92,8 +92,8 @@ const api = {
   getFollowingList: (params) => {
     return request({
       url: '/follow/GuanZhuList',
-      method: 'GET',
-      params
+      method: 'POST',
+      data: params
     })
   },
 
@@ -101,8 +101,8 @@ const api = {
   getFansList: (params) => {
     return request({
       url: '/follow/FenSiList',
-      method: 'GET',
-      params
+      method: 'POST',
+      data: params
     })
   },
 
@@ -546,8 +546,8 @@ export const getFollowingList = async (params) => {
   try {
     const res = await api.getFollowingList(params)
     return res.code === 200 ? res.data : []
-  } catch (e) {
-    console.log('获取关注列表失败：', e)
+  } catch (error) {
+    console.error('获取关注列表失败', error)
     return []
   }
 }
@@ -557,8 +557,8 @@ export const getFansList = async (params) => {
   try {
     const res = await api.getFansList(params)
     return res.code === 200 ? res.data : []
-  } catch (e) {
-    console.log('获取粉丝列表失败：', e)
+  } catch (error) {
+    console.error('获取粉丝列表失败', error)
     return []
   }
 }

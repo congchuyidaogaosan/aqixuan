@@ -62,7 +62,7 @@ public class SmsSendUtill {
         String host = "https://gyytz.market.alicloudapi.com";
         String path = "/sms/smsSend";
         String method = "POST";
-        String appcode = "3e124ed1766f4c10bdc78b2ffed293b7";
+        String appcode = "58fdeb20140f4872aaea1f8be1011660";
         Map<String, String> headers = new HashMap<String, String>();
         //最后在header中的格式(中间是英文空格)为Authorization:APPCODE 83359fd73fe94948385f570e3c139105
         headers.put("Authorization", "APPCODE " + appcode);

@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class id2demo {
-		String appCode = "3e124ed1766f4c10bdc78b2ffed293b7";
+	String appCode = "58fdeb20140f4872aaea1f8be1011660";
 	String url = "https://idenauthen.market.alicloudapi.com/idenAuthentication";
 	public  void main(String[] args) throws IOException {
         

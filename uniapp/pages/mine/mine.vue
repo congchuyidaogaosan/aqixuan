@@ -96,6 +96,7 @@ onMounted(() => {
 // 每次显示页面时更新统计数据
 onShow(() => {
   loadFollowStats()
+  getUserInfo()
 })
 
 // 监听页面显示

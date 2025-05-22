@@ -109,7 +109,7 @@ public class FriendRecommendation {
         
         // 否则使用基于相似度的策略
         System.out.println("使用基于用户相似度的推荐策略");
-        
+
         // 计算目标用户与其他用户的相似度
         Map<Integer, Double> similarityMap = new HashMap<>();
         for (int i = 0; i < numUsers; i++) {
@@ -118,7 +118,7 @@ public class FriendRecommendation {
                 continue;
             }
             
-            double similarity = cosineSimilarity(userFriendMatrix[targetUser], userFriendMatrix[i]);
+                double similarity = cosineSimilarity(userFriendMatrix[targetUser], userFriendMatrix[i]);
             if (similarity > 0) { // 只考虑有一定相似度的用户
                 similarityMap.put(i, similarity);
                 System.out.println("用户 " + targetUser + " 与用户 " + i + " 的相似度: " + similarity);
@@ -132,11 +132,11 @@ public class FriendRecommendation {
             System.out.println("没有相似用户，使用基于活跃度的默认推荐");
             return recommendBasedOnActivity(userFriendMatrix, targetUser, numRecommendations, alreadyKnownFriends);
         }
-        
+
         // 按相似度排序
         List<Map.Entry<Integer, Double>> sortedSimilarities = new ArrayList<>(similarityMap.entrySet());
         sortedSimilarities.sort(Map.Entry.<Integer, Double>comparingByValue().reversed());
-        
+
         System.out.println("相似用户排序: " + sortedSimilarities.stream()
                 .map(e -> e.getKey() + "(" + e.getValue() + ")")
                 .collect(Collectors.joining(", ")));
@@ -200,8 +200,8 @@ public class FriendRecommendation {
         }
         
         System.out.println("最终推荐列表: " + recommendedFriends);
-        return recommendedFriends;
-    }
+                        return recommendedFriends;
+                    }
     
     // 为了兼容静态调用，添加静态包装方法
     public static List<Integer> recommendFriendsStatic(int[][] userFriendMatrix, int targetUser, int numRecommendations) {

@@ -119,32 +119,58 @@ public class FollowController {
     }
 
     // 获取关注列表
-    @GetMapping("GuanZhuList")
-    public Result getGuanZhuList(HttpServletRequest request, FollowQuery followQuery) {
-        String token = request.getHeader("token");
-        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
-        //我的ID
-        String userId = stringStringMap.get("userId");
-
-
-        followQuery.setUserId(userId);
-
-        Page<FollowAllDTO> list = followService.listJoinUserAndUserPrivacy(followQuery, "user_id");
-
-
-        return Result.ok(list);
-
+    @PostMapping("GuanZhuList")
+    public Result getGuanZhuList(HttpServletRequest request, @RequestBody FollowQuery followQuery) {
+        try {
+            // 获取当前用户ID
+            String token = request.getHeader("token");
+            if (token == null || token.isEmpty()) {
+                return Result.fail("未登录或token无效");
+            }
+            
+            Map<String, String> tokenData = tokenUtil.parseToken(token);
+            String userId = tokenData.get("userId");
+            if (userId == null || userId.isEmpty()) {
+                return Result.fail("获取用户信息失败");
+            }
+            
+            // 设置查询参数
+            followQuery.setUserId(userId);
+            
+            // 调用服务获取关注列表
+            Page<FollowAllDTO> list = followService.listJoinUserAndUserPrivacy(followQuery, "user_id");
+            
+            return Result.ok(list);
+        } catch (Exception e) {
+            return Result.fail("获取关注列表失败: " + e.getMessage());
+        }
     }
 
     // 获取粉丝列表
-    @GetMapping("FenSiList")
-    public Result getFenSiList(HttpServletRequest request, FollowQuery followQuery) {
-        String token = request.getHeader("token");
-        Map<String, String> stringStringMap = tokenUtil.parseToken(token);
-        String userId = stringStringMap.get("userId");
-//        String userId = "1";
-        followQuery.setUserId(userId);
-        Page<FollowAllDTO> list = followService.listJoinUserAndUserPrivacy(followQuery, "followed_user_id");
-        return Result.ok(list);
+    @PostMapping("FenSiList")
+    public Result getFenSiList(HttpServletRequest request, @RequestBody FollowQuery followQuery) {
+        try {
+            // 获取当前用户ID
+            String token = request.getHeader("token");
+            if (token == null || token.isEmpty()) {
+                return Result.fail("未登录或token无效");
+            }
+            
+            Map<String, String> tokenData = tokenUtil.parseToken(token);
+            String userId = tokenData.get("userId");
+            if (userId == null || userId.isEmpty()) {
+                return Result.fail("获取用户信息失败");
+            }
+            
+            // 设置查询参数
+            followQuery.setUserId(userId);
+            
+            // 调用服务获取粉丝列表
+            Page<FollowAllDTO> list = followService.listJoinUserAndUserPrivacy(followQuery, "followed_user_id");
+            
+            return Result.ok(list);
+        } catch (Exception e) {
+            return Result.fail("获取粉丝列表失败: " + e.getMessage());
+        }
     }
 }
